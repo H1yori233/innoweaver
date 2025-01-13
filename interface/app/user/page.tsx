@@ -1,8 +1,39 @@
+// /user/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FaSignOutAlt, FaKey } from "react-icons/fa";
+import { FaSignOutAlt, FaKey, FaUser } from "react-icons/fa";
 import useAuthStore from "@/lib/hooks/auth-store";
+
+// 用户头像组件
+const UserAvatar = ({ user, onLogout }) => {
+  const [isDropdownOpen, setDropdownOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setDropdownOpen(!isDropdownOpen)}
+        className="flex items-center justify-center w-10 h-10 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors"
+      >
+        <FaUser className="text-2xl" />
+      </button>
+      {isDropdownOpen && (
+        <div className="absolute right-0 mt-2 py-2 w-48 bg-white rounded-md shadow-xl">
+          <div className="px-4 py-2">
+            <p className="text-lg font-semibold">{user.name}</p>
+            <p className="text-sm text-gray-600">{user.email}</p>
+          </div>
+          <button
+            onClick={onLogout}
+            className="w-full text-left px-4 py-2 hover:bg-gray-100"
+          >
+            <FaSignOutAlt className="mr-2 inline-block" /> Logout
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // 用户信息组件
 const UserInfo = ({ user }) => (
@@ -49,10 +80,26 @@ const AuthButtons = ({ onLogout }) => (
   </div>
 );
 
+// 用户创作内容组件
+const UserCreations = ({ creations }) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
+    {creations.map((creation, index) => (
+      <div
+        key={index}
+        className="bg-white p-6 rounded-lg shadow-md border border-secondary transition-transform transform hover:scale-105"
+      >
+        <h3 className="text-xl font-semibold text-text-primary">{creation.title}</h3>
+        <p className="mt-2 text-text-secondary">{creation.description}</p>
+      </div>
+    ))}
+  </div>
+);
+
 // 主页面组件
 const UserPage = () => {
   const [apiKey, setApiKey] = useState('');
   const [user, setUser] = useState(null);
+  const [creations, setCreations] = useState([]);
   const authStore = useAuthStore();
   const [isMounted, setIsMounted] = useState(false);
 
@@ -68,6 +115,11 @@ const UserPage = () => {
         name: 'John Doe',
         userType: authStore.userType || 'Admin',
       });
+      setCreations([
+        { title: 'Creation 1', description: 'This is the first creation.' },
+        { title: 'Creation 2', description: 'This is the second creation.' },
+        { title: 'Creation 3', description: 'This is the third creation.' },
+      ]);
     }
   }, [authStore.userType]);
 
@@ -85,13 +137,14 @@ const UserPage = () => {
 
   return (
     <div className="flex flex-col items-center justify-center bg-primary min-h-screen p-8 ml-[12.5rem] transition-colors duration-300">
-      <h1 className="text-4xl font-bold text-text-primary mb-8">User Profile</h1>
-
-      {/* 页面主体区域 */}
       <div className="w-full max-w-3xl space-y-8">
+        <div className="flex justify-between items-center w-full">
+          <h1 className="text-4xl font-bold text-text-primary">User Profile</h1>
+          <UserAvatar user={user} onLogout={handleLogout} />
+        </div>
         <UserInfo user={user} />
         <ApiKeySection apiKey={apiKey} onApiKeyChange={handleApiKeyChange} onSave={handleSaveApiKey} />
-        <AuthButtons onLogout={handleLogout} />
+        <UserCreations creations={creations} />
       </div>
     </div>
   );
