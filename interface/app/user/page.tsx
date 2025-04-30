@@ -84,7 +84,7 @@ const UserPage = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center bg-primary min-h-screen p-8 ml-[12.5rem] transition-colors duration-300">
+    <div className="flex flex-col items-center justify-center bg-primary min-h-screen p-8 transition-colors duration-300">
       <h1 className="text-4xl font-bold text-text-primary mb-8">User Profile</h1>
 
       {/* 页面主体区域 */}

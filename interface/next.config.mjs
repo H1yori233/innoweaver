@@ -5,7 +5,18 @@ const nextConfig = {
         // API_URL: 'http://localhost:5000',
     },
     images: {
-        domains: ['s2.loli.net'],
+        remotePatterns: [
+            {
+                protocol: 'https',
+                hostname: 's2.loli.net',
+            },
+        ],
+    },
+    experimental: {
+        webpackBuildWorker: true,
+        parallelServerBuildTraces: true,
+        parallelServerCompiles: true,
     },
 };
+
 export default nextConfig;

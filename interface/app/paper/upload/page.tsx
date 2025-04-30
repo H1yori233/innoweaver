@@ -156,7 +156,7 @@ const PaperUpload = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center bg-primary min-h-screen p-6 ml-[12.5rem]">
+    <div className="flex flex-col items-center justify-center bg-primary min-h-screen p-6">
       {/* 上传区域 */}
       <UploadArea onDrop={onDrop} errorMessage={errorMessage} />
 

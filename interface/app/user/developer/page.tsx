@@ -1,129 +1,162 @@
-"use client";
+'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { fetchViewPrompts, fetchModifyPrompt } from '@/lib/actions';
-import { Editor, EditorState, ContentState } from 'draft-js';
-import 'draft-js/dist/Draft.css';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Database, BarChart, Edit, FileText, AlertTriangle } from 'lucide-react';
+import PromptManager from '@/components/developer/PromptManager';
+import LogAnalyzer from '@/components/developer/LogAnalyzer';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import Dialog from '@/components/ui/dialog';
+import Actionbar from '@/components/ui/action-bar';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/toast';
+import { logger } from '@/lib/logger';
 
-interface Prompts {
-    [key: string]: string; // 提示词名称为字符串，内容为字符串
-}
+const DeveloperDashboardContent = () => {
+  const [activeTab, setActiveTab] = useState('apis');
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [actionbarVisible, setActionbarVisible] = useState(false);
+  const { toast } = useToast();
 
-export default function ViewPrompts() {
-    const [id, setId] = useState('');
-    useEffect(() => {
-        const storedId = localStorage.getItem("id");
+  const tabs = [
+    { id: 'apis', label: 'APIs', icon: Database },
+    { id: 'analytics', label: 'Analytics', icon: BarChart },
+    { id: 'prompts', label: 'Prompts', icon: Edit },
+    { id: 'logs', label: 'Logs', icon: FileText },
+    { id: 'popups', label: 'Popups', icon: AlertTriangle },
+  ];
 
-        if (storedId) {
-            setId(storedId);
-        }
-    }, []);
-
-    const router = useRouter();
-    const formatPromptName = (prompt) => {
-        const formatted = prompt.charAt(0).toUpperCase() + prompt.slice(1).toLowerCase();
-        return formatted.replace(/_/g, ' ');
-    };
-
-    const [prompts, setPrompts] = useState<Prompts>({});
-
-    // 获取提示词
-    useEffect(() => {
-        async function loadPrompts() {
-            try {
-                const fetchedPrompts = await fetchViewPrompts();
-                setPrompts(fetchedPrompts);
-            } catch (error) {
-                console.error("Error fetching prompts:", error);
-            }
-        }
-
-        loadPrompts();
-    }, []);
-
-    const updatePrompts = async (promptName: string, newContent: string) => {
-        alert("更新成功");
-        const result = await fetchModifyPrompt(promptName, newContent);
-        console.log(result);
-    };
-
-    return (
-        <div className='user_history_container bg-primary transition-colors duration-300'>
-            {/* 下拉选择提示词 */}
-            <div className='prompts_container'>
-                {Object.entries(prompts).map(([promptName, promptContent]) => {
-                    const formattedPromptName = formatPromptName(promptName);
-                    return (
-                        <div key={promptName}
-                            style={{
-                                display: 'flex', marginTop: '20px', backgroundColor: '#232323', padding: '15px',
-                            }}>
-                            <label style={{
-                                width: '210px',
-                                color: 'white',
-                                fontWeight: 'bold',
-                                marginTop: '40px',
-                                marginRight: '10px',
-                                // wordBreak: 'break-all',
-                            }}>
-                                {formattedPromptName}
-                            </label>
-
-                            <PromptEditor initialContent={promptContent}
-                                onChange={(newContent) => setPrompts((prevPrompts) => ({
-                                    ...prevPrompts,
-                                    [promptName]: newContent
-                                }))} />
-                            <button
-                                style={{
-                                    marginLeft: '20px', backgroundColor: '#EEEEEE', color: '#171717', fontWeight: 'bold',
-                                    width: '80px', height: '40px', marginTop: '100px', borderRadius: '10px',
-                                }}
-                                onClick={() => updatePrompts(promptName, promptContent)}>
-                                update
-                            </button>
-                        </div>
-                    );
-                })}
+  const renderTabContent = (tabId: string) => {
+    switch (tabId) {
+      case 'apis':
+        return (
+          <div className="space-y-4 text-text-primary">
+            <div className="bg-card p-4 rounded-lg shadow-md">
+              <h3 className="text-lg font-semibold mb-2 text-card-foreground">API Documentation</h3>
+              <p className="text-muted-foreground">Access and manage your API keys, explore endpoints, and view usage statistics.</p>
             </div>
-
-        </div>
-    );
-}
-
-interface PromptEditorProps {
-    initialContent: string;
-    onChange: (newContent: string) => void;
-}
-
-const PromptEditor: React.FC<PromptEditorProps> = ({ initialContent, onChange }) => {
-    const [editorState, setEditorState] = useState(() =>
-        EditorState.createWithContent(ContentState.createFromText(initialContent))
-    );
-
-    const handleEditorStateChange = (state: EditorState) => {
-        setEditorState(state);
-        const content = state.getCurrentContent().getPlainText();
-        onChange(content);
-    };
-
-    return (
-        <div style={{
-            flex: 1,
-            marginLeft: '10px',
-            height: '300px',
-            border: '1px solid #ccc',
-            borderRadius: '4px',
-            padding: '10px',
-            width: '50%',
-            overflowY: 'auto',
-        }}>
-            <Editor
-                editorState={editorState}
-                onChange={handleEditorStateChange}
-                placeholder="开始输入..."
+            <div className="bg-card p-4 rounded-lg shadow-md">
+              <h3 className="text-lg font-semibold mb-2 text-card-foreground">API Keys</h3>
+              <ul className="list-disc list-inside text-muted-foreground">
+                <li>Production Key: ••••••••••••••••</li>
+                <li>Development Key: ••••••••••••••••</li>
+              </ul>
+            </div>
+          </div>
+        );
+      case 'analytics':
+        return (
+          <div className="space-y-4">
+            <div className="bg-card p-4 rounded-lg shadow-md">
+              <h3 className="text-lg font-semibold mb-2 text-card-foreground">Usage Statistics</h3>
+              <p className="text-muted-foreground">View detailed analytics about your API usage, response times, and more.</p>
+            </div>
+            <div className="bg-card p-4 rounded-lg shadow-md">
+              <h3 className="text-lg font-semibold mb-2 text-card-foreground">Performance Metrics</h3>
+              <ul className="list-disc list-inside text-muted-foreground">
+                <li>Average Response Time: 120ms</li>
+                <li>Uptime: 99.99%</li>
+                <li>Total Requests (30 days): 1,234,567</li>
+              </ul>
+            </div>
+          </div>
+        );
+      case 'prompts':
+        return <PromptManager />;
+      case 'logs':
+        return <LogAnalyzer />;
+      case 'popups':
+        return (
+          <div className="space-y-4">
+            <div className="bg-card p-4 rounded-lg shadow-md">
+              <h3 className="text-lg font-semibold mb-2 text-card-foreground">Popup Examples</h3>
+              <div className="space-y-2">
+                <Button onClick={() => toast({ title: "Toast Notification", description: "This is a toast message" })}>
+                  Show Toast
+                </Button>
+                <Button onClick={() => setDialogVisible(true)}>
+                  Show Dialog
+                </Button>
+                <Button onClick={() => setActionbarVisible(true)}>
+                  Show Actionbar
+                </Button>
+              </div>
+            </div>
+            <Dialog
+              isOpen={dialogVisible}
+              onClose={() => setDialogVisible(false)}
+              title="Confirm Action"
+              message="Are you sure you want to perform this action?"
+              buttons={[
+                { text: 'Cancel', onClick: () => setDialogVisible(false) },
+                { text: 'Confirm', onClick: () => {
+                  logger.log('Confirmed');
+                  setDialogVisible(false);
+                }},
+              ]}
             />
-        </div>
-    );
+            <Actionbar
+              isOpen={actionbarVisible}
+              onClose={() => setActionbarVisible(false)}
+              title="Choose an action"
+              buttons={[
+                { text: 'Edit', onClick: () => {
+                  logger.log('Edit clicked');
+                  setActionbarVisible(false);
+                }},
+                { text: 'Delete', onClick: () => {
+                  logger.log('Delete clicked');
+                  setActionbarVisible(false);
+                }},
+                { text: 'Cancel', onClick: () => setActionbarVisible(false) },
+              ]}
+            />
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background text-foreground p-6 text-text-primary">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-6xl mx-auto"
+      >
+        <h1 className="text-2xl font-bold mb-6">Developer Dashboard</h1>
+
+        <Tabs defaultValue="apis" className="w-full">
+          <TabsList className="mb-6">
+            {tabs.map((tab) => (
+              <TabsTrigger key={tab.id} value={tab.id} onClick={() => setActiveTab(tab.id)}>
+                <tab.icon className="mr-2 h-4 w-4" />
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {tabs.map((tab) => (
+            <TabsContent key={tab.id} value={tab.id}>
+              <motion.div
+                key={tab.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                {renderTabContent(tab.id)}
+              </motion.div>
+            </TabsContent>
+          ))}
+        </Tabs>
+      </motion.div>
+    </div>
+  );
 };
+
+const DeveloperDashboard = () => (
+  <DeveloperDashboardContent />
+);
+
+export default DeveloperDashboard;

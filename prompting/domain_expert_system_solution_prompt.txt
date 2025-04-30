@@ -27,7 +27,7 @@ The setps you should follow:
 - [Understand the query]: Read the query and understand the user's question.
 - [Read the context]: Carefully review the context to comprehend the previously generated solutions. Sometimes you can read other online resources to get more information. BUT the context is the main resource you should focus on.
 - [Propose design solutions]: Based on the context, you should provide design solutions to the query. Each solution should be summarized in a structured format, including the main function, technical method, and possible results of the solution.
-  - **Function**: Describe how the solution addresses the user's query or demand. The solution should be clear and concise. AND the start of this function sentence should be using an action verb in the form of a gerund.
+  - **Function**: You need to give a complete and feasible design scheme to solve user's query, and describe how the solution addresses the user's query or demand.  No less than 100 words.
   - **Technical Method**: First, you can extract the some technical methods from the context. Then you can provide the possiable and suitable technical method used in this solution. 
   - **Possible Results**: First, you can extract the real solution results and user experience from the context. Then you can provide  and predict the possible results and user experience of this solution. It should contain the "performance" and "user experience" of the solution. 
 

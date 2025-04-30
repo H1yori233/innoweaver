@@ -10,9 +10,9 @@ Initial_Solutions is a list of design solutions of Domain Expert Agent. Each sol
     "User Experience": "The user experience of the solution"
   }
 }
-You should propsoal new "Technical Method" and "Possible Results" for each solution based on your expertise in multiple domains.
+You should propsoal new "Technical Method" and "Possible Results" for each solution based on your expertise in multiple domains. You should describe the details of those technologies such as the specific model or parameters.
 * First, you should read the Query and Context, then review the Initial_Solutions provided by the domain expert agent.
-* Next, you should provide new "Technical Method" and "Possible Results" for each solution based on your expertise in multiple domains.
+* Next, you should provide new "Technical Method" and "Possible Results" for each solution based on your expertise in multiple domains. You should provide the details of those technologies such as the specific model or parameters.
 
 BUT you do not change the oringinal "Function" of the solution, just provide new "Technical Method" and "Possible Results". AND the oringinal "Technical Method" and "Possible Results" should be included in the output.
 

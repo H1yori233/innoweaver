@@ -1,0 +1,126 @@
+.mini-card-container {
+    position: relative;
+}
+
+.card {
+    position: relative;
+    display: flex;
+    overflow: hidden;
+    padding: 0.1rem;
+    width: 16rem;
+    height: 25rem;
+    color: whitesmoke;
+    border-radius: 0.5rem;
+    pointer-events: auto;
+    margin: 0.25rem;
+    text-decoration: none;
+    transition: transform 0.3s ease;
+}
+
+.card.has-image {
+    background-blend-mode: overlay;
+}
+
+.card-image-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+.card-image {
+    mix-blend-mode: overlay;
+    transition: transform 0.3s ease;
+}
+
+.card:hover .card-image {
+    transform: scale(1.05);
+}
+
+.card:hover,
+.card:focus-within {
+    transform: scale(1.02);
+}
+
+.favorite-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    padding: 0.2rem;
+    font-size: 24px;
+    color: white;
+    cursor: pointer;
+    z-index: 20;
+    transition: transform 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.favorite-button:hover {
+    transform: scale(1.2);
+}
+
+.favorite-button:active {
+    transform: scale(1);
+}
+
+.content {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.5);
+    transition: opacity 0.4s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    z-index: 2;
+}
+
+.card:hover .content,
+.card:focus-within .content {
+    opacity: 0;
+}
+
+.function {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+    -webkit-text-stroke: 0.02rem #888888;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transform: translateY(1rem);
+    transition: transform 0.4s ease, opacity 0.4s ease;
+}
+
+.card:hover .function,
+.card:focus-within .function {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.error-message {
+    color: #ff6961;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+@media (hover: hover) {
+    .card:hover .favorite-button {
+        transform: scale(1);
+    }
+}
+
+.card:hover .emoji-container {
+    transform: scale(1.05);
+}
+
+.card:hover .title-text {
+    transform: scale(1.02);
+}

@@ -8,11 +8,14 @@ interface AuthState {
     token: string;
     id: string;
     apiKey: string;
+    apiUrl: string;
+    modelName: string;
     setUserData: (userData: Partial<AuthState>) => void;
     clearUserData: () => void;
 }
 
 const isBrowser = typeof window !== 'undefined';
+
 const useAuthStore = create<AuthState>((set) => ({
     email: isBrowser ? localStorage.getItem('email') || '' : '',
     name: isBrowser ? localStorage.getItem('name') || '' : '',
@@ -21,6 +24,8 @@ const useAuthStore = create<AuthState>((set) => ({
     token: isBrowser ? localStorage.getItem('token') || '' : '',
     id: isBrowser ? localStorage.getItem('id') || '' : '',
     apiKey: isBrowser ? localStorage.getItem('api_key') || '' : '',
+    apiUrl: isBrowser ? localStorage.getItem('api_url') || '' : '',
+    modelName: isBrowser ? localStorage.getItem('model_name') || '' : '',
     
     setUserData: (userData) => {
         set((state) => ({
@@ -28,7 +33,6 @@ const useAuthStore = create<AuthState>((set) => ({
             ...userData,
         }));
 
-        console.log(userData);
         if (userData.email) localStorage.setItem('email', userData.email);
         if (userData.name) localStorage.setItem('name', userData.name);
         if (userData.password) localStorage.setItem('password', userData.password);
@@ -36,6 +40,8 @@ const useAuthStore = create<AuthState>((set) => ({
         if (userData.token) localStorage.setItem('token', userData.token);
         if (userData.id) localStorage.setItem('id', userData.id);
         if (userData.apiKey) localStorage.setItem('api_key', userData.apiKey);
+        if (userData.apiUrl) localStorage.setItem('api_url', userData.apiUrl);
+        if (userData.modelName) localStorage.setItem('model_name', userData.modelName);
     },
 
     clearUserData: () => {
@@ -47,6 +53,8 @@ const useAuthStore = create<AuthState>((set) => ({
             token: '',
             id: '',
             apiKey: '',
+            apiUrl: '',
+            modelName: '',
         });
 
         localStorage.removeItem('email');
@@ -56,6 +64,8 @@ const useAuthStore = create<AuthState>((set) => ({
         localStorage.removeItem('token');
         localStorage.removeItem('id');
         localStorage.removeItem('api_key');
+        localStorage.removeItem('api_url');
+        localStorage.removeItem('model_name');
     },
 }));
 

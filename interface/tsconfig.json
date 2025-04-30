@@ -34,7 +34,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "lib/actions/customFetch.tsx",
-    "comp/main/FileContext.js"
+    "components/main/FileContext.js"
   ],
   "exclude": [
     "node_modules"

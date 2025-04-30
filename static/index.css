@@ -30,41 +30,8 @@ body {
   margin-bottom: 20px;
   padding: 10px;
   font-size: 14px;
-  resize: none;
   color: #333;
 }
-
-/*滚动条*/
-
-.left-panel textarea::-webkit-scrollbar{
-  width: 12px;
-  height: 12px;
-}
-.left-panel textarea::-webkit-scrollbar {
-  width: 12px;  /* 垂直滚动条的宽度 */ 
-  height: 12px; /* 水平滚动条的高度 */
-}
-
-.left-panel textarea::-webkit-scrollbar-thumb {
-  background-color: #ccc; /* 滑块的背景颜色 */
-  border-radius: 6px; /* 滑块的圆角 */
-  border: 3px solid transparent; /* 滑块的边框 */
-  background-clip: content-box; /* 防止边框被裁剪 */
-}
-
-.left-panel textarea::-webkit-scrollbar-track {
-  background-color: #f1f1f1; /* 轨道的背景颜色 */
-}
-
-.left-panel textarea::-webkit-scrollbar-track-piece {
-  background-color: #f1f1f1; /* 轨道的某一部分 */
-}
-
-.left-panel textarea::-webkit-scrollbar-corner {
-  background-color: #f1f1f1; /* 当滚动条同时出现时的角落背景颜色 */
-}
-
-/*滚动条*/
 
 .upload-btn {
   background-color: #888;

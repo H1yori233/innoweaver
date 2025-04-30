@@ -1,8 +1,6 @@
 from flask import Blueprint, request, jsonify
-from flask.wrappers import Response
-from typing import Any, Dict, Tuple
-import prompting as PROMPTING
 from utils.auth_utils import token_required
+import utils.prompting as PROMPTING
 
 prompts_bp = Blueprint('prompts', __name__)
 
@@ -20,7 +18,7 @@ _PROMPTS = {
 
 @prompts_bp.route('/api/prompts', methods=['GET'])
 @token_required
-def view_prompts(current_user: Dict[str, Any]) -> Tuple[Response, int]:
+def view_prompts(current_user):
     if current_user['user_type'] != 'developer':
         return jsonify({'error': '没有权限访问此资源'}), 403
     
@@ -28,13 +26,13 @@ def view_prompts(current_user: Dict[str, Any]) -> Tuple[Response, int]:
 
 @prompts_bp.route('/api/prompts', methods=['PUT'])
 @token_required
-def modify_prompt(current_user: Dict[str, Any]) -> Tuple[Response, int]:
+def modify_prompt(current_user):
     if current_user['user_type'] != 'developer':
         return jsonify({'error': '没有权限修改此资源'}), 403
     
-    data: Dict[str, Any] = request.json
-    prompt_name: Optional[str] = data.get('prompt_name')
-    new_content: Optional[str] = data.get('new_content')
+    data = request.json
+    prompt_name = data.get('prompt_name')
+    new_content = data.get('new_content')
     
     if prompt_name not in _PROMPTS:
         return jsonify({'error': '无效的提示词名称'}), 400

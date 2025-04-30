@@ -1,21 +1,22 @@
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs'
 import mammoth from "mammoth";
 import * as XLSX from "xlsx";
+import { logger } from '@/lib/logger';
 
 async function extractPdfText(file) {
-    console.log(file);
+    logger.log(file);
 
     const loadingTask = pdfjsLib.getDocument(file);
     const pdf = await loadingTask.promise;
 
     const pages = pdf.numPages;
-    console.log(pages);
+    logger.log(pages);
     
     for (let i = 1; i <= pages; i++)
     {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
-        console.log(textContent);
+        logger.log(textContent);
     }
 
     // const textItems = textContent.items.map(item => ({

@@ -3,59 +3,22 @@
 import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { MeiliSearch } from 'meilisearch';
-import MiniCard from '@/comp/solution/MiniCard';
-import Masonry from 'react-masonry-css';
 import { fetchQueryLikedSolutions } from '@/lib/actions';
-import { FaSearch } from 'react-icons/fa';
-
-interface MasonryGalleryProps {
-    solutions: any[];
-    likedSolutions: { [key: string]: boolean };
-}
-
-const MasonryGallery: React.FC<MasonryGalleryProps> = ({ solutions, likedSolutions }) => {
-    const columns = Math.min(5, solutions.length);
-    const breakpointColumnsObj = {
-        default: columns,
-        1600: Math.min(4, solutions.length),
-        1200: Math.min(3, solutions.length),
-        800: Math.min(2, solutions.length),
-        640: 1,
-    };
-
-    const [likes, setLikes] = useState({});
-    useEffect(() => {
-        setLikes(likedSolutions);
-    }, [likedSolutions]);
-
-    return (
-        <div className="flex justify-center p-4 w-full">
-            <Masonry
-                breakpointCols={breakpointColumnsObj}
-                className="flex"
-                columnClassName="masonry-grid_column flex flex-col"
-            >
-                {solutions.map((solution, index) => (
-                    <MiniCard
-                        key={index}
-                        content={solution}
-                        index={index}
-                        isLiked={likes[solution.id]}
-                    />
-                ))}
-            </Masonry>
-        </div>
-    );
-};
-
+import useAuthStore from '@/lib/hooks/auth-store';
+import { FaSearch, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import MasonryGallery from '@/components/inspiration/MasonryGallery';
+import { motion } from 'framer-motion';
+import { useToast } from '@/components/ui/toast';
 
 const History = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const authStore = useAuthStore();
+    const { toast } = useToast();
 
     const page = searchParams.get('page') || '1';  // Default to page 1
     const query = searchParams.get('query') || '';  // Default to an empty query string
-    const pageNumber = parseInt(page, 20);  // Convert page number to an integer
+    const pageNumber = parseInt(page, 10);  // 修正：使用基数10正确解析页码
     const [queryState, setQuery] = useState(query);
 
     const [loading, setLoading] = useState(true);
@@ -87,7 +50,6 @@ const History = () => {
         setLoading(true);
         try {
             const totalCount = await fetchSolutionCount(searchQuery);
-            console.log(totalCount);
             setTotalPages(Math.ceil(totalCount / 20));
 
             const id = localStorage.getItem('id');
@@ -110,18 +72,33 @@ const History = () => {
                     pageNumber === 1 ? modifiedResults : [...prevSolutions, ...modifiedResults]
                 );
 
-                const solutionIds = modifiedResults.map(solution => solution.id);
-                const likedStatuses = await fetchQueryLikedSolutions(solutionIds);
-
-                const newLikedStates = likedStatuses.reduce((acc, { solution_id, isLiked }) => {
-                    acc[solution_id] = isLiked;
-                    return acc;
-                }, {});
-
-                setLikedSolutions((prevLiked) => ({
-                    ...prevLiked,
-                    ...newLikedStates,
-                }));
+                if (authStore.email) {
+                    try {
+                        const likedStatuses = await fetchQueryLikedSolutions(modifiedResults.map(solution => solution.id));
+                        const newLikedStates = likedStatuses.reduce((acc, { solution_id, isLiked }) => {
+                            acc[solution_id] = isLiked;
+                            return acc;
+                        }, {});
+                        setLikedSolutions(prevLiked => ({
+                            ...prevLiked,
+                            ...newLikedStates,
+                        }));
+                    } catch (likeError) {
+                        // 静默处理点赞状态获取失败，只记录错误
+                        console.error('Failed to fetch like status:', likeError);
+                        const defaultLikedStates = modifiedResults.reduce((acc, solution) => {
+                            acc[solution.id] = false;
+                            return acc;
+                        }, {});
+                        setLikedSolutions(defaultLikedStates);
+                    }
+                } else {
+                    const defaultLikedStates = modifiedResults.reduce((acc, solution) => {
+                        acc[solution.id] = false;
+                        return acc;
+                    }, {});
+                    setLikedSolutions(defaultLikedStates);
+                }
 
                 setHasMore(true);
             } else {
@@ -129,10 +106,15 @@ const History = () => {
             }
         } catch (error) {
             setError('Error fetching solutions');
+            toast({
+                title: "Error",
+                description: "Failed to load solutions. Please try again later.",
+                type: "error"
+            });
         } finally {
             setLoading(false);
         }
-    }, [client, fetchSolutionCount]);
+    }, [client, fetchSolutionCount, authStore.email, toast]);
 
     // Reset the solutions and liked solutions when query or page changes
     useEffect(() => {
@@ -197,11 +179,14 @@ const History = () => {
         return pagesToShow.map((page, index) => (
             <React.Fragment key={index}>
                 {page === '...' ? (
-                    <span className="px-4 py-2">...</span>
+                    <span className="px-3 py-2 text-gray-500 dark:text-gray-400">...</span>
                 ) : (
                     <button
                         onClick={() => handlePageChange(page)}
-                        className={`px-4 py-2 border rounded-lg ${page === pageNumber ? 'bg-secondary text-text-primary' : 'bg-primary text-text-secondary'}`}
+                        className={`px-3 py-2 rounded-md transition-colors duration-200 ${page === pageNumber
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-primary text-text-secondary hover:bg-secondary'
+                            }`}
                     >
                         {page}
                     </button>
@@ -211,8 +196,12 @@ const History = () => {
     };
 
     return (
-        <div className="h-screen overflow-y-auto ml-[12.5rem] bg-primary text-text-primary transition-colors duration-300">
-            <div className="flex justify-center mt-8 mb-2">
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="h-screen overflow-y-auto bg-primary text-text-primary transition-colors duration-300">
+            <div className="flex justify-center mt-4">
                 <header className="text-center w-full">
                     <form onSubmit={handleSearch} className="flex justify-center">
                         <div className="relative w-[80%] max-w-3xl">
@@ -224,7 +213,8 @@ const History = () => {
                                 value={queryState}
                                 onChange={(e) => setQuery(e.target.value)}
                                 placeholder="Search Inspirtaions"
-                                className="w-full pl-12 pr-4 py-3 text-lg border border-secondary rounded-lg bg-secondary text-text-primary outline-none shadow focus:ring focus:ring-secondary focus:border-neutral-500 transition-all duration-300"
+                                className="w-full pl-12 pr-4 py-3 text-lg border border-secondary rounded-lg bg-primary text-text-primary outline-none shadow 
+                                focus:ring focus:ring-secondary focus:border-neutral-500 focus:bg-secondary transition-all duration-300"
                             />
                         </div>
                     </form>
@@ -232,9 +222,7 @@ const History = () => {
             </div>
 
             {loading && pageNumber === 1 ? (
-                <div className="text-2xl mt-24 text-center text-text-secondary">
-                    Loading...
-                </div>
+                <MasonryGallery solutions={[]} likedSolutions={{}} />
             ) : error ? (
                 <div className="text-center mt-24 text-red-500">
                     {error}
@@ -243,16 +231,19 @@ const History = () => {
                 <div>
                     <MasonryGallery solutions={solutions} likedSolutions={likedSolutions} />
                     {loading && pageNumber > 1 && (
-                        <div className="text-center mt-4 text-text-placeholder">Loading more...</div>
+                        <MasonryGallery solutions={[]} likedSolutions={{}} />
                     )}
 
                     {/* Pagination Controls */}
-                    <div className="flex justify-center mt-2 mb-6 space-x-2">
+                    <div className="flex justify-center mt-2 mb-6 space-x-3">
                         <button
                             onClick={() => handlePageChange(pageNumber - 1)}
                             disabled={pageNumber === 1}
-                            className="px-4 py-2 border rounded-lg bg-primary text-text-primary"
+                            className="px-4 py-2 rounded-md bg-primary text-text-primary 
+                                disabled:opacity-50 hover:bg-secondary
+                                focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                         >
+                            <FaChevronLeft className="inline mr-2" />
                             Previous
                         </button>
                         {renderPagination()}
@@ -270,14 +261,17 @@ const History = () => {
                         <button
                             onClick={() => handlePageChange(pageNumber + 1)}
                             disabled={pageNumber === totalPages}
-                            className="px-4 py-2 border rounded-lg bg-primary text-text-primary"
+                            className="px-4 py-2 rounded-md bg-primary text-text-primary 
+                                disabled:opacity-50 hover:bg-secondary
+                                focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                         >
                             Next
+                            <FaChevronRight className="inline ml-2" />
                         </button>
                     </div>
                 </div>
             )}
-        </div>
+        </motion.div>
     );
 };
 

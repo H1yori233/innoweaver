@@ -1,12 +1,8 @@
 import type { Metadata } from "next";
 // import { Inter } from "next/font/google";
 import "./globals.css";
-import { Container, Row, Col, Button } from 'react-bootstrap';
-// import 'bootstrap/dist/css/bootstrap.min.css';
 import React from 'react';
-import TopBar from '@/comp/TopBar';
-import Layout from "@/comp/Layout";
-import ThemeScript from "@/comp/ThemeScript";
+import Layout from "@/components/Layout";
 import wdyr from '@welldone-software/why-did-you-render';
 // const inter = Inter({ subsets: ["latin"] });
 
@@ -27,7 +23,6 @@ export default function RootLayout({
       <head>
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet" />
       </head>
-      {/* <body className={inter.className}>{children}</body> */}
       <body className="light">
         <Layout>{children}</Layout>
       </body>

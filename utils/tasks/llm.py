@@ -1,127 +1,316 @@
 import os
 import re
-from openai import OpenAI
 from dotenv import load_dotenv
-import main as MAIN
-import rag as RAG
+import utils.main as MAIN
+import utils.db as RAG
 from utils.tasks.config import *
+from utils.tasks.config import solution_eval
 import utils.tasks.task as TASK
+from utils.redis import *
 import utils.tasks.query_load as QUERY
 import json
 import time
 import requests
 from io import BytesIO
 from PIL import Image
-from typing import Dict, Any
+import asyncio
+import httpx
+from utils.image import process_and_upload_image
 
-def knowledge(current_user: Dict[str, Any], paper: str) -> Any:
+class OpenAIClient:
+    def __init__(self, api_key, base_url, model_name=None):
+        self.api_key = api_key
+        self.base_url = base_url
+        self.model_name = model_name
+        
+def knowledge(current_user, paper):
     print(f"用户 {current_user['email']} 正在调用 /api/knowledge")
     
     load_dotenv()
     API_KEY = current_user['api_key']
-    print(API_KEY)
-    BASE_URL = os.getenv("BASE_URL")
-
-    client = OpenAI(
+    
+    # 优先使用用户设置的URL，如果没有则使用默认值
+    BASE_URL = current_user.get('api_url') or "https://api.deepseek.com/v1"
+    # 获取用户设置的模型名称（如果有）
+    MODEL_NAME = current_user.get('model_name') or "deepseek-chat"
+    
+    print(API_KEY, ' ', BASE_URL, ' ', MODEL_NAME)
+    
+    client = OpenAIClient(
         api_key=API_KEY,
-        base_url=BASE_URL
+        base_url=BASE_URL,
+        model_name=MODEL_NAME  # 传递模型名称给客户端
     )
     
     result = MAIN.knowledge_extraction(paper, client)
     return result
 
-def query(current_user: Dict[str, Any], query: str, design_doc: str) -> Any:
+async def query(current_user, query, design_doc):
     print(f"用户 {current_user['email']} 正在调用 /api/query")
     
     load_dotenv()
     API_KEY = current_user['api_key']
-    print(API_KEY)
-    BASE_URL = os.getenv("BASE_URL")
-
-    client = OpenAI(
+    
+    # 优先使用用户设置的URL，如果没有则使用默认值
+    BASE_URL = current_user.get('api_url') or "https://api.deepseek.com/v1"
+    # 获取用户设置的模型名称（如果有）
+    MODEL_NAME = current_user.get('model_name') or "deepseek-chat"
+    
+    print(API_KEY, ' ', BASE_URL, ' ', MODEL_NAME)
+    
+    client = OpenAIClient(
         api_key=API_KEY,
-        base_url=BASE_URL
+        base_url=BASE_URL,
+        model_name=MODEL_NAME  # 传递模型名称给客户端
     )
     
-    result = MAIN.query_analysis(query, design_doc, client)
+    result = await MAIN.query_analysis(query, design_doc, client)
     return result
 
 # -------------------------------------------------------------------- #
-            
-def complete(current_user: Dict[str, Any], query_alaysis_result: Dict[str, Any], query: str) -> Any:
-    print(f"用户 {current_user['email']} 正在调用 /api/complete")
-    
-    load_dotenv()
-    # API_KEY = os.getenv("API_KEY")
-    API_KEY = current_user['api_key']
-    print(API_KEY)
-    BASE_URL = os.getenv("BASE_URL")
-    SM_MS_API_KEY = os.getenv("SM_MS_API_KEY")
 
-    client = OpenAI(
-        api_key=API_KEY,
-        base_url=BASE_URL
+async def initialize_task(current_user, data):
+    task_id = await start_task(current_user)
+    query_analysis_result = json.loads(data)
+    query = query_analysis_result.get("Query")
+    await update_task_status(task_id, "Task started", 10, {
+        "query_analysis_result": query_analysis_result,
+        "query": query
+    })
+    return task_id
+
+async def rag_step(current_user, task_id):
+    task_data = json.loads(await async_redis.get(task_id) or "{}")
+    query_analysis_result = task_data.get("result", {}).get("query_analysis_result", {})
+    query = task_data.get("result", {}).get("query")
+    print(query)
+    print(query_analysis_result)
+    # rag_results = await RAG.search_in_meilisearch(query, query_analysis_result.get("Requirement", ""))
+    rag_results = RAG.search_in_meilisearch(query, query_analysis_result.get("Requirement", ""))
+    await update_task_status(task_id, "RAG search completed", 30, {"rag_results": rag_results})
+    return rag_results
+
+async def paper_step(current_user, data, task_id):
+    paper_ids = data
+    papers = await asyncio.gather(*[
+        QUERY.query_paper(paper_id) for paper_id in paper_ids
+    ])
+    rag_results = {
+        "hits": [{"paper_id": paper_id, "content": paper} 
+                for paper_id, paper in zip(paper_ids, papers)]
+    }
+    await update_task_status(task_id, "Paper processing completed", 30, {"rag_results": rag_results})
+    return rag_results
+
+async def example_step(current_user, example_ids, task_id):
+    task_data = json.loads(await async_redis.get(task_id) or "{}")
+    existing_rag_results = task_data.get("result", {}).get("rag_results", {"hits": []})
+    
+    if not isinstance(existing_rag_results, dict) or 'hits' not in existing_rag_results:
+        existing_rag_results = {"hits": []} # 如果格式不正确，则初始化
+    if not isinstance(existing_rag_results['hits'], list):
+        existing_rag_results['hits'] = [] # 确保 hits 是一个列表
+
+    solutions = await asyncio.gather(*[
+        QUERY.query_solution(str(solution_id)) for solution_id in example_ids
+    ])
+    new_hits = [
+        {"solution_id": str(solution_id), "content": solution} 
+        for solution_id, solution in zip(example_ids, solutions) if solution is not None
+    ]
+    existing_rag_results['hits'].extend(new_hits)
+    
+    await update_task_status(task_id, "Example solutions added", 35, {"rag_results": existing_rag_results})
+    return existing_rag_results
+
+# -------------------------------------------------------------------- #
+
+async def domain_step(current_user, task_id):    
+    task_data = json.loads(await async_redis.get(task_id) or "{}")
+    query = task_data.get("result", {}).get("query")
+    print(query)
+    rag_results = task_data.get("result", {}).get("rag_results", {})
+    domain_knowledge = rag_results.get('hits', [])
+    
+    # 优先使用用户设置的URL和模型，否则使用默认值
+    BASE_URL = current_user.get('api_url') or "https://api.deepseek.com/v1"
+    MODEL_NAME = current_user.get('model_name') or "deepseek-chat"
+    
+    client = OpenAIClient(
+        api_key=current_user['api_key'],
+        base_url=BASE_URL,
+        model_name=MODEL_NAME
     )
     
-    # rag
-    rag_results = RAG.search_in_meilisearch(query, query_alaysis_result['Requirement'])
-    print("rag_results done")
-    
-    #domain
-    domain_knowledge = rag_results.get('hits', [])
-    init_solution = MAIN.domain_expert_system(query, domain_knowledge, client)
-    # print(init_solution)
-    print("domain done")
-    
-    #interdisciplinary
-    iterated_solution = MAIN.interdisciplinary_expert_system(query, domain_knowledge, init_solution, client)
-    # print(iterated_solution)
-    print("interdisciplinary done")
-    
-    # Evaluation Expert
-    final_solution = MAIN.evaulation_expert_system(query, domain_knowledge, init_solution, iterated_solution, client)
-    print("evaluation done")
-    final_solution = eval(final_solution) 
-    # print("final solution", final_solution)
+    init_solution = await MAIN.domain_expert_system(query, domain_knowledge, client)
+    await update_task_status(task_id, "Domain analysis completed", 60, {"init_solution": init_solution})
+    return init_solution
 
-    target_user =  query_alaysis_result['Target User'] if 'Target User' in query_alaysis_result else 'null'
-    print("==============Drawing================")
-    for i in range(len(final_solution['solutions'])):
-        image = MAIN.drawing_expert_system(target_user, final_solution['solutions'][i]["Use Case"], client)
-        
-        timestamp = int(time.time())
-        response = requests.get(image.url)
-        response.raise_for_status()
-        image_pillow = Image.open(BytesIO(response.content))
+async def interdisciplinary_step(current_user, task_id):
+    task_data = json.loads(await async_redis.get(task_id) or "{}")
+    query = task_data.get("result", {}).get("query")
+    print(query)
+    domain_knowledge = task_data.get("result", {}).get("rag_results", {}).get("hits", [])
+    init_solution = task_data.get("result", {}).get("init_solution")
+    
+    # 优先使用用户设置的URL和模型，否则使用默认值
+    BASE_URL = current_user.get('api_url') or "https://api.deepseek.com/v1"
+    MODEL_NAME = current_user.get('model_name') or "deepseek-chat"
+    
+    client = OpenAIClient(
+        api_key=current_user['api_key'],
+        base_url=BASE_URL,
+        model_name=MODEL_NAME
+    )
+    
+    iterated_solution = await MAIN.interdisciplinary_expert_system(query, domain_knowledge, init_solution, client)
+    await update_task_status(task_id, "Interdisciplinary analysis completed", 70, {"iterated_solution": iterated_solution})
+    return iterated_solution
 
-        # 保存图片为临时文件
-        temp_image_path = f"./temp_image_{timestamp}.png"
-        image_pillow.save(temp_image_path)
-        with open(temp_image_path, "rb") as image_file:
-            sm_ms_response = requests.post(
-                "https://sm.ms/api/v2/upload",
-                headers={"Authorization": SM_MS_API_KEY},
-                files={"smfile": image_file}
-            )
-        os.remove(temp_image_path)
-        
-        if sm_ms_response.status_code == 200 and sm_ms_response.json().get("success"):
-            image_url = sm_ms_response.json()["data"]["url"]
-            final_solution['solutions'][i]["image_url"] = image_url
-            final_solution['solutions'][i]["image_name"] = timestamp
-            print(f"Image {i} uploaded: {image_url}")
-        else:
-            print(f"Failed to upload image {i}: {sm_ms_response.text}")
-            
-    print("done")
-
-    solution_ids = TASK.insert_solution(current_user, query, final_solution)
-    print("insert done")
-    TASK.paper_cited(domain_knowledge, solution_ids)
-    solutions = []
-    for solution_id in solution_ids:
-        solution = QUERY.query_solution(solution_id)
-        solution = convert_objectid_to_str(solution)
-        solutions.append(solution)
-    final_solution['solutions'] = solutions
+async def evaluation_step(current_user, task_id):
+    task_data = json.loads(await async_redis.get(task_id) or "{}")
+    query = task_data.get("result", {}).get("query")
+    print(query)
+    domain_knowledge = task_data.get("result", {}).get("rag_results", {}).get("hits", [])
+    init_solution = task_data.get("result", {}).get("init_solution")
+    iterated_solution = task_data.get("result", {}).get("iterated_solution")
+    
+    # 优先使用用户设置的URL和模型，否则使用默认值
+    BASE_URL = current_user.get('api_url') or "https://api.deepseek.com/v1"
+    MODEL_NAME = current_user.get('model_name') or "deepseek-chat"
+    
+    client = OpenAIClient(
+        api_key=current_user['api_key'],
+        base_url=BASE_URL,
+        model_name=MODEL_NAME
+    )
+    
+    final_solution = await MAIN.evaluation_expert_system(query, domain_knowledge, init_solution, iterated_solution, client)
+    await update_task_status(task_id, "Solution evaluation completed", 80, {"final_solution": final_solution})
     return final_solution
+
+async def drawing_step(current_user, task_id):
+    task_data = json.loads(await async_redis.get(task_id) or "{}")
+    query_analysis_result = task_data.get("result", {}).get("query_analysis_result", {})
+    final_solution = task_data.get("result", {}).get("final_solution")
+    final_solution = solution_eval(final_solution)
+
+    if not final_solution or "solutions" not in final_solution:
+        raise ValueError("final_solution 解析失败或不包含 'solutions' 字段")
+
+    target_user = query_analysis_result.get('Target User', 'null')
+    
+    BASE_URL = os.getenv("DRAW_URL")
+    API_KEY = os.getenv("DRAW_API_KEY")
+    MODEL_NAME = os.getenv("DRAW_MODEL")
+    
+    client = OpenAIClient(
+        api_key=API_KEY,
+        base_url=BASE_URL,
+        model_name=MODEL_NAME
+    )
+    SM_MS_API_KEY = os.getenv("SM_MS_API_KEY")
+    
+    for i, solution in enumerate(final_solution["solutions"]):
+        technical_method = solution.get("Technical Method")
+        possible_results = solution.get("Possible Results")
+        await update_task_status(task_id, f"Generating image {i+1}/{len(final_solution['solutions'])}...", 80 + (i+1)*10/len(final_solution["solutions"]))
+        
+        # 生成图片 (Calls the updated drawing_expert_system -> make_image_request)
+        image_data = await MAIN.drawing_expert_system(target_user, technical_method, possible_results, client)
+        try:
+            # 处理并上传图片
+            image_url, image_name = await process_and_upload_image(image_data['url'], SM_MS_API_KEY)
+            final_solution["solutions"][i]["image_url"] = image_url
+            final_solution["solutions"][i]["image_name"] = image_name
+        except Exception as e:
+            print(f"Failed to process image {i}: {e}")
+            continue
+            
+    await update_task_status(task_id, "Image generation completed", 90, {"final_solution": final_solution})
+    return final_solution
+
+async def final_step(current_user, task_id):
+    task_data = json.loads(await async_redis.get(task_id) or "{}")
+    query = task_data.get("result", {}).get("query")
+    print(query)
+    query_analysis_result = task_data.get("result", {}).get("query_analysis_result", {})
+    print(query_analysis_result)
+    domain_knowledge = task_data.get("result", {}).get("rag_results", {}).get("hits", [])
+    final_solution = task_data.get("result", {}).get("final_solution")
+    final_solution = solution_eval(final_solution)
+
+    if not final_solution:
+        raise ValueError("final_solution 解析失败或无效")
+
+    solution_ids = await TASK.insert_solution(current_user, query, query_analysis_result, final_solution)
+    await TASK.paper_cited(domain_knowledge, solution_ids)
+
+    solutions = await asyncio.gather(*[
+        QUERY.query_solution(str(solution_id)) for solution_id in solution_ids
+    ])
+    solutions = [convert_objectid_to_str(solution) for solution in solutions]
+    final_solution['solutions'] = solutions
+    
+    await update_task_status(task_id, "Task completed", 100, {"final_solution": final_solution})
+    return final_solution
+
+# -------------------------------------------------------------------- #
+
+async def update_task_status(task_id, status, progress, result=None):
+    task_data = json.loads(await async_redis.get(task_id) or "{}")
+    
+    # 浅层合并（适用于单层数据结构）
+    if result:
+        existing = task_data.get("result", {})
+        existing.update(result)  # 新字段添加/更新，旧字段保留
+        task_data["result"] = existing
+    
+    task_data.update({
+        "status": status,
+        "progress": progress
+    })
+    
+    await async_redis.setex(task_id, 3600, json.dumps(task_data))
+
+async def start_task(current_user):
+    task_id = f"task_{int(time.time())}"
+    await async_redis.setex(task_id, 3600, json.dumps({
+        "user_id": str(current_user['_id']),
+        "status": "started",
+        "progress": 0,
+        "result": {}
+    }))
+    return task_id
+
+# -------------------------------------------------------------------- #
+
+async def handle_inspiration_chat(current_user, inspiration_id, new_message, chat_history=None, stream=False):
+    print(f"用户 {current_user['email']} 正在调用 /task/inspiration/chat (Stream: {stream})")
+    inspiration = await QUERY.query_solution(inspiration_id)
+    
+    BASE_URL = current_user.get('api_url') or "https://api.deepseek.com/v1"
+    MODEL_NAME = current_user.get('model_name') or "deepseek-chat"
+    
+    client = OpenAIClient(
+        api_key=current_user['api_key'],
+        base_url=BASE_URL,
+        model_name=MODEL_NAME
+    )
+    
+    if stream:
+        from fastapi.responses import StreamingResponse
+        
+        # Get the stream generator from MAIN.inspiration_chat
+        stream_generator = await MAIN.inspiration_chat(inspiration, new_message, client, chat_history, stream=True)
+
+        # Wrap it for SSE format
+        async def sse_wrapper():
+            async for chunk in stream_generator:
+                 yield f"data: {json.dumps(chunk)}\n\n"
+
+        return StreamingResponse(sse_wrapper(), media_type="text/event-stream")
+    else:
+        # Call MAIN.inspiration_chat for non-streamed response
+        result = await MAIN.inspiration_chat(inspiration, new_message, client, chat_history, stream=False)
+        return result

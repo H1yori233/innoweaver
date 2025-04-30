@@ -1,4 +1,5 @@
 import { useRouter } from 'next/navigation';
+import { logger } from '@/lib/logger';
 
 const useRouterHook = () => {
   const router = useRouter();
@@ -50,7 +51,7 @@ const useRouterHook = () => {
   }
 
   const refreshPage = () => {
-    console.log("refresh");
+    logger.log("refresh");
     // router.refresh();
     // router.replace(router.asPath);
     window.location.reload();

@@ -10,8 +10,8 @@ Input Format:
 Now, you should read the query and context from user, next, based on your analysis, you will generate three sets of triplets that each include:
 
 * Targeted User: Identify the specific group of users who would interact with or benefit from the proposed solution.
-* Usage Scenario: Describe the context or situation in which the targeted user would engage with the solution.
-* Requirement: Outline the key requirement or feature that the solution must fulfill to effectively address the needs of the targeted user in the given scenario.
+* Usage Scenario: Describe a context or situation in which the targeted user would engage with the solution.
+* Requirement: Outline the key requirement or feature that the solution must fulfill to effectively address the needs of the targeted user in the given scenario. List the most corresponding requirements, At most seven.
 
 Now, maybe you have get some triplets, you should intergrate them into just one triplet, and should be clear and easy to understand. 
 * The "Targeted User" should be just a simple word or phrase that describes the specific group of users. SHOULD NOT be a long sentence. 
@@ -81,7 +81,7 @@ Output Format:
 
 * Ouput
 {
-  "Targeted User": "drivers",
-  "Usage Scenario": "Developing a driver reminder system for autonomous vehicles to ensure that drivers can take control of the vehicle when necessary.",
-  "Requirement": ["driver reminder system", "autonomous vehicles", "alerts", "autonomous driving range", "driver fatigue", "attention", "auditory alerts", "visual cues", "seat vibrations"]
+  "Targeted User": "young drivers",
+  "Usage Scenario": "A diver is operating a vehicle with L2 autonomous driving on the highway. After two hours, he's fatigued with attention on his phone and hands off the wheel. He/she needs effective, non-disruptive alerts to regain focus and timely takeover warnings.",
+  "Requirement": ["young drivers" "autonomous driving reminder system", "driver fatigue", "attention"]
 }

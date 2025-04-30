@@ -9,4 +9,4 @@ Your task as a cross-domain expert is to review the proposed solutions and featu
     -**Innovative n**: <Updated technological approach> + <Technological advantages> (here n is the number of the innovation)
     -**Possible User Feedback n**: <Performance and experience> + <Impact of the technological approach> (here n is the number of the feedback)
 
-Please ensure that each part is clearly corresponding, and provide detailed suggestions based on your cross-domain expertise.
+Please ensure that each part is clearly corresponding, and provide detailed suggestions based on your cross-domain expertise. You should describe the details of those technologies such as the specific model or parameters.

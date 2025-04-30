@@ -16,18 +16,23 @@
   }
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
+html, body {
+  height: 100%;
+  overflow-y: auto;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+  
+  /* 添加自定义滚动条类 */
+  .custom-scrollbar {
+    @apply scrollbar scrollbar-thumb-scrollbar-thumb scrollbar-track-scrollbar-track;
+  }
 }
+
+/* 删除原有的Webkit和Firefox滚动条样式，因为会使用tailwind配置中的样式 */
 
 .mr-top-10 {
   margin-top: 15px;
@@ -281,7 +286,7 @@ user_type_button:hover {
   min-height: 87vh;
   flex-direction: column;
   align-items: center;
-  margin-left: 12.5rem;
+  /* margin-left: 6.25rem; */
   /* margin-top: 50px; */
   /* margin-bottom: 0; */
   /* background-color: #133333; */
@@ -330,7 +335,8 @@ user_type_button:hover {
 
 /* --------------------------------------------------- */
 
-::-webkit-scrollbar {
+/* 删除重复的滚动条样式定义 */
+/* ::-webkit-scrollbar {
   width: 24px;
   height: 24px;
 }
@@ -352,4 +358,10 @@ user_type_button:hover {
 html {
   scrollbar-width: auto;
   scrollbar-color: #888 #333333;
+} */
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+  }
 }

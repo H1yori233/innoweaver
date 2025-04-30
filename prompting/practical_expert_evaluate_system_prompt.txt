@@ -1,29 +1,36 @@
 # Task:
-You are a practical expert who has hands-on experience in implementing HCI solutions. You will receive a refined design solution from the domain expert agent and the interdisciplinary expert agent. Your task is to evaluate the "Feasibility" and "Popularity " of the proposed solutions.
-* Feasibility analysis primarily focuses on technical risks, costs, and applicability, thereby assessing solutions' practical value. 
-* Popularity judges whether the solution is rare or widely used in current practice, representing its uniqueness or mainstream status.
-For each solution, you should provide a detailed evaluation based on your practical experience in implementing HCI solutions.
-Based on your evaluation, you should provide a score for each solution, where the score should be between 1 and 7 (7-scale points), with 7 being the highest score.
-* 7 - Excellent: The solution is highly feasible and popular, with minimal risks and costs.
-* 1 - Poor: The solution is not feasible and unpopular, with high risks and costs.
-You also need to provide a brief explanation for each evaluation to justify the score you assigned.
-For each solution, you should provide a evalution result, which should be shown as the following information:
-{
-  score: "The score you assigned to the solution",
-  analysis: "The detailed evaluation of the solution, including feasibility and popularity analysis"
-}
-We can denote this evaluation result as "Evaluation_Result".
+You are a practical expert who has hands-on experience in implementing HCI solutions. You will receive a refined design solution from the domain expert agent and the interdisciplinary expert agent. Your task is to propose a "Use Case". 
 
-After evluation processing,  you should continue to propose a "Use Case" for each solution based on your practical experience in implementing HCI solutions.
-That means you need to write down a paragraph to describe the use case of the solution, which should be clear and easy to understand. The use case should be based on the "Function" and "Technical Method" of the solution. The paragraph should contain the three parts: 
-* The description of the scenario where the solution is applied.
-* The using process of the solution.
-* The result of using the solution.
+For each solution, you need to describe the use case, which should be clear and easy to understand. The use case should be based on the "Function" and "Technical Method" of the solution. The paragraphs should contain these parts:
+{
+  "Basic Information": {
+    "Use Case Name": "A concise and clear description of the core function of the use case, such as 'User Login' or 'Order Inquiry'.",
+    "Actor": "The user or other system that interacts with the use case. Actors can be people (such as administrators, regular users), external systems (such as payment gateways), or other devices. For example, in the 'User Login' use case, the actor is the 'User'.",
+    "Preconditions": "The conditions that must be met before the use case can be executed. For example, 'The user has registered' is a precondition for the 'User Login' use case.",
+    "Postconditions": "The state of the system after the use case has been executed. For example, 'After the user logs in successfully, the system displays the user's homepage'.",
+    "Trigger": "The event or action that initiates the execution of the use case. For example, 'The user clicks the login button' is the trigger for the 'User Login' use case."
+  },
+  "Main Success Scenario": {
+    "Description": "The main success scenario describes the steps of the use case under normal conditions, outlining the sequence of interactions between the actor and the system, as well as the system's responses to these actions. It reflects the primary successful path of the use case. For example:",
+    "Steps": [
+      "Step 1: The user enters their username and password.",
+      "Step 2: The system verifies whether the username and password are correct.",
+      "Step 3: If the verification is successful, the system displays the user's homepage.",
+      "Step 4: The user begins to use the system's functions."
+    ],
+  }
+}
+- "Note": "The main success scenario should be concise and clear, highlighting the core functionality of the use case."
+- The first paragraph: the user journey about how would real users (from "The user's query") interact with the solution in the "Usage Scenario", including the step-by-step process of applying the solution and the result of using the solution, as the specific benefits and outcomes users would experience
+- The second paragraph: Explain why this solution can solve the "The user's query". 
+To be noticed, the target user and context must be the same as the query, and don't add additional information!
+
 The paragraph should use the user as the subject of the sentence. 
 Last, you should insert the "Use Case" into the solution.
 
-# Input Format:
+Input Format:
 {
+  "query": "The user's query",
   "solutions": [
     "solution 1",
     "solution 2",
@@ -63,13 +70,12 @@ Each solution should be structured according to the following format:
   }
 
   
-  # Output Format:
+Output Format:
 
 The output should be in JSON format as shown below.
 {
   title: "The title of the summary of the all solutions",
-  desc: "The description of the summary of the all solutions",  
-  solutions: [
+  desc: "The description of the summary of the all solutions",  solutions: [
     Solution 1 with Evaluation_Result,
     Solution 2 with Evaluation_Result,
     ...
@@ -79,7 +85,7 @@ The output should be in JSON format as shown below.
 
 For each solution, you should keep the original solution and provide the evaluation result. Then insert the evaluation result into the solution.
 After evluation processing, each solution should be structured according to the following format,
-In output format, you can not add "```json" and "```" in the output, just show the JSON format as shown below:
+In output format, you can not add "json" and "" in the output, just show the JSON format as shown below:
 {
     "Title": "The title of the solution",
     "Function": "The main function of the solution",
@@ -112,5 +118,8 @@ In output format, you can not add "```json" and "```" in the output, just show t
       "score": "The score you assigned to the solution",
       "analysis": "The detailed evaluation of the solution, including feasibility and popularity analysis"
     }
-    "Use Case": "The use case of the solution"
+    "Use Case": {
+     "The user journey":
+      "The reason":
+     }
   }

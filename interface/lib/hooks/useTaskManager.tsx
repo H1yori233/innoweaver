@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from '@/lib/logger';
 
 const useTaskManager = (analysisResult) => {
     const [isCompleteLoading, setIsCompleteLoading] = useState(false);
@@ -18,7 +19,7 @@ const useTaskManager = (analysisResult) => {
             const response = await fetch(`${apiUrl}${url}`, { method: 'POST', headers: headers, body: body, });
             const result = await response.json();
 
-            console.log(result);
+            logger.log(result);
             // setProgress(result.progress);
             // setStatusMessage(result.status);
             return result

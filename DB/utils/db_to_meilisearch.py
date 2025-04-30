@@ -1,35 +1,32 @@
-from meilisearch import Client
-from pymongo import MongoClient
-from bson import ObjectId
-
+import asyncio
+from motor.motor_asyncio import AsyncIOMotorClient
+from meilisearch_python_async import Client as AsyncMeiliClient
 
 MONGO_URI = 'mongodb://localhost:27017/'
 DATABASE_NAME = 'papersDB'  
 COLLECTION_NAME = 'papersCollection'
 
-client = MongoClient(MONGO_URI)
-db = client[DATABASE_NAME]
-collection = db[COLLECTION_NAME]
-
-
-def fetch_from_mongodb():
-    documents = collection.find()
-    data = []
-    for doc in documents:
-        # 将 ObjectId 转换为字符串
+async def fetch_from_mongodb():
+    client = AsyncIOMotorClient(MONGO_URI)
+    db = client[DATABASE_NAME]
+    collection = db[COLLECTION_NAME]
+    
+    documents = []
+    async for doc in collection.find():
         doc['_id'] = str(doc['_id'])
-        data.append(doc)
+        documents.append(doc)
     
-    client.close()
-    return data
+    await client.close()
+    return documents
 
+async def insert_to_meilisearch(data):
+    meili_client = AsyncMeiliClient('http://127.0.0.1:7700')
+    index = await meili_client.get_index('paper_id')
+    await index.add_documents(data)
 
-def insert_to_meilisearch(data):
-    meili_client = Client('http://127.0.0.1:7700')
-    index = meili_client.index('paper_id')
-    
-    index.add_documents(data)
+async def main():
+    mongo_data = await fetch_from_mongodb()
+    await insert_to_meilisearch(mongo_data)
 
-
-mongo_data = fetch_from_mongodb()
-insert_to_meilisearch(mongo_data)
+if __name__ == "__main__":
+    asyncio.run(main())

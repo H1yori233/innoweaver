@@ -1,21 +1,18 @@
 from flask import Blueprint, request, jsonify
-from flask.wrappers import Response
-from typing import Any, Dict, Tuple, Optional
 import utils.tasks as USER
 from utils.auth_utils import token_required, validate_input
-from utils.redis import *
 
 auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/api/register', methods=['POST'])
 @validate_input(['email', 'name', 'password', 'user_type'])
-def register() -> Tuple[Response, int]:
+def register():
     try:
-        data: Dict[str, Any] = request.json
-        email: str = data.get('email')
-        name: str = data.get('name')
-        password: str = data.get('password')
-        user_type: str = data.get('user_type')
+        data = request.json
+        email = data.get('email')
+        name = data.get('name')
+        password = data.get('password')
+        user_type = data.get('user_type')
 
         response, status_code = USER.register_user(email, name, password, user_type)
         print(response)
@@ -28,29 +25,22 @@ def register() -> Tuple[Response, int]:
 
 @auth_bp.route('/api/login', methods=['POST'])
 @validate_input(['email', 'password'])
-def login() -> Tuple[Response, int]:
+def login():
     try:
-        data: Dict[str, Any] = request.json
-        email: str = data.get('email')
-        password: str = data.get('password')
+        data = request.json
+        email = data.get('email')
+        password = data.get('password')
         
-        cache_key: str = f"login_attempts:{email}"
-        attempts: Optional[str] = redis_client.get(cache_key)
-        if attempts and int(attempts) >= 10:
+        if USER.check_login_attempts(email):
             return jsonify({"error": "Too many login attempts, please try again later."}), 429
 
         response, status_code = USER.login_user(email, password)
         if status_code == 200:
-            user_id: str = response.get('user_id')
-            token: str = response.get('token')
-            redis_client.setex(f"user_session:{user_id}", 3600, json.dumps(response))  # 缓存会话1小时
-
-            # 登录成功后重置尝试次数
-            redis_client.delete(cache_key)
+            user_id = response.get('user_id')
+            USER.cache_user_session(user_id, response)
+            USER.reset_login_attempts(email)  # 重置登录尝试次数
         else:
-            # 登录失败，增加登录尝试次数
-            redis_client.incr(cache_key)
-            redis_client.expire(cache_key, 300)
+            USER.increment_login_attempts(email)
             
         return jsonify(response), status_code
     
@@ -62,7 +52,7 @@ def login() -> Tuple[Response, int]:
 
 @auth_bp.route('/api/get_user', methods=['POST'])
 @token_required
-def get_user(current_user: Dict[str, Any]) -> Tuple[Response, int]:
+def get_user(current_user):
     try:
         return jsonify(current_user), 200
     except Exception as e:

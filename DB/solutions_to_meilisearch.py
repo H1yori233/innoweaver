@@ -1,6 +1,14 @@
 from meilisearch import Client
 from pymongo import MongoClient
 from bson.objectid import ObjectId
+import asyncio
+import sys
+import os
+
+# 添加项目根目录到Python路径
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from utils.async_meilisearch import AsyncMeilisearchClient
 
 # 连接 MongoDB
 client = MongoClient('mongodb://localhost:27017/')
@@ -36,28 +44,41 @@ def convert_objectid_to_str(data):
     else:
         return data
     
+# 同步版本
+def sync_update_solutions():
+    solutions = solutions_collection.find()
+    data = []
+    for item in solutions:
+        item = convert_objectid_to_str(item)
+        data.append(item)
+        
+    meili_client = Client('http://127.0.0.1:7700')
+    index = meili_client.index('solution_id')
+    print("同步方式 - 索引统计:", index.get_stats())
+
+    task = index.add_documents(data)
+    print("同步方式 - 任务结果:", task)
+
+# 异步版本
+async def async_update_solutions():
+    solutions = solutions_collection.find()
+    data = []
+    for item in solutions:
+        item = convert_objectid_to_str(item)
+        data.append(item)
+        
+    meili_client = AsyncMeilisearchClient('http://127.0.0.1:7700')
+    index = meili_client.index('solution_id')
     
-solutions = solutions_collection.find()
-data = []
-for item in solutions:
-    item = convert_objectid_to_str(item)
-    # if item.get('solution') and item['solution'].get('image_url'):
-    #     # item['poster'] = item['solution']['image_url']
-    #     item['poster'] = 'https://image.tmdb.org/t/p/w500/ojDg0PGvs6R9xYFodRct2kdI6wC.jpg'
-    data.append(item)
-    
-meili_client = Client('http://127.0.0.1:7700')
-index = meili_client.index('solution_id')
-print(index.get_stats())
+    task = await index.add_documents(data)
+    print("异步方式 - 任务结果:", task)
 
-task = index.add_documents(data)
-print(task)
+# 运行同步版本
+# sync_update_solutions()
 
-# test_doc = {
-#     "_id": "test123",
-#     "title": "Test Document",
-#     "description": "This is a test"
-# }
+# 运行异步版本
+async def main():
+    await async_update_solutions()
 
-# task = index.add_documents([test_doc])
-# print(task)
+if __name__ == "__main__":
+    asyncio.run(main())
