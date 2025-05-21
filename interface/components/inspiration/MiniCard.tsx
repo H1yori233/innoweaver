@@ -9,7 +9,7 @@ import { getLargeEmojiForTitle } from '@/lib/emoji-utils';
 import { logger } from '@/lib/logger';
 import Image from 'next/image';
 
-const MiniCard = React.memo(function MiniCard(props: { content: any, index: number, isLiked: boolean }) {
+const MiniCard = React.memo(function MiniCard(props: { content: any, index: number, isLiked: boolean, likeCount?: number }) {
     const { routes } = useRouterHook();
     const [isLiked, setIsLiked] = useState(false);
     const [imageError, setImageError] = useState<boolean>(false);
@@ -83,6 +83,22 @@ const MiniCard = React.memo(function MiniCard(props: { content: any, index: numb
                 }}
                 aria-label={`View solution ${title}`}
             >
+                {typeof props.likeCount === 'number' && (
+                    <span
+                        style={{
+                            position: 'absolute',
+                            top: 10,
+                            left: 16,
+                            color: 'rgba(255,255,255,0.7)',
+                            fontWeight: 600,
+                            fontSize: '1.1rem',
+                            zIndex: 20,
+                            textShadow: '0 1px 2px rgba(0,0,0,0.15)'
+                        }}
+                    >
+                        {props.likeCount}
+                    </span>
+                )}
                 {hasImage && (
                     <div className="card-image-container">
                         <Image
