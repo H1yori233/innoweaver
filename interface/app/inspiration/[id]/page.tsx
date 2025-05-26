@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from 'react';
 import { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { fetchQuerySolution, fetchQueryLikedSolutions, fetchLikeSolution, fetchComplete } from "@/lib/actions";
@@ -124,6 +125,18 @@ const useSolutionData = (id: string) => {
     return { solution, loading, error, refetch: fetchSolutionData };
 };
 
+// 新增：获取 like 数量的函数
+async function fetchLikeCount(id: string): Promise<number> {
+    try {
+        const res = await fetch(`/api/solution/${id}/like_count`);
+        if (!res.ok) return 0;
+        const data = await res.json();
+        return data.like_count ?? 0;
+    } catch {
+        return 0;
+    }
+}
+
 const Inspiration = () => {
     const { id } = useParams();
     const router = useRouter();
@@ -134,6 +147,7 @@ const Inspiration = () => {
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [isChatMinimized, setIsChatMinimized] = useState(false);
     const [titleEmoji, setTitleEmoji] = useState<string>('📄');
+    const [likeCount, setLikeCount] = useState<number>(0);
 
     // 初始化喜欢状态
     useEffect(() => {
@@ -177,7 +191,13 @@ const Inspiration = () => {
         }
     }, [solution, expandedSections.length]);
 
-    // 切换喜欢状态
+    // 新增：获取 like 数量
+    useEffect(() => {
+        if (!id) return;
+        fetchLikeCount(id as string).then(setLikeCount);
+    }, [id]);
+
+    // 点赞后刷新 like 数量
     const handleLiked = useCallback(async () => {
         if (!authStore.email) {
             router.push('/user/login');
@@ -186,6 +206,8 @@ const Inspiration = () => {
         try {
             setIsLiked(prev => !prev);
             await fetchLikeSolution(id as string);
+            // 点赞后刷新 like 数量
+            fetchLikeCount(id as string).then(setLikeCount);
         } catch (error) {
             console.error("Failed to update like status", error);
             setIsLiked(prev => !prev); // 如果失败则恢复状态
@@ -301,16 +323,20 @@ const Inspiration = () => {
                         <h1 className="text-2xl font-bold text-text-primary flex-1 mr-4"> {/* Increased size */}
                             {loading ? "Loading..." : solution?.solution?.Title || "No Title"}
                         </h1>
-                        <motion.button
-                            className={`text-3xl transition-colors duration-200 ${isLiked ? "text-red-500" : "text-gray-400"}`} // Added mt-1 for alignment
-                            onClick={handleLiked}
-                            aria-label={isLiked ? "Dislike" : "Like"}
-                            disabled={loading}
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                        >
-                            <FaHeart />
-                        </motion.button>
+                        <div className="flex flex-col items-center">
+                            <motion.button
+                                className={`text-3xl transition-colors duration-200 ${isLiked ? "text-red-500" : "text-gray-400"}`}
+                                onClick={handleLiked}
+                                aria-label={isLiked ? "Dislike" : "Like"}
+                                disabled={loading}
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                            >
+                                <FaHeart />
+                            </motion.button>
+                            {/* 新增：展示 like 数量 */}
+                            <span className="text-sm text-text-secondary mt-1">{likeCount} Likes</span>
+                        </div>
                     </div>
 
                     {/* Highlighted Function Section - Two Column Layout */}

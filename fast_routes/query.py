@@ -56,3 +56,17 @@ async def query_liked_solution(
     user_id = current_user['_id']
     result = await USER.query_liked_solution(user_id, solution_ids)
     return result
+
+@query_router.get("/solution/{solution_id}/like_count")
+@route_handler()
+async def get_solution_like_count(solution_id: str):
+    """
+    返回指定 solution（inspiration）被喜欢的次数
+    """
+    from utils.db import solutions_collection
+    from bson.objectid import ObjectId
+    doc = await solutions_collection.find_one({'_id': ObjectId(solution_id)})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Solution not found")
+    like_count = doc.get('Liked', 0)
+    return {"solution_id": solution_id, "like_count": like_count}
