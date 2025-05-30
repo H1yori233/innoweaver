@@ -9,23 +9,6 @@ interface MasonryGalleryProps {
     likedSolutions: { [key: string]: boolean };
 }
 
-// 新增：批量获取 like 数量
-async function fetchLikeCounts(ids: string[]): Promise<Record<string, number>> {
-    const results: Record<string, number> = {};
-    await Promise.all(ids.map(async (id) => {
-        try {
-            // 直接请求 FastAPI 后端
-            const res = await fetch(`http://localhost:8000/api/solution/${id}/like_count`);
-            if (!res.ok) return;
-            const data = await res.json();
-            results[id] = data.like_count ?? 0;
-        } catch {
-            results[id] = 0;
-        }
-    }));
-    return results;
-}
-
 const SkeletonCard: React.FC = () => {
     return (
         <div className="relative w-64 h-96 rounded-2xl overflow-hidden mb-4 bg-gray-200 dark:bg-gray-700 animate-pulse">
@@ -41,6 +24,7 @@ const SkeletonCard: React.FC = () => {
     );
 };
 
+
 const MasonryGallery: React.FC<MasonryGalleryProps> = ({ solutions, likedSolutions }) => {
     const columns = solutions.length > 0 ? Math.min(5, solutions.length) : 5;
     const breakpointColumnsObj = {
@@ -52,18 +36,10 @@ const MasonryGallery: React.FC<MasonryGalleryProps> = ({ solutions, likedSolutio
     };
 
     const isLoading = solutions.length === 0;
-    const [likes, setLikes] = useState(likedSolutions);
+    const [likes, setLikes] = useState({});
     useEffect(() => {
         setLikes(likedSolutions);
     }, [likedSolutions]);
-
-    // 新增：like 数量
-    const [likeCounts, setLikeCounts] = useState<Record<string, number>>({});
-    useEffect(() => {
-        if (solutions.length === 0) return;
-        const ids = solutions.map(s => s.id);
-        fetchLikeCounts(ids).then(setLikeCounts);
-    }, [solutions]);
 
     return (
         <div className="flex justify-center p-4 w-full">
@@ -82,7 +58,6 @@ const MasonryGallery: React.FC<MasonryGalleryProps> = ({ solutions, likedSolutio
                             content={solution}
                             index={index}
                             isLiked={likes[solution.id]}
-                            likeCount={likeCounts[solution.id]}
                         />
                     ))}
             </Masonry>

@@ -18,6 +18,9 @@ app = FastAPI(
     version="1.1.0"
 )
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
 # CORS 配置
 app.add_middleware(
     CORSMiddleware,
@@ -26,10 +29,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# 配置模板
-templates = Jinja2Templates(directory="templates")
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Celery 配置
 app.state.broker_url = 'redis://localhost:6379/1'
@@ -69,12 +68,12 @@ async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 class HealthResponse(BaseModel):
-    系统状态: str
-    版本: str
-    检查时间: str
-    服务状态: Dict[str, Dict[str, Any]]
-    修复建议: List[str]
-    可用API: Optional[List[Dict[str, Any]]] = None
+    system_status: str
+    version: str
+    check_time: str
+    services: Dict[str, Dict[str, Any]]
+    suggestions: List[str]
+    available_apis: Optional[List[Dict[str, Any]]] = None
 
 # 创建健康检查实例
 health_checker = HealthCheck()
@@ -82,65 +81,27 @@ health_checker = HealthCheck()
 @app.get("/api/health", response_model=HealthResponse, status_code=200)
 def enhanced_health_check():
     """
-    获取系统健康状态和可用API列表
+    Enhanced health check endpoint
     
-    返回:
-    - 系统整体健康状态
-    - 各个服务（MongoDB、Redis、Meilisearch）的状态
-    - 所有可用的API路由列表
+    Check the health status of system components:
+    - MongoDB database connection
+    - Redis cache connection  
+    - Meilisearch search engine connection
+    - Return all available API routes
+    
+    Returns:
+        HealthResponse: Contains system status, service status, suggestions and available APIs
     """
+    import asyncio
+    
+    # Since this is a sync function, we need to create an event loop to run async method
     try:
-        health_status = {
-            "系统状态": "检查中",
-            "版本": "1.1.0",
-            "检查时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "服务状态": {},
-            "修复建议": []
-        }
-
-        # 检查各个服务
-        services_status = {
-            "MongoDB数据库": health_checker.check_mongodb(),
-            "Redis缓存": health_checker.check_redis(),
-            "Meilisearch搜索引擎": health_checker.check_meilisearch()
-        }
-        
-        health_status["服务状态"] = services_status
-
-        # 如果任何服务不健康，将整体状态设置为降级并收集建议
-        if any(service["status"] == "不健康" for service in services_status.values()):
-            health_status["系统状态"] = "服务降级"
-            for service_name, service_status in services_status.items():
-                if service_status["status"] == "不健康" and "建议" in service_status:
-                    health_status["修复建议"].append(
-                        f"{service_name}: {service_status['建议']}"
-                    )
-        else:
-            health_status["系统状态"] = "健康"
-
-        # 获取API路由信息
-        routes = []
-        for route in app.routes:
-            if hasattr(route, "methods") and route.path.startswith("/api"):
-                routes.append({
-                    "路径": route.path,
-                    "请求方法": list(route.methods),
-                    "名称": route.name if hasattr(route, "name") else None,
-                    "描述": route.description if hasattr(route, "description") else None
-                })
-        health_status["可用API"] = sorted(routes, key=lambda x: x["路径"])
-
-        return health_status
-    except Exception as e:
-        logger.error(f"健康检查失败: {str(e)}")
-        return {
-            "系统状态": "错误",
-            "版本": "1.1.0",
-            "检查时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "服务状态": {},
-            "修复建议": [f"健康检查执行失败: {str(e)}"],
-            "可用API": []
-        }
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    
+    return loop.run_until_complete(health_checker.check_all(app))
 
 if __name__ == "__main__":
     import uvicorn
