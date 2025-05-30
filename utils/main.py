@@ -118,13 +118,13 @@ def process_llm_response(content):
             # 如果没有找到JSON部分，返回原始内容作为文本
             return {"text": content}
 
-async def knowledge_extraction(paper, client, stream=False):
+async def knowledge_extraction(paper, client, user_type=None, stream=False):
     model_name = client.model_name or "deepseek-chat"
-    LOG.logger.info(f"Using model {model_name} for knowledge extraction (Stream: {stream})")
+    LOG.logger.info(f"Using model {model_name} for knowledge extraction (Stream: {stream}, User Type: {user_type})")
     
     result_gen = await make_openai_request(
         messages=[
-            {"role": "system", "content": prompting.KNOWLEDGE_EXTRACTION_SYSTEM_PROMPT},
+            {"role": "system", "content": prompting.get_prompt('KNOWLEDGE_EXTRACTION_SYSTEM_PROMPT')},
             {"role": "user", "content": paper},
         ],
         model=model_name,
@@ -138,9 +138,9 @@ async def knowledge_extraction(paper, client, stream=False):
         content = result_gen['choices'][0]['message']['content']
         return process_llm_response(content)
 
-async def query_analysis(query, documents, client, stream=False):
+async def query_analysis(query, documents, client, user_type=None, stream=False):
     model_name = client.model_name or "deepseek-chat"
-    LOG.logger.info(f"Using model {model_name} for query analysis (Stream: {stream})")
+    LOG.logger.info(f"Using model {model_name} for query analysis (Stream: {stream}, User Type: {user_type})")
     
     user_content = f'''
         query: {query if query else "No query provided"}
@@ -149,7 +149,7 @@ async def query_analysis(query, documents, client, stream=False):
     
     result_gen = await make_openai_request(
         messages=[
-            {"role": "system", "content": prompting.QUERY_EXPLAIN_SYSTEM_PROMPT},
+            {"role": "system", "content": prompting.get_prompt('QUERY_EXPLAIN_SYSTEM_PROMPT')},
             {"role": "user", "content": user_content},
         ],
         model=model_name,
@@ -171,7 +171,7 @@ async def query_analysis(query, documents, client, stream=False):
     
 #     result_gen = await make_openai_request(
 #         messages=[
-#             {"role": "system", "content": prompting.DOMAIN_EXPERT_SYSTEM_SOLUTION_PROMPT},
+#             {"role": "system", "content": prompting.get_prompt('DOMAIN_EXPERT_SYSTEM_SOLUTION_PROMPT')},
 #             {"role": "user", "content": f"query: {query}\nSolutions: {solutions}"},
 #         ],
 #         model=model_name,
@@ -185,13 +185,13 @@ async def query_analysis(query, documents, client, stream=False):
 #         content = result_gen['choices'][0]['message']['content']
 #         return process_llm_response(content)
 
-async def domain_expert_system(query, domain_knowledge, client, stream=False):
+async def domain_expert_system(query, domain_knowledge, client, user_type=None, stream=False):
     model_name = client.model_name or "deepseek-chat"
-    LOG.logger.info(f"Using model {model_name} for domain expert system (Stream: {stream})")
+    LOG.logger.info(f"Using model {model_name} for domain expert system (Stream: {stream}, User Type: {user_type})")
     
     result_gen = await make_openai_request(
         messages=[
-            {"role": "system", "content": prompting.DOMAIN_EXPERT_SYSTEM_PROMPT},
+            {"role": "system", "content": prompting.get_prompt('DOMAIN_EXPERT_SYSTEM_PROMPT')},
             {"role": "user", "content": f"query: {query}\nDomain Knowledge: {domain_knowledge}"},
         ],
         model=model_name,
@@ -205,13 +205,13 @@ async def domain_expert_system(query, domain_knowledge, client, stream=False):
         content = result_gen['choices'][0]['message']['content']
         return process_llm_response(content)
 
-async def interdisciplinary_expert_system(query, domain_knowledge, init_solution, client, stream=False):
+async def interdisciplinary_expert_system(query, domain_knowledge, init_solution, client, user_type=None, stream=False):
     model_name = client.model_name or "deepseek-chat"
-    LOG.logger.info(f"Using model {model_name} for interdisciplinary expert system (Stream: {stream})")
+    LOG.logger.info(f"Using model {model_name} for interdisciplinary expert system (Stream: {stream}, User Type: {user_type})")
     
     result_gen = await make_openai_request(
         messages=[
-            {"role": "system", "content": prompting.INTERDISCIPLINARY_EXPERT_SYSTEM_PROMPT},
+            {"role": "system", "content": prompting.get_prompt('INTERDISCIPLINARY_EXPERT_SYSTEM_PROMPT')},
             {"role": "user", "content": f"query: {query}\nDomain Knowledge: {domain_knowledge}\nInitial Solution: {init_solution}"},
         ],
         model=model_name,
@@ -225,13 +225,13 @@ async def interdisciplinary_expert_system(query, domain_knowledge, init_solution
         content = result_gen['choices'][0]['message']['content']
         return process_llm_response(content)
 
-async def evaluation_expert_system(query, domain_knowledge, init_solution, iterated_solution, client, stream=False):
+async def evaluation_expert_system(query, domain_knowledge, init_solution, iterated_solution, client, user_type=None, stream=False):
     model_name = client.model_name or "deepseek-chat"
-    LOG.logger.info(f"Using model {model_name} for evaluation expert system (Stream: {stream})")
+    LOG.logger.info(f"Using model {model_name} for evaluation expert system (Stream: {stream}, User Type: {user_type})")
     
     result_gen = await make_openai_request(
         messages=[
-            {"role": "system", "content": prompting.PRACTICAL_EXPERT_EVALUATE_SYSTEM_PROMPT},
+            {"role": "system", "content": prompting.get_prompt('PRACTICAL_EXPERT_EVALUATE_SYSTEM_PROMPT')},
             {"role": "user", "content": f"query: {query}\nDomain Knowledge: {domain_knowledge}\nInitial Solution: {init_solution}\nIterated Solution: {iterated_solution}"},
         ],
         model=model_name,
@@ -247,9 +247,9 @@ async def evaluation_expert_system(query, domain_knowledge, init_solution, itera
 
 # -----------------------------------------------------------------------------
 
-async def drawing_expert_system(target_user, technical_method, possible_results, client):
+async def drawing_expert_system(target_user, technical_method, possible_results, client, user_type=None):
     # 图像生成函数不需要使用模型名称，因为它使用专门的图像API
-    LOG.logger.info(f"Using image generation API for drawing expert system")
+    LOG.logger.info(f"Using image generation API for drawing expert system (User Type: {user_type})")
     
     user_content = f'''
         target_user: {target_user}
@@ -266,7 +266,7 @@ async def html_generator(useage_scenario, solutions, client, stream=False):
     
     result_gen = await make_openai_request(
         messages=[
-            {"role": "system", "content": prompting.HTML_GENERATION_SYSTEM_PROMPT},
+            {"role": "system", "content": prompting.get_prompt('HTML_GENERATION_SYSTEM_PROMPT')},
             {"role": "user", "content": f"Usage Scenario: {useage_scenario}\nSolutions: {solutions}"},
         ],
         model=model_name,
@@ -282,12 +282,12 @@ async def html_generator(useage_scenario, solutions, client, stream=False):
 
 # -----------------------------------------------------------------------------
 
-async def inspiration_chat(inspiration, new_message, client, chat_history=None, stream=False):
+async def inspiration_chat(inspiration, new_message, client, chat_history=None, user_type=None, stream=False):
     model_name = client.model_name or "deepseek-chat"
-    LOG.logger.info(f"Using model {model_name} for inspiration chat (Stream: {stream})")
+    LOG.logger.info(f"Using model {model_name} for inspiration chat (Stream: {stream}, User Type: {user_type})")
     
     messages = [
-        {"role": "system", "content": prompting.INSPIRATION_CHAT_SYSTEM_PROMPT},
+        {"role": "system", "content": prompting.get_prompt('INSPIRATION_CHAT_SYSTEM_PROMPT')},
     ]
     
     # Build message history

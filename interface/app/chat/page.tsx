@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import * as React from 'react';
 import { useDropzone } from 'react-dropzone';
-import { FaArrowCircleUp } from 'react-icons/fa';
+import { FaArrowCircleUp, FaPaperclip, FaRedo, FaFileAlt } from 'react-icons/fa';
 import Textarea from 'react-textarea-autosize';
 import {
   fetchQueryAnalysis,
@@ -21,12 +21,19 @@ import {
   PanelResizeHandle
 } from 'react-resizable-panels';
 
-import AnalysisResult from './AnalysisResult';
 import IntermediateResult from './IntermediateResult';
 import ProgressDisplay from './ProgressDisplay';
 import CompleteResult from './CompleteResult';
-import { readFileContent, extractErrorMessage } from './FileUtils';
+import { 
+  readFileContent, 
+  extractErrorMessage, 
+  validateFile, 
+  handleFileUpload, 
+  MAX_FILE_SIZE 
+} from './FileUtils';
 import { callQueryAnalysis, callStepApi } from './ApiService';
+import ChatMessages from './ChatMessages';
+import FileContent from './FileContent';
 
 const testIntermediateData = {
   "title": "Summary of HCI Solutions for Enhanced Navigation and Content Access",
@@ -137,6 +144,7 @@ const GenerateSolution = () => {
   const [selectedMode, setSelectedMode] = useState('chat');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [drawMode, setDrawMode] = useState(false);
+  const [viewingFile, setViewingFile] = useState<File | null>(null);
 
   // 处理URL参数
   useEffect(() => {
@@ -184,11 +192,14 @@ const GenerateSolution = () => {
     setDrawMode(!drawMode);
   };
 
-  const [id, setId] = useState('');
+  const [messages, setMessages] = useState<{
+    type: 'user' | 'system' | 'analysis' | 'loading' | 'file', 
+    content: string, data?: any, fileData?: File}[]
+  >([]);
   const [inputText, setInputText] = useState('');
-  const [messages, setMessages] = useState('');
-  const [files, setFiles] = useState<File[]>([]);
+  const [file, setFile] = useState<File | null>(null);
   const { toast } = useToast();
+  const [id, setId] = useState('');
 
   useEffect(() => {
     const storedId = localStorage.getItem("id");
@@ -198,30 +209,55 @@ const GenerateSolution = () => {
   }, []);
 
   const handleSendMessage = () => {
-    logger.log(inputText);
-    setMessages('');
-    if (inputText.trim()) {
-      setMessages(inputText);
-      handleQueryAnalysis();
-    }
+    if (!inputText.trim()) return;
+    
+    const newMessage = { type: 'user' as const, content: inputText };
+    setMessages([...messages, newMessage]);
+    setInputText('');
+    
+    // Add loading indicator as a message
+    setMessages(prev => [...prev, { type: 'loading' as const, content: 'Analyzing...' }]);
+    
+    handleQueryAnalysis();
   };
 
   // Handle file drop
   const { getRootProps, getInputProps } = useDropzone({
     onDrop: (acceptedFiles) => {
       if (acceptedFiles.length > 0) {
-        setFiles([acceptedFiles[0]]);
+        handleFileUpload(
+          acceptedFiles[0], 
+          setFile, 
+          (title, description) => toast({ title, description })
+        );
       }
     },
     accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.bmp'],
-      'application/msword': ['.doc'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-      'application/vnd.ms-excel': ['.xls'],
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'text/markdown': ['.md'],
       'text/plain': ['.txt'],
     },
+    maxSize: MAX_FILE_SIZE,
+    maxFiles: 1,
+    onDropRejected: (fileRejections) => {
+      const rejection = fileRejections[0];
+      if (rejection) {
+        if (rejection.errors.some(e => e.code === 'file-too-large')) {
+          toast({
+            title: "File Too Large",
+            description: "File size exceeds the 1MB limit.",
+          });
+        } else if (rejection.errors.some(e => e.code === 'file-invalid-type')) {
+          toast({
+            title: "Invalid File Type",
+            description: "Only .txt files are supported.",
+          });
+        } else {
+          toast({
+            title: "Upload Failed",
+            description: "Could not upload the file. Please try again.",
+          });
+        }
+      }
+    }
   });
 
   // 分析结果相关状态
@@ -229,15 +265,81 @@ const GenerateSolution = () => {
   const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
 
   const handleQueryAnalysis = () => {
-    callQueryAnalysis(
-      inputText,
-      files,
-      setAnalysisResult,
-      setIsAnalysisLoading,
-      readFileContent,
-      fetchQueryAnalysis,
-      toast
-    );
+    setIsAnalysisLoading(true);
+    
+    const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+    const queryText = lastMessage && lastMessage.type === 'user' ? lastMessage.content : inputText;
+    
+    const processAnalysisResult = (result) => {
+      setIsAnalysisLoading(false);
+      
+      // Remove loading message and add analysis result
+      setMessages(prev => {
+        // Filter out the loading message
+        const filteredMessages = prev.filter(msg => msg.type !== 'loading');
+        
+        // Add the analysis message
+        return [...filteredMessages, {
+          type: 'analysis' as const,
+          content: 'Query Analysis',
+          data: result
+        }];
+      });
+      
+      setAnalysisResult(result);
+    };
+    
+    if (file) {
+      readFileContent(file).then((fileContent) => {
+        fetchQueryAnalysis(queryText, fileContent)
+          .then(processAnalysisResult)
+          .catch((error) => {
+            setIsAnalysisLoading(false);
+            const errorMsg = extractErrorMessage(error);
+            
+            // Remove loading message and add error message
+            setMessages(prev => {
+              // Filter out the loading message
+              const filteredMessages = prev.filter(msg => msg.type !== 'loading');
+              
+              // Add error message
+              return [...filteredMessages, {
+                type: 'system' as const,
+                content: `Analysis failed: ${errorMsg}`
+              }];
+            });
+            
+            toast({
+              title: "Error",
+              description: `Analysis failed: ${errorMsg}`,
+            });
+          });
+      });
+    } else {
+      fetchQueryAnalysis(queryText, "")
+        .then(processAnalysisResult)
+        .catch((error) => {
+          setIsAnalysisLoading(false);
+          const errorMsg = extractErrorMessage(error);
+          
+          // Remove loading message and add error message
+          setMessages(prev => {
+            // Filter out the loading message
+            const filteredMessages = prev.filter(msg => msg.type !== 'loading');
+            
+            // Add error message
+            return [...filteredMessages, {
+              type: 'system' as const,
+              content: `Analysis failed: ${errorMsg}`
+            }];
+          });
+          
+          toast({
+            title: "Error",
+            description: `Analysis failed: ${errorMsg}`,
+          });
+        });
+    }
   };
 
   // 生成过程相关状态
@@ -266,6 +368,12 @@ const GenerateSolution = () => {
   }
 
   const handleGenerate = async () => {
+    // Add a generate button click message
+    setMessages(prev => [...prev, {
+      type: 'system' as const,
+      content: 'Starting generation process...'
+    }]);
+    
     if (isCompleteLoading) {
       toast({
         title: "Warning",
@@ -315,6 +423,12 @@ const GenerateSolution = () => {
       setTaskId('');
       setProgress(0);
       setIsCompleteLoading(false);
+      
+      // 添加生成完成的消息
+      setMessages(prev => [...prev, {
+        type: 'system' as const,
+        content: 'Generation process completed'
+      }]);
     }
   };
 
@@ -368,6 +482,12 @@ const GenerateSolution = () => {
       setTaskId('');
       setProgress(0);
       setIsCompleteLoading(false);
+      
+      // 添加重新生成完成的消息
+      setMessages(prev => [...prev, {
+        type: 'system' as const,
+        content: 'Regeneration process completed'
+      }]);
     }
   };
 
@@ -381,6 +501,160 @@ const GenerateSolution = () => {
     setStatusMessage("Analyzing domain-specific concepts...");
   };
 
+  // 处理 Regenerate 按钮点击的回调
+  const handleRegenerateClick = (messageIndex, userMessageIndex) => {
+    // 获取用户消息内容
+    const lastUserMessage = messages[userMessageIndex];
+    
+    // 添加新消息
+    const newUserMessage = { 
+      type: 'user' as const, 
+      content: lastUserMessage.content 
+    };
+    
+    // 更新消息状态
+    setMessages([
+      ...messages, 
+      newUserMessage, 
+      { type: 'loading' as const, content: 'Analyzing...' }
+    ]);
+    
+    // 设置加载状态并触发分析
+    setIsAnalysisLoading(true);
+    
+    // 延迟执行以确保状态更新
+    setTimeout(() => {
+      fetchQueryAnalysis(lastUserMessage.content, "")
+        .then((result) => {
+          setIsAnalysisLoading(false);
+          setAnalysisResult(result);
+          
+          // 移除加载消息并添加分析结果
+          setMessages(prev => {
+            const filteredMessages = prev.filter(msg => msg.type !== 'loading');
+            return [...filteredMessages, {
+              type: 'analysis' as const,
+              content: 'Query Analysis',
+              data: result
+            }];
+          });
+        })
+        .catch((error) => {
+          setIsAnalysisLoading(false);
+          const errorMsg = extractErrorMessage(error);
+          
+          // 移除加载消息并添加错误消息
+          setMessages(prev => {
+            const filteredMessages = prev.filter(msg => msg.type !== 'loading');
+            return [...filteredMessages, {
+              type: 'system' as const,
+              content: `Analysis failed: ${errorMsg}`
+            }];
+          });
+          
+          toast({
+            title: "Error",
+            description: `Analysis failed: ${errorMsg}`,
+          });
+        });
+    }, 100);
+  };
+
+  // 处理文件上传作为消息
+  const handleFileUploadAsMessage = (uploadedFile: File) => {
+    // 验证文件
+    const validation = validateFile(uploadedFile);
+    if (!validation.valid && validation.errorMessage) {
+      toast({
+        title: "Error",
+        description: validation.errorMessage,
+      });
+      return;
+    }
+
+    // 添加文件消息
+    const newMessage = { 
+      type: 'file' as const, 
+      content: `Uploaded file: ${uploadedFile.name}`, 
+      fileData: uploadedFile 
+    };
+    setMessages([...messages, newMessage]);
+
+    // 设置当前活动文件
+    setFile(uploadedFile);
+    
+    // 自动显示文件内容在右侧面板
+    setViewingFile(uploadedFile);
+
+    // 添加系统提示消息
+    setMessages(prev => [...prev, { 
+      type: 'system' as const, 
+      content: `File "${uploadedFile.name}" has been uploaded. You can now analyze its content.` 
+    }]);
+  };
+
+  // 处理文件点击
+  const handleFileClick = (clickedFile: File) => {
+    setViewingFile(clickedFile);
+    setFile(clickedFile); // 设置为当前活动文件
+  };
+
+  // 关闭文件查看器
+  const handleCloseFileViewer = () => {
+    setViewingFile(null);
+  };
+
+  // 删除文件消息
+  const handleDeleteFileMessage = (index: number) => {
+    // 获取要删除的消息
+    const fileMessage = messages[index];
+    
+    // 如果是当前活动文件，则清除活动文件
+    if (file && fileMessage.fileData && 
+        file.name === fileMessage.fileData.name && 
+        file.size === fileMessage.fileData.size) {
+      setFile(null);
+      
+      // 如果正在查看该文件，也关闭查看器
+      if (viewingFile) {
+        setViewingFile(null);
+      }
+    }
+    
+    // 从消息列表中删除该消息
+    const newMessages = [...messages];
+    newMessages.splice(index, 1);
+    setMessages(newMessages);
+    
+    // 显示通知
+    toast({
+      title: "File Removed",
+      description: "The file has been removed from the conversation.",
+    });
+  };
+
+  // 文件上传按钮的处理函数
+  const handleFileButtonClick = () => {
+    // 创建一个隐藏的文件输入元素
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.txt';
+    fileInput.style.display = 'none';
+
+    // 添加文件选择处理函数
+    fileInput.onchange = (e) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files && target.files.length > 0) {
+        handleFileUploadAsMessage(target.files[0]);
+      }
+    };
+
+    // 触发文件选择对话框
+    document.body.appendChild(fileInput);
+    fileInput.click();
+    document.body.removeChild(fileInput);
+  };
+
   return (
     <div className='flex justify-center bg-primary text-text-primary min-h-full transition-colors duration-300'>
       <motion.div
@@ -391,107 +665,141 @@ const GenerateSolution = () => {
       >
         <div className='w-full h-screen bg-secondary rounded-2xl'>
           <PanelGroup direction="horizontal">
-            <Panel defaultSize={30} minSize={20}>
+            <Panel defaultSize={40} minSize={30}>
               <div className='relative ml-8 h-full rounded-xl bg-primary shadow-lg overflow-hidden flex flex-col'>
                 {/* Header section with title and mode selector */}
-                <div className='flex justify-between items-center mt-1 p-4 border-b border-gray-700/30'>
-                  <div className='text-text-secondary text-2xl font-semibold'>Input</div>
+                <div className='flex justify-between items-center p-4 border-b border-gray-700/30'>
+                  <div className='text-text-secondary text-xl font-semibold my-2'>Chat</div>
 
                   <select
-                    className='px-3 py-2 rounded-lg bg-secondary text-text-secondary font-semibold 
+                    className='px-3 py-1.5 rounded-lg bg-secondary text-text-secondary font-medium
                       transition-colors hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-blue-500/50'
                     value={selectedMode}
                     onChange={handleModeChange}
                   >
-                    <option value="chat" className='font-semibold'>Chat</option>
-                    <option value="inspiration" className='font-semibold'>Inspiration</option>
+                    <option value="chat">Chat</option>
+                    <option value="inspiration">Inspiration</option>
                   </select>
                 </div>
 
-                {/* Main content area */}
-                <div className='flex flex-col p-4 space-y-4 flex-grow'>
-                  {/* Text input area */}
-                  <div className="w-full rounded-lg bg-secondary/80 backdrop-blur-sm shadow-inner">
-                    <Textarea
-                      className="w-full h-full bg-transparent text-text-primary placeholder:text-gray-400/70 p-3 
-                        focus:ring-1 focus:ring-blue-500/50 focus:outline-none rounded-lg resize-none transition-all"
-                      placeholder="Please type your question here..."
-                      minRows={6}
-                      maxRows={6}
-                      spellCheck={false}
-                      autoComplete="off"
-                      autoCorrect="off"
-                      aria-label="Type your question here"
-                      onChange={(e) => setInputText(e.target.value)}
+                {/* Main content area - 使用 ChatMessages 组件 */}
+                <div className='flex-1 overflow-y-auto custom-scrollbar'>
+                  <div className="p-4">
+                    <ChatMessages 
+                      messages={messages}
+                      onRegenerateClick={handleRegenerateClick}
+                      onGenerateClick={handleGenerate}
+                      onFileClick={handleFileClick}
+                      activeFile={file}
+                      onDeleteFileMessage={handleDeleteFileMessage}
                     />
-                    <div className='w-full flex justify-end items-center px-3 pb-3'>
-                      <button
-                        className='text-text-primary hover:text-blue-400 transition-colors duration-200 flex items-center justify-center'
-                        onClick={handleSendMessage}
-                        aria-label="Send message"
-                      >
-                        <FaArrowCircleUp className='text-3xl' />
-                      </button>
+                  </div>
+                  
+                  {/* 保留显示加载指示器 */}
+                  {isAnalysisLoading && !messages.some(msg => msg.type === 'loading') && (
+                    <div className="flex justify-center items-center py-4">
+                      <CircularProgress size={30} />
                     </div>
-                  </div>
-
-                  {/* Analysis result area */}
-                  <div className="flex-1 w-full rounded-lg overflow-y-auto flex flex-col custom-scrollbar">
-                    {isAnalysisLoading ? (
-                      <div className="flex justify-center items-center h-full">
-                        <CircularProgress />
-                      </div>
-                    ) : analysisResult ? (
-                      <AnalysisResult
-                        analysisResult={analysisResult}
-                        handleQueryAnalysis={handleQueryAnalysis}
-                      />
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-gray-400/70">
-                        {/* <p>Your analysis will appear here</p> */}
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
 
-                {/* Footer with generate button */}
-                <div className='p-4 border-t border-gray-700/30 flex justify-between items-center'>
-                  {isDeveloper && (
-                    <div className="flex items-center space-x-4">
-                      <button
-                        className={`px-4 py-2 rounded-lg text-text-secondary font-semibold 
-                              transition-colors duration-200 shadow-sm 
-                              ${drawMode ? 'bg-primary hover:bg-primary/70' : 'bg-secondary hover:bg-secondary/70'}`}
-                        onClick={toggleDrawMode}
+                {/* Input area - ChatGPT风格的输入区域 */}
+                <div className='p-4 border-t border-gray-700/10'>
+                  {/* 主输入区域 */}
+                  <div className="relative">
+                    <div className="rounded-xl border border-gray-700/30 bg-secondary/20 shadow-sm overflow-hidden">
+                      <Textarea
+                        className="w-full bg-transparent text-text-primary placeholder:text-gray-400/60 px-4 py-3
+                          focus:ring-0 focus:outline-none resize-none transition-all text-sm min-h-[150px] max-h-[350px] overflow-auto"
+                        placeholder="Ask me anything..."
+                        minRows={5}
+                        maxRows={12}
+                        spellCheck={false}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        value={inputText}
+                        aria-label="Type your question"
+                        onChange={(e) => setInputText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSendMessage();
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* 底部功能区 */}
+                  <div className="flex items-center justify-between mt-2 px-1">
+                    <div className="flex items-center space-x-2">
+                      {/* 文件上传按钮 */}
+                      <button 
+                        type="button"
+                        onClick={handleFileButtonClick}
+                        className="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-blue-500 transition-colors rounded-lg hover:bg-gray-200/10"
+                        title="Upload .txt file (max 1MB)"
                       >
-                        {drawMode ? 'Draw: ON' : 'Draw: OFF'}
+                        <FaPaperclip className="w-4 h-4" />
+                      </button>
+                      
+                      {/* 其他功能按钮可以在这里添加 */}
+                    </div>
+                    
+                    <div className="flex items-center space-x-3">
+                      {/* 文件格式提示 */}
+                      <div className="text-xs text-gray-500">
+                        Only .txt files (max 1MB)
+                      </div>
+                      
+                      {/* Draw模式切换 */}
+                      {isDeveloper && (
+                        <button
+                          className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-colors duration-200 ${
+                            drawMode 
+                              ? 'bg-blue-500/10 text-blue-500 hover:bg-blue-500/20' 
+                              : 'bg-gray-200/10 text-gray-400 hover:bg-gray-200/20'
+                          }`}
+                          onClick={toggleDrawMode}
+                        >
+                          Draw: {drawMode ? 'ON' : 'OFF'}
+                        </button>
+                      )}
+                      
+                      {/* 发送按钮 */}
+                      <button
+                        type="button"
+                        className={`flex items-center justify-center p-2 rounded-lg transition-colors duration-200 ${
+                          inputText.trim() 
+                            ? 'text-white bg-blue-600 hover:bg-blue-700' 
+                            : 'bg-gray-300/20 text-gray-400 hover:bg-gray-300/30'
+                        }`}
+                        onClick={handleSendMessage}
+                        aria-label="Send message"
+                        disabled={!inputText.trim()}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" className="w-5 h-5" strokeWidth="2">
+                          <path d="M.5 1.163A1 1 0 0 1 1.97.28l12.868 6.837a1 1 0 0 1 0 1.766L1.969 15.72A1 1 0 0 1 .5 14.836V10.33a1 1 0 0 1 .816-.983L8.5 8 1.316 6.653A1 1 0 0 1 .5 5.67V1.163Z" fill="currentColor" />
+                        </svg>
                       </button>
                     </div>
-                  )}
-                  {analysisResult ? (
-                    <button
-                      className='bg-secondary hover:bg-blue-600 text-text-secondary text-lg 
-                        font-bold py-2 px-6 rounded-lg transition-colors duration-200 shadow-sm 
-                        flex items-center'
-                      onClick={handleGenerate}
-                    >
-                      Generate!
-                    </button>
-                  ) : (
-                    <div className='h-8'></div>
-                  )}
+                  </div>
                 </div>
               </div>
             </Panel>
 
-            <PanelResizeHandle className="w-1 mx-2 hover:bg-blue-500 hover:w-1.5 transition-all duration-300 rounded-full cursor-col-resize" />
+            <PanelResizeHandle className="flex items-center justify-center w-2 mx-3 hover:mx-1 hover:w-6 transition-all duration-300 cursor-col-resize">
+              <div className="h-full w-[3px] bg-gray-600/30 hover:bg-blue-500 rounded-full transition-colors duration-200"></div>
+            </PanelResizeHandle>
 
-            <Panel defaultSize={70} minSize={40}>
+            {/* Right Panel - 保持不变 */}
+            <Panel defaultSize={60} minSize={40}>
               <div className='relative h-full mr-8 rounded-lg bg-primary overflow-auto custom-scrollbar'>
                 <div className="flex w-full h-full">
-                  {isCompleteLoading ? (
+                  {viewingFile ? (
+                    <FileContent file={viewingFile} onClose={handleCloseFileViewer} />
+                  ) : isCompleteLoading ? (
                     <div className="flex flex-col h-full w-full overflow-y-auto custom-scrollbar">
-                      {/* 固定高度的进度显示区域 - 改为占据更多空间 */}
                       <div className="mt-12">
                         <ProgressDisplay
                           progress={progress}
@@ -501,7 +809,6 @@ const GenerateSolution = () => {
                         />
                       </div>
 
-                      {/* 可滚动的中间态数据区域 - 移至下半部分 */}
                       {intermediateData && intermediateData.solution && (
                         <div>
                           <IntermediateResult intermediateData={intermediateData} />
@@ -520,7 +827,7 @@ const GenerateSolution = () => {
                       )}
 
                       {(selectedMode !== 'inspiration' && selectedMode !== 'paper') && (
-                        <p className='font-bold text-4xl'>No result available yet.</p>
+                        <p className='font-bold text-3xl text-gray-400'>No result available yet.</p>
                       )}
                     </div>
                   )}
@@ -531,7 +838,7 @@ const GenerateSolution = () => {
         </div>
       </motion.div>
     </div>
-  )
+  );
 };
 
 export default GenerateSolution;

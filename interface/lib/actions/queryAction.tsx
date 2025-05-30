@@ -26,3 +26,11 @@ export async function fetchQueryLikedSolutions(solution_ids: string[]) {
         requireAuth: true  // 明确需要认证
     });
 }
+
+// 不需要认证的请求 - 获取单个 solution 的 like count
+export async function fetchSolutionLikeCount(solution_id: string) {
+    return customFetch(`/api/solution/${solution_id}/like_count`, {
+        method: "GET",
+        requireAuth: false  // 明确不需要认证
+    });
+}

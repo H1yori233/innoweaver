@@ -26,9 +26,28 @@ html, body {
     text-wrap: balance;
   }
   
-  /* 添加自定义滚动条类 */
+  /* 优化自定义滚动条样式 */
   .custom-scrollbar {
-    @apply scrollbar scrollbar-thumb-scrollbar-thumb scrollbar-track-scrollbar-track;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: 4px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-thumb);
+    border-radius: 4px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
   }
 }
 
@@ -318,11 +337,22 @@ user_type_button:hover {
 
 .masonry-grid_column {
   background-clip: padding-box;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 
 .masonry-grid_column>div {
-  margin-bottom: 0.2rem;
+  margin-bottom: 1rem;
   /* 卡片的底部间距 */
+}
+
+/* 第一列和最后一列的特殊处理 */
+.masonry-grid_column:first-child {
+  padding-left: 0;
+}
+
+.masonry-grid_column:last-child {
+  padding-right: 0;
 }
 
 .prompts_container {

@@ -10,14 +10,24 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/toast';
 import { fetchSetAPIKey, fetchTestAPIConnection } from '@/lib/actions/taskActions';
 import { fetchLogin } from '@/lib/actions/userActions';
-import { FaKey, FaCheck, FaTimes, FaSignOutAlt, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { 
+  FaKey, 
+  FaCheck, 
+  FaTimes, 
+  FaSignOutAlt, 
+  FaEye, 
+  FaEyeSlash, 
+  FaUser, 
+  FaCog, 
+  FaRocket,
+  FaShieldAlt,
+  FaArrowLeft
+} from 'react-icons/fa';
+import { motion } from 'framer-motion';
 
 // Default values for API settings
-// const DEFAULT_API_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1";
-// const DEFAULT_MODEL_NAME = "qwen-plus";
 const DEFAULT_API_URL = "https://api.deepseek.com/v1";
 const DEFAULT_MODEL_NAME = "deepseek-chat";
-
 
 const UserPage = () => {
   const { id } = useParams();
@@ -52,8 +62,6 @@ const UserPage = () => {
     } else {
       setModelName(DEFAULT_MODEL_NAME);
     }
-
-    // Additional logic to fetch more user info from backend could be added here
   }, [authStore.apiKey, authStore.apiUrl, authStore.modelName]);
 
   const handleSaveApiSettings = async () => {
@@ -165,214 +173,366 @@ const UserPage = () => {
       title: "Logged Out",
       description: "You have been successfully logged out.",
     });
-    router.push('/'); // Redirect to home page after logout
+    router.push('/');
+  };
+
+  // Handle back navigation
+  const handleBack = () => {
+    router.back();
   };
 
   // Show restricted access message if user not logged in or ID doesn't match
   if (!authStore.email || authStore.id !== id) {
     return (
-      <div className="container mx-auto py-10 px-4">
-        <Card className="w-full max-w-3xl mx-auto border border-border-primary">
-          <CardHeader className="bg-secondary">
-            <CardTitle className="text-center text-text-primary">Restricted Access</CardTitle>
-          </CardHeader>
-          <CardContent className="bg-primary p-6">
-            <p className="text-center text-red-500">You do not have permission to access this user profile</p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-primary flex items-center justify-center px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md"
+        >
+          <Card className="border border-border-primary backdrop-blur-sm bg-primary/80 shadow-xl">
+            <CardHeader className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border-b border-border-secondary">
+              <div className="flex items-center justify-center mb-4">
+                <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center">
+                  <FaShieldAlt className="text-red-500 text-2xl" />
+                </div>
+              </div>
+              <CardTitle className="text-center text-text-primary text-xl">Access Restricted</CardTitle>
+            </CardHeader>
+            <CardContent className="p-8 text-center">
+              <p className="text-text-secondary mb-6">
+                You do not have permission to access this user profile
+              </p>
+              <Button 
+                onClick={() => router.push('/')}
+                                 className="bg-text-link hover:bg-text-linkHover text-white px-6 py-2 rounded-lg transition-all duration-200"
+              >
+                Return Home
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-10 px-4 max-w-5xl">
-      <h1 className="text-3xl font-bold mb-8 text-center text-text-primary">Profile Settings</h1>
+    <div className="min-h-screen bg-primary">
+      {/* Header with back button */}
+      <div className="sticky top-0 z-10 bg-primary/80">
+        <div className="container mx-auto px-4 py-4 max-w-7xl">
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              onClick={handleBack}
+              className="text-text-secondary hover:text-text-primary hover:bg-secondary/50 transition-all duration-200"
+            >
+              <FaArrowLeft className="mr-2" />
+              Back
+            </Button>
+            <h1 className="text-2xl font-bold text-text-primary">Profile Settings</h1>
+            <div className="w-20"></div> {/* Spacer for centering */}
+          </div>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* User information card */}
-        <Card className="lg:col-span-1 border border-border-primary h-fit">
-          <CardHeader className="bg-secondary">
-            <CardTitle className="text-xl text-text-primary">User Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 p-6 bg-primary">
-            <div className="flex items-center space-x-4 mb-6">
-              <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center text-2xl font-bold text-text-primary">
-                {authStore.name ? authStore.name.substring(0, 2).toUpperCase() : 'U'}
-              </div>
-              <div>
-                <h3 className="text-lg font-medium text-text-primary">{authStore.name || 'User'}</h3>
-                <p className="text-text-secondary text-sm">{authStore.userType || 'Standard User'}</p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="email" className="text-text-secondary text-sm">Email</Label>
-                <div className="bg-secondary border border-border-secondary rounded-md px-3 py-2 text-text-primary text-sm mt-1 break-all">
-                  {authStore.email || 'Not available'}
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+          {/* User Profile Card */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="xl:col-span-1"
+          >
+            <Card className="border border-border-primary backdrop-blur-sm bg-primary/80 shadow-xl h-fit sticky top-24">
+                             <CardHeader className="bg-gradient-to-br from-text-link/10 to-text-linkHover/10 border-b border-border-secondary">
+                 <div className="flex items-center space-x-2 text-text-primary">
+                   <FaUser className="text-text-link" />
+                  <CardTitle className="text-lg">User Profile</CardTitle>
                 </div>
-              </div>
-
-              <div>
-                <Label htmlFor="userId" className="text-text-secondary text-sm">User ID</Label>
-                <div className="bg-secondary border border-border-secondary rounded-md px-3 py-2 text-text-primary text-xs mt-1 font-mono break-all">
-                  {authStore.id || 'Not available'}
-                </div>
-              </div>
-            </div>
-
-            {/* Add Logout Button here */}
-            <div>
-              <Button
-                variant="destructive"
-                className="w-full mt-4 mb-4"
-                onClick={handleLogout}
-              >
-                <FaSignOutAlt className="mr-2" /> Log out
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* API settings card */}
-        <Card className="lg:col-span-2 border border-border-primary">
-          <CardHeader className="bg-secondary">
-            <CardTitle className="text-xl text-text-primary">API Configuration</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6 p-6 bg-primary">
-            <div>
-              <Label htmlFor="apiKey" className="text-text-secondary mb-1 block">API Key <span className="text-red-500">*</span></Label>
-              <div className="relative">
-                <Input
-                  id="apiKey"
-                  type={showApiKey ? "text" : "password"}
-                  placeholder="Enter your API Key"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  className="bg-secondary border-border-secondary text-text-primary pr-10"
-                />
-                <button 
-                  type="button"
-                  onClick={() => setShowApiKey(!showApiKey)}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-text-secondary hover:text-text-primary"
-                  aria-label={showApiKey ? "Hide API Key" : "Show API Key"}
-                >
-                  {showApiKey ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
-                </button>
-              </div>
-              {apiKey ? (
-                <p className="text-xs text-text-link mt-1 flex items-center">
-                  <FaCheck className="mr-1" /> API Key set
-                </p>
-              ) : (
-                <p className="text-xs text-red-500 mt-1 flex items-center">
-                  <FaTimes className="mr-1" /> API Key required
-                </p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="apiUrl" className="text-text-secondary mb-1 block">API URL</Label>
-                <Input
-                  id="apiUrl"
-                  placeholder={`Enter API URL`}
-                  value={apiUrl}
-                  onChange={(e) => setApiUrl(e.target.value || DEFAULT_API_URL)}
-                  className="bg-secondary border-border-secondary text-text-primary"
-                />
-                {apiUrl === DEFAULT_API_URL ? (
-                  <p className="text-xs text-text-secondary mt-1 flex items-center">
-                    <span className="inline-block w-2 h-2 rounded-full bg-text-secondary mr-1"></span> Using default
-                  </p>
-                ) : (
-                  <p className="text-xs text-text-link mt-1 flex items-center">
-                    <span className="inline-block w-2 h-2 rounded-full bg-text-link mr-1"></span> Using custom
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="modelName" className="text-text-secondary mb-1 block">Model Name</Label>
-                <Input
-                  id="modelName"
-                  placeholder={`Enter model name`}
-                  value={modelName}
-                  onChange={(e) => setModelName(e.target.value || DEFAULT_MODEL_NAME)}
-                  className="bg-secondary border-border-secondary text-text-primary"
-                />
-                {modelName === DEFAULT_MODEL_NAME ? (
-                  <p className="text-xs text-text-secondary mt-1 flex items-center">
-                    <span className="inline-block w-2 h-2 rounded-full bg-text-secondary mr-1"></span> Using default
-                  </p>
-                ) : (
-                  <p className="text-xs text-text-link mt-1 flex items-center">
-                    <span className="inline-block w-2 h-2 rounded-full bg-text-link mr-1"></span> Using custom
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <div className="text-xs text-text-secondary mb-3">
-                <p className="mb-1">Default configuration:</p>
-                <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 pl-4 list-disc">
-                  <li><span className="font-mono">{DEFAULT_API_URL}</span></li>
-                  <li><span className="font-mono">{DEFAULT_MODEL_NAME}</span></li>
-                </ul>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  onClick={handleSaveApiSettings}
-                  className="w-full sm:w-1/2 bg-secondary hover:bg-border-secondary text-text-primary"
-                >
-                  Save Settings
-                </Button>
-                <Button
-                  onClick={handleTestApiConnection}
-                  className="w-full sm:w-1/2 bg-secondary hover:bg-border-secondary text-text-primary"
-                  disabled={testStatus === 'loading'}
-                >
-                  {testStatus === 'loading' ? (
-                    <span className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-text-primary mr-2"></div>
-                      Testing...
-                    </span>
-                  ) : 'Test Connection'}
-                </Button>
-              </div>
-            </div>
-
-            {testStatus !== 'idle' && (
-              <div className={`p-3 rounded border max-h-60 overflow-y-auto custom-scrollbar ${testStatus === 'success' ? 'border-green-700 bg-green-900/20' :
-                  testStatus === 'error' ? 'border-red-700 bg-red-900/20' :
-                    'bg-secondary border-border-secondary'
-                }`}>
-                <div className="flex items-start">
-                  <div className="mt-0.5">
-                    {testStatus === 'success' && <FaCheck className="text-green-500 mr-2" />}
-                    {testStatus === 'error' && <FaTimes className="text-red-500 mr-2" />}
-                    {testStatus === 'loading' && (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-text-primary mr-2"></div>
-                    )}
+              </CardHeader>
+              <CardContent className="p-6">
+                {/* Avatar and basic info */}
+                <div className="text-center mb-6">
+                  <div className="relative inline-block">
+                                         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-text-link to-text-linkHover flex items-center justify-center text-3xl font-bold text-white shadow-lg">
+                      {authStore.name ? authStore.name.substring(0, 2).toUpperCase() : 'U'}
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-primary flex items-center justify-center">
+                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
                   </div>
-                  <div className={`${testStatus === 'success' ? 'text-green-400' :
-                      testStatus === 'error' ? 'text-red-400' :
-                        'text-text-secondary'
-                    }`}>
-                    <p className="font-medium mb-1">
-                      {testStatus === 'success' ? 'Connection Successful' :
-                        testStatus === 'error' ? 'Connection Failed' :
-                          'Testing Connection'}
+                  <h3 className="text-xl font-semibold text-text-primary mt-4">
+                    {authStore.name || 'User'}
+                  </h3>
+                  <p className="text-text-secondary text-sm">
+                    {authStore.userType || 'Standard User'}
+                  </p>
+                </div>
+
+                {/* User details */}
+                <div className="space-y-4">
+                  <div className="bg-secondary/50 rounded-lg p-4 border border-border-secondary">
+                    <Label className="text-text-secondary text-xs font-medium uppercase tracking-wide">
+                      Email Address
+                    </Label>
+                    <p className="text-text-primary text-sm mt-1 break-all font-mono">
+                      {authStore.email || 'Not available'}
                     </p>
-                    <p className="text-sm break-all">{testMessage}</p>
+                  </div>
+
+                  <div className="bg-secondary/50 rounded-lg p-4 border border-border-secondary">
+                    <Label className="text-text-secondary text-xs font-medium uppercase tracking-wide">
+                      User ID
+                    </Label>
+                    <p className="text-text-primary text-xs mt-1 break-all font-mono">
+                      {authStore.id || 'Not available'}
+                    </p>
                   </div>
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+
+                {/* Logout button */}
+                <div className="mt-6 pt-6 border-t border-border-secondary">
+                  <Button
+                    variant="destructive"
+                    className="w-full bg-red-500 hover:bg-red-600 text-white transition-all duration-200 shadow-lg hover:shadow-xl"
+                    onClick={handleLogout}
+                  >
+                    <FaSignOutAlt className="mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* API Configuration Card */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="xl:col-span-3"
+          >
+            <Card className="border border-border-primary backdrop-blur-sm bg-primary/80 shadow-xl">
+                             <CardHeader className="bg-gradient-to-br from-text-link/10 to-text-linkHover/10 border-b border-border-secondary">
+                 <div className="flex items-center space-x-2 text-text-primary">
+                   <FaCog className="text-text-link" />
+                  <CardTitle className="text-lg">API Configuration</CardTitle>
+                </div>
+                <p className="text-text-secondary text-sm mt-2">
+                  Configure your AI model settings for optimal performance
+                </p>
+              </CardHeader>
+              <CardContent className="p-8">
+                <div className="space-y-8">
+                  {/* API Key Section */}
+                  <div className="space-y-4">
+                                         <div className="flex items-center space-x-2 mb-4">
+                       <FaKey className="text-text-link" />
+                      <h3 className="text-lg font-semibold text-text-primary">API Authentication</h3>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="apiKey" className="text-text-secondary mb-2 block font-medium">
+                        API Key <span className="text-red-500">*</span>
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="apiKey"
+                          type={showApiKey ? "text" : "password"}
+                          placeholder="Enter your API Key"
+                          value={apiKey}
+                          onChange={(e) => setApiKey(e.target.value)}
+                                                     className="bg-secondary/50 border-border-secondary text-text-primary pr-12 h-12 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-text-link/20 focus:border-text-link"
+                        />
+                        <button 
+                          type="button"
+                          onClick={() => setShowApiKey(!showApiKey)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors duration-200 p-1"
+                          aria-label={showApiKey ? "Hide API Key" : "Show API Key"}
+                        >
+                          {showApiKey ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                        </button>
+                      </div>
+                      {apiKey ? (
+                        <p className="text-xs text-green-500 mt-2 flex items-center">
+                          <FaCheck className="mr-1" /> API Key configured
+                        </p>
+                      ) : (
+                        <p className="text-xs text-red-500 mt-2 flex items-center">
+                          <FaTimes className="mr-1" /> API Key required for functionality
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Model Configuration */}
+                  <div className="space-y-4">
+                                         <div className="flex items-center space-x-2 mb-4">
+                       <FaRocket className="text-text-link" />
+                      <h3 className="text-lg font-semibold text-text-primary">Model Configuration</h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div>
+                        <Label htmlFor="apiUrl" className="text-text-secondary mb-2 block font-medium">
+                          API Endpoint
+                        </Label>
+                                                 <Input
+                           id="apiUrl"
+                           placeholder="Enter API URL"
+                           value={apiUrl}
+                           onChange={(e) => setApiUrl(e.target.value || DEFAULT_API_URL)}
+                           className="bg-secondary/50 border-border-secondary text-text-primary h-12 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-text-link/20 focus:border-text-link"
+                        />
+                        <div className="mt-2">
+                          {apiUrl === DEFAULT_API_URL ? (
+                            <p className="text-xs text-text-secondary flex items-center">
+                              <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+                              Using default endpoint
+                            </p>
+                                                     ) : (
+                             <p className="text-xs text-text-link flex items-center">
+                               <span className="inline-block w-2 h-2 rounded-full bg-text-link mr-2"></span>
+                               Using custom endpoint
+                             </p>
+                           )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="modelName" className="text-text-secondary mb-2 block font-medium">
+                          Model Name
+                        </Label>
+                                                 <Input
+                           id="modelName"
+                           placeholder="Enter model name"
+                           value={modelName}
+                           onChange={(e) => setModelName(e.target.value || DEFAULT_MODEL_NAME)}
+                           className="bg-secondary/50 border-border-secondary text-text-primary h-12 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-text-link/20 focus:border-text-link"
+                        />
+                        <div className="mt-2">
+                          {modelName === DEFAULT_MODEL_NAME ? (
+                            <p className="text-xs text-text-secondary flex items-center">
+                              <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+                              Using default model
+                            </p>
+                                                     ) : (
+                             <p className="text-xs text-text-link flex items-center">
+                               <span className="inline-block w-2 h-2 rounded-full bg-text-link mr-2"></span>
+                               Using custom model
+                             </p>
+                           )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Default configuration info */}
+                    <div className="bg-secondary/30 rounded-lg p-4 border border-border-secondary">
+                      <p className="text-xs text-text-secondary mb-2 font-medium">Default Configuration:</p>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-xs">
+                        <div>
+                          <span className="text-text-secondary">Endpoint: </span>
+                          <span className="font-mono text-text-primary">{DEFAULT_API_URL}</span>
+                        </div>
+                        <div>
+                          <span className="text-text-secondary">Model: </span>
+                          <span className="font-mono text-text-primary">{DEFAULT_MODEL_NAME}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-border-secondary">
+                                         <Button
+                       onClick={handleSaveApiSettings}
+                       className="flex-1 bg-text-link hover:bg-text-linkHover text-white h-12 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
+                    >
+                      <FaCheck className="mr-2" />
+                      Save Configuration
+                    </Button>
+                    <Button
+                      onClick={handleTestApiConnection}
+                      className="flex-1 bg-secondary hover:bg-border-secondary text-text-primary h-12 rounded-lg transition-all duration-200 border border-border-secondary font-medium"
+                      disabled={testStatus === 'loading'}
+                    >
+                      {testStatus === 'loading' ? (
+                        <span className="flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-text-primary mr-2"></div>
+                          Testing Connection...
+                        </span>
+                      ) : (
+                        <>
+                          <FaRocket className="mr-2" />
+                          Test Connection
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {/* Test Results */}
+                  {testStatus !== 'idle' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className={`p-6 rounded-lg border max-h-60 overflow-y-auto ${
+                        testStatus === 'success' 
+                          ? 'border-green-500/30 bg-green-500/10' 
+                          : testStatus === 'error' 
+                          ? 'border-red-500/30 bg-red-500/10' 
+                          : 'bg-secondary/30 border-border-secondary'
+                      }`}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className="mt-1">
+                          {testStatus === 'success' && (
+                            <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                              <FaCheck className="text-white text-xs" />
+                            </div>
+                          )}
+                          {testStatus === 'error' && (
+                            <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center">
+                              <FaTimes className="text-white text-xs" />
+                            </div>
+                          )}
+                                                     {testStatus === 'loading' && (
+                             <div className="w-6 h-6 rounded-full border-2 border-text-link border-t-transparent animate-spin"></div>
+                           )}
+                        </div>
+                        <div className="flex-1">
+                          <p className={`font-semibold mb-2 ${
+                            testStatus === 'success' 
+                              ? 'text-green-400' 
+                              : testStatus === 'error' 
+                              ? 'text-red-400' 
+                              : 'text-text-primary'
+                          }`}>
+                            {testStatus === 'success' ? 'Connection Successful' :
+                             testStatus === 'error' ? 'Connection Failed' :
+                             'Testing Connection'}
+                          </p>
+                          <p className={`text-sm break-all ${
+                            testStatus === 'success' 
+                              ? 'text-green-300' 
+                              : testStatus === 'error' 
+                              ? 'text-red-300' 
+                              : 'text-text-secondary'
+                          }`}>
+                            {testMessage}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
       </div>
     </div>
   );

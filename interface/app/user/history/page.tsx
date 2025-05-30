@@ -9,6 +9,7 @@ import { FaSearch, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import MasonryGallery from '@/components/inspiration/MasonryGallery';
 import { motion } from 'framer-motion';
 import { useToast } from '@/components/ui/toast';
+import { URLQueryManager, QueryParams } from '@/lib/hooks/url-query';
 
 const History = () => {
     const router = useRouter();
@@ -16,9 +17,11 @@ const History = () => {
     const authStore = useAuthStore();
     const { toast } = useToast();
 
-    const page = searchParams.get('page') || '1';  // Default to page 1
-    const query = searchParams.get('query') || '';  // Default to an empty query string
-    const pageNumber = parseInt(page, 10);  // 修正：使用基数10正确解析页码
+    // 使用URL查询管理器
+    const urlManager = useMemo(() => new URLQueryManager(router, '/user/history'), [router]);
+    const currentParams = useMemo(() => URLQueryManager.parseSearchParams(searchParams), [searchParams]);
+    
+    const { page: pageNumber, query } = currentParams;
     const [queryState, setQuery] = useState(query);
 
     const [loading, setLoading] = useState(true);
@@ -36,7 +39,7 @@ const History = () => {
             const id = localStorage.getItem('id');
             const index = client.index('solution_id');
             const searchResults = await index.search(searchQuery, {
-                limit: 0,  // 不需要返回实际的文档，只需要获取总数
+                limit: 0,
                 filter: [`user_id="${id}"`],
             });
             return searchResults.estimatedTotalHits;
@@ -84,7 +87,6 @@ const History = () => {
                             ...newLikedStates,
                         }));
                     } catch (likeError) {
-                        // 静默处理点赞状态获取失败，只记录错误
                         console.error('Failed to fetch like status:', likeError);
                         const defaultLikedStates = modifiedResults.reduce((acc, solution) => {
                             acc[solution.id] = false;
@@ -116,49 +118,41 @@ const History = () => {
         }
     }, [client, fetchSolutionCount, authStore.email, toast]);
 
-    // Reset the solutions and liked solutions when query or page changes
+    // 同步URL参数变化到本地状态
     useEffect(() => {
-        setSolutions([]);  // Clear existing solutions
-        setLikedSolutions({});  // Clear liked solutions
-        setHasMore(true);  // Reset "has more" flag
-        setLoading(true);  // Start loading state
+        setQuery(query);
+    }, [query]);
 
-        fetchSolutions(queryState, pageNumber);  // Fetch new data based on query and page
-    }, [queryState, pageNumber, fetchSolutions]);
-
+    // 当URL参数变化时重新获取数据
     useEffect(() => {
-        if (queryState) {
-            router.push(`/user/history?page=1&query=${queryState}`);
-        } else {
-            router.push(`/user/history?page=1`);  // Clear query if it's empty
-        }
-    }, [queryState, router]);
+        setSolutions([]);
+        setLikedSolutions({});
+        setHasMore(true);
+        setLoading(true);
+        fetchSolutions(query, pageNumber);
+    }, [query, pageNumber, fetchSolutions]);
 
     const handleSearch = (e) => {
         e.preventDefault();
-        if (queryState) {
-            router.push(`/user/history?page=1&query=${queryState}`); // Update the query in the URL
-        } else {
-            router.push(`/user/history?page=1`);  // Clear query if it's empty
-        }
+        urlManager.updateSingleParam('query', queryState.trim(), currentParams);
     };
 
     const handlePageChange = (newPage) => {
         if (newPage <= totalPages && newPage > 0) {
-            router.push(`/user/history?page=${newPage}&query=${queryState}`);
+            urlManager.updateQuery({ ...currentParams, page: newPage });
         }
     };
 
     const handlePageInputChange = (e) => {
         const newPage = parseInt(e.target.value, 10);
         if (!isNaN(newPage) && newPage >= 1 && newPage <= totalPages) {
-            router.push(`/user/history?page=${newPage}&query=${queryState}`);
+            urlManager.updateQuery({ ...currentParams, page: newPage });
         }
     };
 
     const renderPagination = () => {
         const pagesToShow = [];
-        const range = 3; // Number of pages to show on either side of the current page
+        const range = 3;
         let startPage = Math.max(1, pageNumber - range);
         let endPage = Math.min(totalPages, pageNumber + range);
 
@@ -247,16 +241,6 @@ const History = () => {
                             Previous
                         </button>
                         {renderPagination()}
-                        {/* <div className="flex justify-center mt-4">
-                            <input
-                                type="number"
-                                min="1"
-                                max={totalPages}
-                                value={pageNumber}
-                                onChange={handlePageInputChange}
-                                className="px-4 py-2 border rounded-lg bg-primary text-text-primary"
-                            />
-                        </div> */}
 
                         <button
                             onClick={() => handlePageChange(pageNumber + 1)}

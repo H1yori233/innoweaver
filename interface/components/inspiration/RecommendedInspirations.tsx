@@ -103,13 +103,11 @@ const RecommendedInspirations = ({ currentSolution, currentId }: RecommendedInsp
 
     if (loading) {
         return (
-            <div className="mt-0">
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-1">
-                    {[...Array(4)].map((_, i) => (
-                        <div key={i} className="bg-secondary rounded-lg shadow-lg overflow-hidden p-4 space-y-4">
-                            <div className="h-40 bg-gray-300 rounded animate-pulse"></div>
-                            <div className="h-4 bg-gray-300 rounded w-3/4 animate-pulse"></div>
-                            <div className="h-4 bg-gray-300 rounded w-1/2 animate-pulse"></div>
+            <div className="w-full">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {[...Array(5)].map((_, i) => (
+                        <div key={i} className="bg-secondary/20 rounded-xl shadow-sm overflow-hidden h-64 animate-pulse">
+                            <div className="h-full bg-gradient-to-b from-gray-300/30 to-gray-400/20 rounded"></div>
                         </div>
                     ))}
                 </div>
@@ -129,12 +127,15 @@ const RecommendedInspirations = ({ currentSolution, currentId }: RecommendedInsp
 
     return (
         <motion.div
-            className="mt-0"
+            className="w-full"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
         >
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 
+                lg:grid-cols-3 
+                xl:grid-cols-4 
+                2xl:grid-cols-5 gap-4">
                 {recommendations.map((solution, index) => (
                     <MiniCard
                         key={solution.id}

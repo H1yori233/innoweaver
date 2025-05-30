@@ -1,88 +1,73 @@
-import mammoth from 'mammoth';
-import {
-  FaFileImage,
-  FaFileWord,
-  FaFileExcel,
-  FaFileCode,
-  FaFileAlt,
-} from 'react-icons/fa';
+import { FaFileAlt } from 'react-icons/fa';
+
+// 文件大小限制 (1MB)
+export const MAX_FILE_SIZE = 1048576; 
 
 export const getFileExtension = (fileName: string) => {
   return fileName.slice(((fileName.lastIndexOf(".") - 1) >>> 0) + 2).toLowerCase();
 };
 
 export const renderFileIcon = (file: File) => {
-  const extension = getFileExtension(file.name);
+  return <FaFileAlt className="text-gray-500 text-2xl" />;
+};
 
-  switch (extension) {
-    case 'jpg':
-    case 'jpeg':
-    case 'png':
-    case 'gif':
-    case 'bmp':
-      return <FaFileImage className="text-blue-500 text-2xl" />;
-    case 'doc':
-    case 'docx':
-      return <FaFileWord className="text-blue-700 text-2xl" />;
-    case 'xls':
-    case 'xlsx':
-      return <FaFileExcel className="text-green-500 text-2xl" />;
-    case 'md':
-      return <FaFileCode className="text-purple-500 text-2xl" />;
-    case 'txt':
-      return <FaFileAlt className="text-gray-500 text-2xl" />;
-    default:
-      return <FaFileAlt className="text-gray-500 text-2xl" />;
+export const validateFile = (file: File): { valid: boolean; errorMessage?: string } => {
+  // 检查文件类型
+  const extension = getFileExtension(file.name);
+  if (extension !== 'txt') {
+    return { 
+      valid: false, 
+      errorMessage: "Invalid File Type. Only .txt files are supported." 
+    };
   }
+  
+  // 检查文件大小
+  if (file.size > MAX_FILE_SIZE) {
+    return { 
+      valid: false, 
+      errorMessage: "File Too Large. File size exceeds the 1MB limit." 
+    };
+  }
+  
+  return { valid: true };
 };
 
 export const readFileContent = async (file: File): Promise<string> => {
-  const extension = getFileExtension(file.name);
-
-  if (extension === 'txt' || extension === 'md') {
-    return new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result;
-        if (typeof result === 'string') {
-          resolve(result);
-        } else {
-          reject(new Error('File content is not a string.'));
-        }
-      };
-      reader.onerror = (error) => {
-        reject(error);
-      };
-      reader.readAsText(file);
-    });
-  } else if (extension === 'docx' || extension === 'doc') {
-    return await extractTextFromDocx(file);
-  } else {
-    throw new Error('Unsupported file type.');
+  const validation = validateFile(file);
+  if (!validation.valid) {
+    throw new Error(validation.errorMessage);
   }
-};
 
-export const extractTextFromDocx = async (file: File): Promise<string> => {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = async (event) => {
-      const arrayBuffer = event.target?.result;
-      if (arrayBuffer instanceof ArrayBuffer) {
-        try {
-          const result = await mammoth.extractRawText({ arrayBuffer });
-          resolve(result.value);
-        } catch (error) {
-          reject(error);
-        }
+    reader.onload = (event) => {
+      const result = event.target?.result;
+      if (typeof result === 'string') {
+        resolve(result);
       } else {
-        reject(new Error('Could not read file as ArrayBuffer.'));
+        reject(new Error('File content is not a string.'));
       }
     };
     reader.onerror = (error) => {
       reject(error);
     };
-    reader.readAsArrayBuffer(file);
+    reader.readAsText(file);
   });
+};
+
+export const handleFileUpload = (
+  file: File, 
+  setFile: (file: File | null) => void,
+  showToast: (title: string, description: string) => void
+): void => {
+  const validation = validateFile(file);
+  
+  if (!validation.valid && validation.errorMessage) {
+    showToast("Error", validation.errorMessage);
+    return;
+  }
+  
+  setFile(file);
 };
 
 export const extractErrorMessage = (error: any) => {

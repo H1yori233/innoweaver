@@ -22,23 +22,35 @@ const config: Config = {
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
-  		colors: {},
-  		animation: {
-  			shine: 'shine var(--duration) infinite linear'
+  		colors: {
+  			'accent-blue': '#3B82F6',
+  			'accent-purple': '#8B5CF6',
   		},
-  		keyframes: {
-  			shine: {
-  				'0%': {
-  					'background-position': '0% 0%'
-  				},
-  				'50%': {
-  					'background-position': '100% 100%'
-  				},
-  				to: {
-  					'background-position': '0% 0%'
-  				}
-  			}
-  		}
+  				animation: {
+			shine: 'shine var(--duration) infinite linear',
+			shimmer: 'shimmer 2s infinite'
+		},
+		keyframes: {
+			shine: {
+				'0%': {
+					'background-position': '0% 0%'
+				},
+				'50%': {
+					'background-position': '100% 100%'
+				},
+				to: {
+					'background-position': '0% 0%'
+				}
+			},
+			shimmer: {
+				'0%': {
+					'transform': 'translateX(-100%)'
+				},
+				'100%': {
+					'transform': 'translateX(100%)'
+				}
+			}
+		}
   	}
   },
   plugins: [

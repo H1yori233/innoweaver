@@ -206,7 +206,12 @@ async def evaluation_step(
     data = await request.json()
     task_id = data.get("task_id")
     final_solution = await USER.evaluation_step(current_user, task_id)
-    return {"status": "in_progress", "task_id": task_id, "progress": 80}
+    return {
+        "status": "in_progress", 
+        "task_id": task_id, 
+        "progress": 80,
+        "solution": final_solution
+    }
 
 @task_router.post("/complete/drawing")
 @route_handler()
@@ -217,7 +222,12 @@ async def drawing_step(
     data = await request.json()
     task_id = data.get("task_id")
     final_solution = await USER.drawing_step(current_user, task_id)
-    return {"status": "in_progress", "task_id": task_id, "progress": 90}
+    return {
+        "status": "in_progress", 
+        "task_id": task_id, 
+        "progress": 90,
+        "solution": final_solution
+    }
 
 @task_router.post("/complete/final")
 @route_handler()

@@ -42,11 +42,13 @@ def knowledge(current_user, paper):
         model_name=MODEL_NAME  # 传递模型名称给客户端
     )
     
-    result = MAIN.knowledge_extraction(paper, client)
+    user_type = current_user.get("user_type", "None Type")
+    result = MAIN.knowledge_extraction(paper, client, user_type=user_type)
     return result
 
 async def query(current_user, query, design_doc):
     print(f"用户 {current_user['email']} 正在调用 /api/query")
+    print(current_user.get("user_type", "None Type"))
     
     load_dotenv()
     API_KEY = current_user['api_key']
@@ -64,7 +66,8 @@ async def query(current_user, query, design_doc):
         model_name=MODEL_NAME  # 传递模型名称给客户端
     )
     
-    result = await MAIN.query_analysis(query, design_doc, client)
+    user_type = current_user.get("user_type", "None Type")
+    result = await MAIN.query_analysis(query, design_doc, client, user_type=user_type)
     return result
 
 # -------------------------------------------------------------------- #
@@ -83,7 +86,7 @@ async def rag_step(current_user, task_id):
     task_data = json.loads(await async_redis.get(task_id) or "{}")
     query_analysis_result = task_data.get("result", {}).get("query_analysis_result", {})
     query = task_data.get("result", {}).get("query")
-    print(query)
+    print(current_user.get("user_type", "None Type"))
     print(query_analysis_result)
     # rag_results = await RAG.search_in_meilisearch(query, query_analysis_result.get("Requirement", ""))
     rag_results = RAG.search_in_meilisearch(query, query_analysis_result.get("Requirement", ""))
@@ -128,7 +131,8 @@ async def example_step(current_user, example_ids, task_id):
 async def domain_step(current_user, task_id):    
     task_data = json.loads(await async_redis.get(task_id) or "{}")
     query = task_data.get("result", {}).get("query")
-    print(query)
+    user_type = current_user.get("user_type", "None Type")
+    print(user_type)
     rag_results = task_data.get("result", {}).get("rag_results", {})
     domain_knowledge = rag_results.get('hits', [])
     
@@ -142,14 +146,15 @@ async def domain_step(current_user, task_id):
         model_name=MODEL_NAME
     )
     
-    init_solution = await MAIN.domain_expert_system(query, domain_knowledge, client)
+    init_solution = await MAIN.domain_expert_system(query, domain_knowledge, client, user_type=user_type)
     await update_task_status(task_id, "Domain analysis completed", 60, {"init_solution": init_solution})
     return init_solution
 
 async def interdisciplinary_step(current_user, task_id):
     task_data = json.loads(await async_redis.get(task_id) or "{}")
     query = task_data.get("result", {}).get("query")
-    print(query)
+    user_type = current_user.get("user_type", "None Type")
+    print(user_type)
     domain_knowledge = task_data.get("result", {}).get("rag_results", {}).get("hits", [])
     init_solution = task_data.get("result", {}).get("init_solution")
     
@@ -163,14 +168,15 @@ async def interdisciplinary_step(current_user, task_id):
         model_name=MODEL_NAME
     )
     
-    iterated_solution = await MAIN.interdisciplinary_expert_system(query, domain_knowledge, init_solution, client)
+    iterated_solution = await MAIN.interdisciplinary_expert_system(query, domain_knowledge, init_solution, client, user_type=user_type)
     await update_task_status(task_id, "Interdisciplinary analysis completed", 70, {"iterated_solution": iterated_solution})
     return iterated_solution
 
 async def evaluation_step(current_user, task_id):
     task_data = json.loads(await async_redis.get(task_id) or "{}")
     query = task_data.get("result", {}).get("query")
-    print(query)
+    user_type = current_user.get("user_type", "None Type")
+    print(user_type)
     domain_knowledge = task_data.get("result", {}).get("rag_results", {}).get("hits", [])
     init_solution = task_data.get("result", {}).get("init_solution")
     iterated_solution = task_data.get("result", {}).get("iterated_solution")
@@ -185,7 +191,7 @@ async def evaluation_step(current_user, task_id):
         model_name=MODEL_NAME
     )
     
-    final_solution = await MAIN.evaluation_expert_system(query, domain_knowledge, init_solution, iterated_solution, client)
+    final_solution = await MAIN.evaluation_expert_system(query, domain_knowledge, init_solution, iterated_solution, client, user_type=user_type)
     await update_task_status(task_id, "Solution evaluation completed", 80, {"final_solution": final_solution})
     return final_solution
 
@@ -194,6 +200,7 @@ async def drawing_step(current_user, task_id):
     query_analysis_result = task_data.get("result", {}).get("query_analysis_result", {})
     final_solution = task_data.get("result", {}).get("final_solution")
     final_solution = solution_eval(final_solution)
+    user_type = current_user.get("user_type", "None Type")
 
     if not final_solution or "solutions" not in final_solution:
         raise ValueError("final_solution 解析失败或不包含 'solutions' 字段")
@@ -217,7 +224,7 @@ async def drawing_step(current_user, task_id):
         await update_task_status(task_id, f"Generating image {i+1}/{len(final_solution['solutions'])}...", 80 + (i+1)*10/len(final_solution["solutions"]))
         
         # 生成图片 (Calls the updated drawing_expert_system -> make_image_request)
-        image_data = await MAIN.drawing_expert_system(target_user, technical_method, possible_results, client)
+        image_data = await MAIN.drawing_expert_system(target_user, technical_method, possible_results, client, user_type=user_type)
         try:
             # 处理并上传图片
             image_url, image_name = await process_and_upload_image(image_data['url'], SM_MS_API_KEY)
@@ -233,7 +240,7 @@ async def drawing_step(current_user, task_id):
 async def final_step(current_user, task_id):
     task_data = json.loads(await async_redis.get(task_id) or "{}")
     query = task_data.get("result", {}).get("query")
-    print(query)
+    print(current_user.get("user_type", "None Type"))
     query_analysis_result = task_data.get("result", {}).get("query_analysis_result", {})
     print(query_analysis_result)
     domain_knowledge = task_data.get("result", {}).get("rag_results", {}).get("hits", [])
@@ -288,6 +295,7 @@ async def start_task(current_user):
 async def handle_inspiration_chat(current_user, inspiration_id, new_message, chat_history=None, stream=False):
     print(f"用户 {current_user['email']} 正在调用 /task/inspiration/chat (Stream: {stream})")
     inspiration = await QUERY.query_solution(inspiration_id)
+    user_type = current_user.get("user_type", "None Type")
     
     BASE_URL = current_user.get('api_url') or "https://api.deepseek.com/v1"
     MODEL_NAME = current_user.get('model_name') or "deepseek-chat"
@@ -302,7 +310,7 @@ async def handle_inspiration_chat(current_user, inspiration_id, new_message, cha
         from fastapi.responses import StreamingResponse
         
         # Get the stream generator from MAIN.inspiration_chat
-        stream_generator = await MAIN.inspiration_chat(inspiration, new_message, client, chat_history, stream=True)
+        stream_generator = await MAIN.inspiration_chat(inspiration, new_message, client, chat_history, user_type=user_type, stream=True)
 
         # Wrap it for SSE format
         async def sse_wrapper():
@@ -312,5 +320,5 @@ async def handle_inspiration_chat(current_user, inspiration_id, new_message, cha
         return StreamingResponse(sse_wrapper(), media_type="text/event-stream")
     else:
         # Call MAIN.inspiration_chat for non-streamed response
-        result = await MAIN.inspiration_chat(inspiration, new_message, client, chat_history, stream=False)
+        result = await MAIN.inspiration_chat(inspiration, new_message, client, chat_history, user_type=user_type, stream=False)
         return result
