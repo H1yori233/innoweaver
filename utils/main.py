@@ -58,7 +58,7 @@ async def make_openai_request(messages, model, client, stream=False):
         headers["Accept"] = "text/event-stream"
         data["stream"] = True
 
-    async with httpx.AsyncClient(base_url=client.base_url, timeout=120.0) as http_client:
+    async with httpx.AsyncClient(base_url=client.base_url, timeout=300.0) as http_client:
         if stream:
             # Call the extracted stream handler
             return _stream_openai_response(http_client, data, headers)
@@ -86,18 +86,36 @@ async def make_image_request(prompt, client):
         "Content-Type": "application/json"
     }
     
+    # Use client's model_name or fallback to dall-e-3
+    model_name = client.model_name or "dall-e-3"
+    
     data = {
-        "model": "dall-e-3",
+        "model": model_name,
         "prompt": prompt,
         "size": "1024x1024",
         "quality": "standard",
         "n": 1
     }
     
-    async with httpx.AsyncClient(base_url=client.base_url, timeout=30.0) as http_client:
-        response = await http_client.post("/images/generations", json=data, headers=headers)
-        response.raise_for_status()
-        return response.json()
+    LOG.logger.info(f"Making image request with model: {model_name}, base_url: {client.base_url}")
+    
+    try:
+        async with httpx.AsyncClient(base_url=client.base_url, timeout=60.0) as http_client:
+            response = await http_client.post("/images/generations", json=data, headers=headers)
+            response.raise_for_status()
+            return response.json()
+    except httpx.HTTPStatusError as e:
+        error_body = "Unknown error body"
+        try:
+            error_body = await e.response.aread()
+            error_body = error_body.decode()
+        except Exception as read_err:
+            LOG.logger.error(f"Failed to read error response body: {read_err}")
+        LOG.logger.error(f"HTTP error in image request: {e.response.status_code} - {error_body}")
+        raise e
+    except Exception as e:
+        LOG.logger.error(f"Error during image request: {e}", exc_info=True)
+        raise e
     
 # -----------------------------------------------------------------------------
 
@@ -165,97 +183,14 @@ async def query_analysis(query, documents, client, user_type=None, stream=False)
 
 # -----------------------------------------------------------------------------
 
-# async def solution_example_system(query, solutions, client, stream=False):
-#     model_name = client.model_name or "deepseek-chat"
-#     LOG.logger.info(f"Using model {model_name} for solution example system (Stream: {stream})")
-    
-#     result_gen = await make_openai_request(
-#         messages=[
-#             {"role": "system", "content": prompting.get_prompt('DOMAIN_EXPERT_SYSTEM_SOLUTION_PROMPT')},
-#             {"role": "user", "content": f"query: {query}\nSolutions: {solutions}"},
-#         ],
-#         model=model_name,
-#         client=client,
-#         stream=stream
-#     )
-    
-#     if stream:
-#         return result_gen
-#     else:
-#         content = result_gen['choices'][0]['message']['content']
-#         return process_llm_response(content)
-
-async def domain_expert_system(query, domain_knowledge, client, user_type=None, stream=False):
-    model_name = client.model_name or "deepseek-chat"
-    LOG.logger.info(f"Using model {model_name} for domain expert system (Stream: {stream}, User Type: {user_type})")
-    
-    result_gen = await make_openai_request(
-        messages=[
-            {"role": "system", "content": prompting.get_prompt('DOMAIN_EXPERT_SYSTEM_PROMPT')},
-            {"role": "user", "content": f"query: {query}\nDomain Knowledge: {domain_knowledge}"},
-        ],
-        model=model_name,
-        client=client,
-        stream=stream
-    )
-    
-    if stream:
-        return result_gen
-    else:
-        content = result_gen['choices'][0]['message']['content']
-        return process_llm_response(content)
-
-async def interdisciplinary_expert_system(query, domain_knowledge, init_solution, client, user_type=None, stream=False):
-    model_name = client.model_name or "deepseek-chat"
-    LOG.logger.info(f"Using model {model_name} for interdisciplinary expert system (Stream: {stream}, User Type: {user_type})")
-    
-    result_gen = await make_openai_request(
-        messages=[
-            {"role": "system", "content": prompting.get_prompt('INTERDISCIPLINARY_EXPERT_SYSTEM_PROMPT')},
-            {"role": "user", "content": f"query: {query}\nDomain Knowledge: {domain_knowledge}\nInitial Solution: {init_solution}"},
-        ],
-        model=model_name,
-        client=client,
-        stream=stream
-    )
-    
-    if stream:
-        return result_gen
-    else:
-        content = result_gen['choices'][0]['message']['content']
-        return process_llm_response(content)
-
-async def evaluation_expert_system(query, domain_knowledge, init_solution, iterated_solution, client, user_type=None, stream=False):
-    model_name = client.model_name or "deepseek-chat"
-    LOG.logger.info(f"Using model {model_name} for evaluation expert system (Stream: {stream}, User Type: {user_type})")
-    
-    result_gen = await make_openai_request(
-        messages=[
-            {"role": "system", "content": prompting.get_prompt('PRACTICAL_EXPERT_EVALUATE_SYSTEM_PROMPT')},
-            {"role": "user", "content": f"query: {query}\nDomain Knowledge: {domain_knowledge}\nInitial Solution: {init_solution}\nIterated Solution: {iterated_solution}"},
-        ],
-        model=model_name,
-        client=client,
-        stream=stream
-    )
-    
-    if stream:
-        return result_gen
-    else:
-        content = result_gen['choices'][0]['message']['content']
-        return process_llm_response(content)
-
-# -----------------------------------------------------------------------------
-
 async def drawing_expert_system(target_user, technical_method, possible_results, client, user_type=None):
     # 图像生成函数不需要使用模型名称，因为它使用专门的图像API
     LOG.logger.info(f"Using image generation API for drawing expert system (User Type: {user_type})")
     
-    user_content = f'''
-        target_user: {target_user}
-        technical_method: {technical_method}
-        possible_results: {possible_results}
-    '''
+    # Create a more natural prompt that won't trigger safety systems
+    user_content = f"Create a professional illustration showing {technical_method} being used by {target_user} to achieve {possible_results}. The image should be clean, modern, and visually appealing, suitable for a technical presentation or educational material."
+    
+    LOG.logger.info(f"Generated prompt: {user_content}")
  
     response = await make_image_request(user_content, client)
     return response['data'][0]

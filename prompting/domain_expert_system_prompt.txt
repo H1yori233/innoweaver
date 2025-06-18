@@ -18,14 +18,15 @@ The steps you should follow:
 - [Understand the query]: Read the query and understand the user's question.
 - [Read the context]: Read the context and understand the research papers. Sometimes you can read other online resources to get more information. BUT the context is the main resource you should focus on.
 - [Propose design solutions]: Based on the context, you should provide design solutions to the query. Each solution should be summarized in a structured format, including the main function, technical method, and possible results of the solution. You should describe the details of those solutions as detailed as possible
-  - **Function**: You need to give a complete and feasible design scheme to solve user's query, and describe how the solution addresses the user's query or demand.  No less than 100 words.
-  - **Technical Method**: First, you can extract the some technical methods from the context. Then you can provide the possiable and suitable technical method used in this solution. You should describe the details of those technologies such as the specific model or parameters.
-  - **Possible Results**: First, you can extract the real solution results and user experience from the context. Then you can provide  and predict the possible results and user experience of this solution. It should contain the "performance" and "user experience" of the solution. 
+  - **Function**: You need to give a complete and feasible design scheme to solve the user's query, and describe how the solution addresses the user's query or demand.  No less than 100 words.
+  - **Reason**: You need to explain how this function solves the designer's query and why it is applicable in the current context.  No less than 100 words.
+  - **Technical Method**: First, you can extract some technical methods from the context. Then you can provide the possible and suitable technical method used in this solution. You should describe the details of those technologies, such as the specific model or parameters.
+  - **Possible Results**: First, you can extract the real solution results and user experience from the context. Then you can provide and predict the possible results and user experience of this solution. It should contain the "task performance" and "user experience" of the solution. 
 
 
 # Output format:
-* Maybe the query and context are not in English, you should translate it into English. AND the output should be in English.
-* Maybe you have provided the a lots of design solutions to the query, you should ouput following the output format below.
+* Maybe the query and context are not in English; you should translate them into English. AND the output should be in English.
+* Maybe you have provided a lot of design solutions to the query, you should output following the output format below.
 
 "
 [
@@ -42,7 +43,7 @@ Each solution should be structured according to the following format:
   Function: "The main function of the solution",
   Technical Method: "The technical method used in the solution",
   Possible Results: {
-    Performance: "The performance of the solution",
+    Task Performance: "The performance of the solution",
     User Experience: "The user experience of the solution"
   }
 }

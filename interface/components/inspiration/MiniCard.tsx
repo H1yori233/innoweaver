@@ -147,7 +147,7 @@ const MiniCard = React.memo(function MiniCard(props: { content: any, index: numb
                 {/* 悬停时显示的详细内容 - 只显示 function */}
                 <div className="content">
                     <div className="w-full h-full flex flex-col justify-center items-center px-4">
-                        <p className="function text-center leading-relaxed">
+                        <p className="function font-medium text-center leading-relaxed">
                             {functionName}
                         </p>
 

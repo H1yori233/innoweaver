@@ -102,147 +102,6 @@ async def test_api_connection(
 
 # ------------------------------------------------------------------------
 
-@task_router.post("/complete/initialize")
-@route_handler()
-async def initialize_task(
-    request: Request,
-    current_user: Dict[str, Any] = Depends(fastapi_token_required)
-):
-    data = await request.json()
-    task_id = await USER.initialize_task(current_user, data.get("data", {}))
-    return {
-        "status": "started", 
-        "task_id": task_id, 
-        "progress": 10
-    }
-
-@task_router.post("/complete/rag")
-@route_handler()
-async def rag_step(
-    request: Request,
-    current_user: Dict[str, Any] = Depends(fastapi_token_required)
-):
-    data = await request.json()
-    task_id = data.get("task_id")
-    rag_results = await USER.rag_step(current_user, task_id)
-    return {"status": "in_progress", "task_id": task_id, "progress": 30}
-
-@task_router.post("/complete/paper")
-@route_handler()
-async def paper_step(
-    request: Request,
-    current_user: Dict[str, Any] = Depends(fastapi_token_required)
-):
-    data = await request.json()
-    task_id = data.get("task_id")
-    rag_results = await USER.paper_step(current_user, data.get("paper_ids", []), task_id)
-    return {"status": "in_progress", "task_id": task_id, "progress": 30}
-
-@task_router.post("/complete/example")
-@route_handler()
-async def example_step(
-    request: Request,
-    current_user: Dict[str, Any] = Depends(fastapi_token_required)
-):
-    data = await request.json()
-    task_id = data.get("task_id")
-    
-    example_ids_str = data.get("data") 
-    example_ids = []
-    if example_ids_str:
-        try:
-            example_ids = json.loads(example_ids_str)
-            if not isinstance(example_ids, list):
-                 raise HTTPException(status_code=400, detail="Invalid format for example IDs in 'data' field: expected a list.")
-        except json.JSONDecodeError:
-             raise HTTPException(status_code=400, detail="Invalid JSON string in 'data' field for example IDs.")
-
-    print(f"Parsed example_ids: {example_ids}") # Debug print
-
-    if not task_id:
-        raise HTTPException(status_code=400, detail="Missing task_id")
-    
-    updated_rag_results = await USER.example_step(current_user, example_ids, task_id)
-    return {"status": "in_progress", "task_id": task_id, "progress": 35}
-
-@task_router.post("/complete/domain")
-@route_handler()
-async def domain_step(
-    request: Request,
-    current_user: Dict[str, Any] = Depends(fastapi_token_required)
-):
-    data = await request.json()
-    task_id = data.get("task_id")
-    init_solution = await USER.domain_step(current_user, task_id)
-    return {
-        "status": "in_progress", 
-        "task_id": task_id, 
-        "progress": 60,
-        "solution": init_solution
-    }
-
-@task_router.post("/complete/interdisciplinary")
-@route_handler()
-async def interdisciplinary_step(
-    request: Request,
-    current_user: Dict[str, Any] = Depends(fastapi_token_required)
-):
-    data = await request.json()
-    task_id = data.get("task_id")
-    iterated_solution = await USER.interdisciplinary_step(current_user, task_id)
-    return {
-        "status": "in_progress", 
-        "task_id": task_id, 
-        "progress": 70,
-        "solution": iterated_solution
-    }
-
-@task_router.post("/complete/evaluation")
-@route_handler()
-async def evaluation_step(
-    request: Request,
-    current_user: Dict[str, Any] = Depends(fastapi_token_required)
-):
-    data = await request.json()
-    task_id = data.get("task_id")
-    final_solution = await USER.evaluation_step(current_user, task_id)
-    return {
-        "status": "in_progress", 
-        "task_id": task_id, 
-        "progress": 80,
-        "solution": final_solution
-    }
-
-@task_router.post("/complete/drawing")
-@route_handler()
-async def drawing_step(
-    request: Request,
-    current_user: Dict[str, Any] = Depends(fastapi_token_required)
-):
-    data = await request.json()
-    task_id = data.get("task_id")
-    final_solution = await USER.drawing_step(current_user, task_id)
-    return {
-        "status": "in_progress", 
-        "task_id": task_id, 
-        "progress": 90,
-        "solution": final_solution
-    }
-
-@task_router.post("/complete/final")
-@route_handler()
-async def final_step(
-    request: Request,
-    current_user: Dict[str, Any] = Depends(fastapi_token_required)
-):
-    data = await request.json()
-    task_id = data.get("task_id")
-    final_solution = await USER.final_step(current_user, task_id)
-    USER.delete_task(task_id)
-    return final_solution
-
-# ------------------------------------------------------------------------
-
 @task_router.get("/complete/status/{task_id}")
 @route_handler()
 async def task_status(task_id: str):
@@ -255,7 +114,8 @@ async def task_status(task_id: str):
 
 @task_router.post("/inspiration/chat")
 @route_handler()
-async def inspiration_chat(request: Request,
+async def inspiration_chat(
+    request: Request,
     current_user: Dict[str, Any] = Depends(fastapi_token_required)
 ):
     data = await request.json()
@@ -265,3 +125,68 @@ async def inspiration_chat(request: Request,
     stream = data.get("stream", False)
     
     return await USER.handle_inspiration_chat(current_user, inspiration_id, new_message, chat_history, stream=stream)
+
+# ------------------------------------------------------------------------
+
+from utils.tasks.research import start_research
+import asyncio
+from sse_starlette.sse import EventSourceResponse
+
+
+@task_router.post("/research")
+@route_handler()
+async def research(
+    request: Request, current_user: Dict[str, Any] = Depends(fastapi_token_required)
+):
+    data = await request.json()
+    query = data.get("query")
+    query_analysis_result = data.get("query_analysis_result")
+    with_paper = data.get("with_paper", False)
+    with_example = data.get("with_example", False)
+    is_drawing = data.get("is_drawing", False)
+    print("start research")
+    print(f"with_paper: {with_paper}, with_example: {with_example}, is_drawing: {is_drawing}")
+    
+    async def event_generator():
+        queue: asyncio.Queue = asyncio.Queue()
+
+        async def send_event(event_type: str, payload: Any):
+            if await request.is_disconnected():
+                raise asyncio.CancelledError()
+            # print(f"event: {event_type}, data: {payload}")
+            await queue.put({"event": event_type, "data": payload})
+
+        async def run_workflow():
+            try:
+                await start_research(
+                    current_user=current_user,
+                    query=query,
+                    query_analysis_result=query_analysis_result,
+                    with_paper=with_paper,
+                    with_example=with_example,
+                    is_drawing=is_drawing,
+                    send_event=send_event,
+                )
+            except asyncio.CancelledError:
+                print("research cancelled")
+                raise
+            except Exception as e:
+                await queue.put({"event": "error", "data": str(e)})
+            finally:
+                await queue.put({"event": "end", "data": "complete"})
+
+        task = asyncio.create_task(run_workflow())
+        try:
+            while True:
+                msg = await queue.get()
+                yield msg
+                if msg["event"] == "end":
+                    break
+        except asyncio.CancelledError:
+            task.cancel()
+            raise
+        finally:
+            if not task.done():
+                task.cancel()
+
+    return EventSourceResponse(event_generator(), media_type="text/event-stream")

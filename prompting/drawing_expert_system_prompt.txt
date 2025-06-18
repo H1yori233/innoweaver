@@ -13,7 +13,7 @@ Your task is to design and draw  a user interface prototype for the proposed sol
 }
 
   # Task
-You should read the "Function", "Technical Method" of the solution and for the "Target User", then design and draw a prototype for the proposed solutions. The prototype should be clear and easy to understand. You should provide the key features and interactions
+You should read the "Function", "Technical Method" of the solution and for the "Target User", then design and draw a prototype for the proposed solutions. The prototype should be clear and easy to understand. If it is a physical product, please draw it in the form of a product rendering; if it is a software or app, please draw the interface; if it is an interactive method, please draw an interactive scene. The style needs to be realistic, and it needs to be the picture that will appear in the real scene.
 
 There some design requirements you should follow:
 1. The color scheme should be visually appealing and consistent.

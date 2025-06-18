@@ -128,73 +128,6 @@ async def example_step(current_user, example_ids, task_id):
 
 # -------------------------------------------------------------------- #
 
-async def domain_step(current_user, task_id):    
-    task_data = json.loads(await async_redis.get(task_id) or "{}")
-    query = task_data.get("result", {}).get("query")
-    user_type = current_user.get("user_type", "None Type")
-    print(user_type)
-    rag_results = task_data.get("result", {}).get("rag_results", {})
-    domain_knowledge = rag_results.get('hits', [])
-    
-    # 优先使用用户设置的URL和模型，否则使用默认值
-    BASE_URL = current_user.get('api_url') or "https://api.deepseek.com/v1"
-    MODEL_NAME = current_user.get('model_name') or "deepseek-chat"
-    
-    client = OpenAIClient(
-        api_key=current_user['api_key'],
-        base_url=BASE_URL,
-        model_name=MODEL_NAME
-    )
-    
-    init_solution = await MAIN.domain_expert_system(query, domain_knowledge, client, user_type=user_type)
-    await update_task_status(task_id, "Domain analysis completed", 60, {"init_solution": init_solution})
-    return init_solution
-
-async def interdisciplinary_step(current_user, task_id):
-    task_data = json.loads(await async_redis.get(task_id) or "{}")
-    query = task_data.get("result", {}).get("query")
-    user_type = current_user.get("user_type", "None Type")
-    print(user_type)
-    domain_knowledge = task_data.get("result", {}).get("rag_results", {}).get("hits", [])
-    init_solution = task_data.get("result", {}).get("init_solution")
-    
-    # 优先使用用户设置的URL和模型，否则使用默认值
-    BASE_URL = current_user.get('api_url') or "https://api.deepseek.com/v1"
-    MODEL_NAME = current_user.get('model_name') or "deepseek-chat"
-    
-    client = OpenAIClient(
-        api_key=current_user['api_key'],
-        base_url=BASE_URL,
-        model_name=MODEL_NAME
-    )
-    
-    iterated_solution = await MAIN.interdisciplinary_expert_system(query, domain_knowledge, init_solution, client, user_type=user_type)
-    await update_task_status(task_id, "Interdisciplinary analysis completed", 70, {"iterated_solution": iterated_solution})
-    return iterated_solution
-
-async def evaluation_step(current_user, task_id):
-    task_data = json.loads(await async_redis.get(task_id) or "{}")
-    query = task_data.get("result", {}).get("query")
-    user_type = current_user.get("user_type", "None Type")
-    print(user_type)
-    domain_knowledge = task_data.get("result", {}).get("rag_results", {}).get("hits", [])
-    init_solution = task_data.get("result", {}).get("init_solution")
-    iterated_solution = task_data.get("result", {}).get("iterated_solution")
-    
-    # 优先使用用户设置的URL和模型，否则使用默认值
-    BASE_URL = current_user.get('api_url') or "https://api.deepseek.com/v1"
-    MODEL_NAME = current_user.get('model_name') or "deepseek-chat"
-    
-    client = OpenAIClient(
-        api_key=current_user['api_key'],
-        base_url=BASE_URL,
-        model_name=MODEL_NAME
-    )
-    
-    final_solution = await MAIN.evaluation_expert_system(query, domain_knowledge, init_solution, iterated_solution, client, user_type=user_type)
-    await update_task_status(task_id, "Solution evaluation completed", 80, {"final_solution": final_solution})
-    return final_solution
-
 async def drawing_step(current_user, task_id):
     task_data = json.loads(await async_redis.get(task_id) or "{}")
     query_analysis_result = task_data.get("result", {}).get("query_analysis_result", {})
@@ -235,31 +168,6 @@ async def drawing_step(current_user, task_id):
             continue
             
     await update_task_status(task_id, "Image generation completed", 90, {"final_solution": final_solution})
-    return final_solution
-
-async def final_step(current_user, task_id):
-    task_data = json.loads(await async_redis.get(task_id) or "{}")
-    query = task_data.get("result", {}).get("query")
-    print(current_user.get("user_type", "None Type"))
-    query_analysis_result = task_data.get("result", {}).get("query_analysis_result", {})
-    print(query_analysis_result)
-    domain_knowledge = task_data.get("result", {}).get("rag_results", {}).get("hits", [])
-    final_solution = task_data.get("result", {}).get("final_solution")
-    final_solution = solution_eval(final_solution)
-
-    if not final_solution:
-        raise ValueError("final_solution 解析失败或无效")
-
-    solution_ids = await TASK.insert_solution(current_user, query, query_analysis_result, final_solution)
-    await TASK.paper_cited(domain_knowledge, solution_ids)
-
-    solutions = await asyncio.gather(*[
-        QUERY.query_solution(str(solution_id)) for solution_id in solution_ids
-    ])
-    solutions = [convert_objectid_to_str(solution) for solution in solutions]
-    final_solution['solutions'] = solutions
-    
-    await update_task_status(task_id, "Task completed", 100, {"final_solution": final_solution})
     return final_solution
 
 # -------------------------------------------------------------------- #

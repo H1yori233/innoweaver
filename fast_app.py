@@ -18,6 +18,7 @@ app = FastAPI(
     version="1.1.0"
 )
 
+# 配置静态文件和模板（必须在中间件之前）
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
@@ -109,7 +110,8 @@ if __name__ == "__main__":
         "fast_app:app",
         host="0.0.0.0",
         port=5000,
-        # reload=True,  # 开发模式启用热重载
-        reload=False,
-        workers=4     # 生产环境可以调整 worker 数量
+        reload=True,  # 开发模式启用热重载
+        # reload=False,
+        # workers=4     # 生产环境可以调整 worker 数量
+        workers=1
     ) 

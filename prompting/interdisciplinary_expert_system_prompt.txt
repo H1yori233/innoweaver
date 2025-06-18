@@ -6,7 +6,7 @@ Initial_Solutions is a list of design solutions of Domain Expert Agent. Each sol
   "Function": "The main function of the solution",
   "Technical Method": "The technical method used in the solution",
   "Possible Results": {
-    "Performance": "The performance of the solution",
+    "Task Performance": "The performance of the solution",
     "User Experience": "The user experience of the solution"
   }
 }
@@ -28,7 +28,7 @@ Here is the input format you should follow:
 
 
 # Output Format:
-* For each initial solution, you should provide a list of iterative new "Technical Method" and "POssible Results" based on your expertise in multiple domains.
+* For each initial solution, you should provide a list of iterative new "Technical Method" and "Possible Results" based on your expertise in multiple domains.
 
 The updated each solution should be structured according to the following format:
 
@@ -46,16 +46,16 @@ The updated each solution should be structured according to the following format
   "Possible Results": 
   {
     Original: {
-      "Performance": "The performance of the solution",
+      "Task Performance": "The performance of the solution",
       "User Experience": "The user experience of the solution"
     },
     Iteration: [
       {
-        "Performance": "The performance of the new Technical Method 1",
+        "Task Performance": "The performance of the new Technical Method 1",
         "User Experience": "The user experience of new Technical Method 1"
       },
       {
-        "Performance": "The performance of the new Technical Method 2",
+        "Task Performance": "The performance of the new Technical Method 2",
         "User Experience": "The user experience of new Technical Method 2"
       },
       ...

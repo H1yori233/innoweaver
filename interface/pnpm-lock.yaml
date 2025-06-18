@@ -26,6 +26,9 @@ importers:
       '@meilisearch/instant-meilisearch':
         specifier: ^0.21.1
         version: 0.21.1
+      '@microsoft/fetch-event-source':
+        specifier: ^2.0.1
+        version: 2.0.1
       '@mui/material':
         specifier: ^6.4.11
         version: 6.4.11(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@18.3.20)(react@18.3.1))(@types/react@18.3.20)(react@18.3.1))(@types/react@18.3.20)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -122,6 +125,9 @@ importers:
       js-cookie:
         specifier: ^3.0.5
         version: 3.0.5
+      json5:
+        specifier: ^2.2.3
+        version: 2.2.3
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -812,6 +818,9 @@ packages:
 
   '@meilisearch/instant-meilisearch@0.21.1':
     resolution: {integrity: sha512-igbDiEwUnYvB0CqbdL7M9ninRL3OGH/my5Aacsz8TaGIWtacCzIaRPgYizHApqPLGT8jk7OSn+OcZrBUa6p6RA==}
+
+  '@microsoft/fetch-event-source@2.0.1':
+    resolution: {integrity: sha512-W6CLUJ2eBMw3Rec70qrsEW0jOm/3twwJv21mrmj2yORiaVmVYGS4sSS5yUwvQc1ZlDLYGPnClVWmUUMagKNsfA==}
 
   '@mui/core-downloads-tracker@6.4.11':
     resolution: {integrity: sha512-CzAQs9CTzlwbsF9ZYB4o4lLwBv1/qNE264NjuYao+ctAXsmlPtYa8RtER4UsUXSMxNN9Qi+aQdYcKl2sUpnmAw==}
@@ -8044,6 +8053,8 @@ snapshots:
   '@meilisearch/instant-meilisearch@0.21.1':
     dependencies:
       meilisearch: 0.44.1
+
+  '@microsoft/fetch-event-source@2.0.1': {}
 
   '@mui/core-downloads-tracker@6.4.11': {}
 

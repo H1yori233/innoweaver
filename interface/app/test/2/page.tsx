@@ -12,7 +12,7 @@ export default function ApiTestPage() {
         setError(null);
 
         try {
-            const response = await fetch('http://120.55.193.195:5000/api/query_solution?id=67245d8394ffc23355f79716');
+            const response = await fetch('http://localhost:5000/api/query_solution?id=67245d8394ffc23355f79716');
             if (!response.ok) {
                 throw new Error(`API request failed with status ${response.status}`);
             }

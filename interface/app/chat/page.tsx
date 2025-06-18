@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import * as React from 'react';
 import { useDropzone } from 'react-dropzone';
 import { FaArrowCircleUp, FaPaperclip, FaRedo, FaFileAlt } from 'react-icons/fa';
@@ -21,9 +21,8 @@ import {
   PanelResizeHandle
 } from 'react-resizable-panels';
 
-import IntermediateResult from './IntermediateResult';
-import ProgressDisplay from './ProgressDisplay';
-import CompleteResult from './CompleteResult';
+import ResearchDisplay from '@/app/chat/ResearchDisplay';
+
 import { 
   readFileContent, 
   extractErrorMessage, 
@@ -31,109 +30,24 @@ import {
   handleFileUpload, 
   MAX_FILE_SIZE 
 } from './FileUtils';
-import { callQueryAnalysis, callStepApi } from './ApiService';
 import ChatMessages from './ChatMessages';
 import FileContent from './FileContent';
+import JSON5 from 'json5';
 
-const testIntermediateData = {
-  "title": "Summary of HCI Solutions for Enhanced Navigation and Content Access",
-  "desc": "This summary provides a comprehensive evaluation of three distinct solutions designed to improve user navigation performance and reduce frustration in accessing visual content. Each solution incorporates advanced technical methods, including augmented reality, haptic feedback, and immersive XR environments.",
-  "solution": [
-    {
-      "Title": "AR Navigation for Visual Content Access",
-      "Function": "Improving user navigation performance and reducing frustration through augmented reality visualizations.",
-      "Technical Method": {
-        "Original": [
-          "Context-aware AR visualizations that adapt to user location and movement.",
-          "Gesture-based interactions for accessing data visualizations."
-        ],
-        "Iteration": [
-          "Integration of AI-driven context prediction with AR visualizations to provide anticipatory guidance.",
-          "Utilization of multi-modal feedback (haptic and auditory) alongside AR visuals for enhanced accessibility."
-        ]
-      },
-      "Possible Results": {
-        "Original": {
-          "Performance": "Real-time updates of relevant information based on the user's physical surroundings can significantly improve task efficiency and accuracy in outdoor settings.",
-          "User Experience": "Participants reported increased engagement with AR visualizations, indicating a positive impact on both usability and satisfaction. The immersive experience enhances the perception of environmental details without requiring constant visual attention."
-        },
-        "Iteration": [
-          {
-            "Performance": "AI-driven predictive context awareness reduces decision-making time by up to 20%, enhancing overall task performance.",
-            "User Experience": "Users report a more intuitive and seamless interaction experience due to anticipatory guidance provided by the system."
-          },
-          {
-            "Performance": "Multi-modal feedback ensures accessibility and usability for users with varying sensory capabilities, improving inclusivity.",
-            "User Experience": "Feedback indicates higher satisfaction among users who benefit from haptic and auditory cues, leading to reduced cognitive load during navigation."
-          }
-        ]
-      }
-    },
-    {
-      "Title": "Haptic Feedback for Spatial Guidance",
-      "Function": "Providing haptic feedback to enhance spatial awareness and reduce cognitive load during navigation.",
-      "Technical Method": {
-        "Original": [
-          "Shape-changing haptic interface that pivots, extends, and retracts to convey directional cues and distances.",
-          "Tactile notches for users to identify the device's orientation."
-        ],
-        "Iteration": [
-          "Incorporation of temperature-based feedback to signal proximity to destinations or obstacles.",
-          "Dynamic adjustment of haptic intensity based on user speed and environmental complexity."
-        ]
-      },
-      "Possible Results": {
-        "Original": {
-          "Performance": "Users demonstrated comparable motion efficiency with haptic devices compared to visual methods, though navigation times were slightly longer. However, head elevations were higher, indicating improved environmental awareness.",
-          "User Experience": "Subjective feedback indicated trust and preference for immersion over visual-only methods. Users appreciated the tactile feedback, which allowed them to maintain focus on their surroundings rather than a screen."
-        },
-        "Iteration": [
-          {
-            "Performance": "Temperature-based feedback improves reaction times by providing additional sensory input, reducing errors in complex environments.",
-            "User Experience": "Users find the combination of shape-changing and temperature-based feedback more engaging and less intrusive, enhancing overall satisfaction."
-          },
-          {
-            "Performance": "Adaptive haptic intensity reduces fatigue and maintains optimal feedback levels across different scenarios, improving long-term usability.",
-            "User Experience": "Dynamic adjustments lead to a more personalized experience, with users reporting greater comfort and effectiveness in prolonged use."
-          }
-        ]
-      }
-    },
-    {
-      "Title": "Interactive XR Systems for Immersive Navigation",
-      "Function": "Enhancing navigation and decision-making using immersive XR environments with adaptive guidance.",
-      "Technical Method": {
-        "Original": [
-          "Adaptive guidance mechanisms within XR systems to facilitate transitions through learning stages.",
-          "Integration of high-precision LiDAR mapping with traditional XR simulation."
-        ],
-        "Iteration": [
-          "Implementation of real-time collaborative features allowing multiple users to interact in shared XR spaces.",
-          "Use of biofeedback sensors to adjust the level of immersion dynamically based on user stress levels."
-        ]
-      },
-      "Possible Results": {
-        "Original": {
-          "Performance": "Significant reduction in the time required for learners to master tasks through personalized guidance in XR, with improved learner engagement metrics.",
-          "User Experience": "Users rated the personalized guidance feature highly, reporting feeling more in control of their learning process. In on-road simulators, participants perceived greater immersion despite discomfort due to XR headsets."
-        },
-        "Iteration": [
-          {
-            "Performance": "Collaborative features enable faster problem-solving and knowledge sharing, reducing individual learning curves by up to 30%.",
-            "User Experience": "Shared immersive experiences foster a sense of community and support, increasing motivation and engagement among users."
-          },
-          {
-            "Performance": "Biofeedback-driven adjustments optimize immersion levels, reducing simulator sickness and improving overall comfort by 40%.",
-            "User Experience": "Users appreciate the adaptive nature of the system, leading to prolonged and more enjoyable sessions in XR environments."
-          }
-        ]
-      }
-    }
-  ],
-  "status": "in_progress",
-  "task_id": "task_test_1234",
-  "progress": 60
-};
+// 研究状态接口
+interface ResearchState {
+  isLoading: boolean;
+  progress: number;
+  statusMessage: string;
+  elapsedTime: number;
+  streamingContent: string;
+  results: {
+    domainKnowledge?: any;
+    initSolution?: any;
+    iteratedSolution?: any;
+    finalSolution?: any;
+  };
+}
 
 const GenerateSolution = () => {
   const router = useRouter();
@@ -141,14 +55,50 @@ const GenerateSolution = () => {
   const { userType } = useAuthStore();
   const isDeveloper = userType === 'developer';
 
+  // 基础状态
   const [selectedMode, setSelectedMode] = useState('chat');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [drawMode, setDrawMode] = useState(false);
   const [viewingFile, setViewingFile] = useState<File | null>(null);
 
-  // 处理URL参数
+  // 消息和分析相关
+  const [messages, setMessages] = useState<{
+    type: 'user' | 'system' | 'analysis' | 'loading' | 'file', 
+    content: string, data?: any, fileData?: File}[]
+  >([]);
+  const [inputText, setInputText] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
+
+  // 研究工作流状态
+  const [researchState, setResearchState] = useState<ResearchState>({
+    isLoading: false,
+    progress: 0,
+    statusMessage: "Ready to start research",
+    elapsedTime: 0,
+    streamingContent: '',
+    results: {}
+  });
+
+  // 完成结果和其他状态
+
+  const { toast } = useToast();
+  const [id, setId] = useState('');
+
+  // Refs
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
-    // 这里我们使用URL API来解析当前URL
+    const storedId = localStorage.getItem("id");
+    if (storedId) {
+      setId(storedId);
+    }
+  }, []);
+
+  // URL 参数处理
+  useEffect(() => {
     const url = new URL(window.location.href);
     const mode = url.searchParams.get('mode');
     const ids = url.searchParams.get('ids');
@@ -161,7 +111,6 @@ const GenerateSolution = () => {
     }
   }, []);
 
-  // 更新 URL 的函数
   const updateURL = (mode: string, ids: string[] = []) => {
     const url = new URL(window.location.href);
     url.searchParams.set('mode', mode);
@@ -173,7 +122,6 @@ const GenerateSolution = () => {
     router.push(url.pathname + url.search);
   };
 
-  // 处理模式变更
   const handleModeChange = (event) => {
     const mode = event.target.value;
     setSelectedMode(mode);
@@ -181,33 +129,16 @@ const GenerateSolution = () => {
     updateURL(mode);
   };
 
-  // 处理 ID 选择
   const handleIDSelection = (ids) => {
     setSelectedIds(ids);
     updateURL(selectedMode, ids);
   };
 
-  // 处理 Draw 模式切换
   const toggleDrawMode = () => {
     setDrawMode(!drawMode);
   };
 
-  const [messages, setMessages] = useState<{
-    type: 'user' | 'system' | 'analysis' | 'loading' | 'file', 
-    content: string, data?: any, fileData?: File}[]
-  >([]);
-  const [inputText, setInputText] = useState('');
-  const [file, setFile] = useState<File | null>(null);
-  const { toast } = useToast();
-  const [id, setId] = useState('');
-
-  useEffect(() => {
-    const storedId = localStorage.getItem("id");
-    if (storedId) {
-      setId(storedId);
-    }
-  }, []);
-
+  // 消息处理
   const handleSendMessage = () => {
     if (!inputText.trim()) return;
     
@@ -215,13 +146,11 @@ const GenerateSolution = () => {
     setMessages([...messages, newMessage]);
     setInputText('');
     
-    // Add loading indicator as a message
     setMessages(prev => [...prev, { type: 'loading' as const, content: 'Analyzing...' }]);
-    
     handleQueryAnalysis();
   };
 
-  // Handle file drop
+  // 文件上传处理
   const { getRootProps, getInputProps } = useDropzone({
     onDrop: (acceptedFiles) => {
       if (acceptedFiles.length > 0) {
@@ -260,10 +189,7 @@ const GenerateSolution = () => {
     }
   });
 
-  // 分析结果相关状态
-  const [analysisResult, setAnalysisResult] = useState(null);
-  const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
-
+  // 查询分析
   const handleQueryAnalysis = () => {
     setIsAnalysisLoading(true);
     
@@ -273,12 +199,8 @@ const GenerateSolution = () => {
     const processAnalysisResult = (result) => {
       setIsAnalysisLoading(false);
       
-      // Remove loading message and add analysis result
       setMessages(prev => {
-        // Filter out the loading message
         const filteredMessages = prev.filter(msg => msg.type !== 'loading');
-        
-        // Add the analysis message
         return [...filteredMessages, {
           type: 'analysis' as const,
           content: 'Query Analysis',
@@ -289,20 +211,12 @@ const GenerateSolution = () => {
       setAnalysisResult(result);
     };
     
-    if (file) {
-      readFileContent(file).then((fileContent) => {
-        fetchQueryAnalysis(queryText, fileContent)
-          .then(processAnalysisResult)
-          .catch((error) => {
+    const handleError = (error) => {
             setIsAnalysisLoading(false);
             const errorMsg = extractErrorMessage(error);
             
-            // Remove loading message and add error message
             setMessages(prev => {
-              // Filter out the loading message
               const filteredMessages = prev.filter(msg => msg.type !== 'loading');
-              
-              // Add error message
               return [...filteredMessages, {
                 type: 'system' as const,
                 content: `Analysis failed: ${errorMsg}`
@@ -313,223 +227,341 @@ const GenerateSolution = () => {
               title: "Error",
               description: `Analysis failed: ${errorMsg}`,
             });
-          });
+    };
+    
+    if (file) {
+      readFileContent(file).then((fileContent) => {
+        fetchQueryAnalysis(queryText, fileContent)
+          .then(processAnalysisResult)
+          .catch(handleError);
       });
     } else {
       fetchQueryAnalysis(queryText, "")
         .then(processAnalysisResult)
-        .catch((error) => {
-          setIsAnalysisLoading(false);
-          const errorMsg = extractErrorMessage(error);
-          
-          // Remove loading message and add error message
-          setMessages(prev => {
-            // Filter out the loading message
-            const filteredMessages = prev.filter(msg => msg.type !== 'loading');
-            
-            // Add error message
-            return [...filteredMessages, {
-              type: 'system' as const,
-              content: `Analysis failed: ${errorMsg}`
-            }];
-          });
-          
-          toast({
-            title: "Error",
-            description: `Analysis failed: ${errorMsg}`,
-          });
-        });
+        .catch(handleError);
     }
   };
 
-  // 生成过程相关状态
-  const [taskId, setTaskId] = useState(null);
-  const [progress, setProgress] = useState(0);
-  const [statusMessage, setStatusMessage] = useState("Initializing...");
-  const [isCompleteLoading, setIsCompleteLoading] = useState(false);
-  const [completeResult, setCompleteResult] = useState(null);
-  const [intermediateData, setIntermediateData] = useState(null);
-  const [stageEmoji, setStageEmoji] = useState("🚀");
-  const [stageDescription, setStageDescription] = useState("Starting the generation process");
+  // SSE 事件处理
+  const handleSSEEvent = (eventType: string, data: any) => {
+    switch (eventType) {
+      case 'chunk': {
+        const text = data?.text ? String(data.text) : String(data);
+        setResearchState(prev => ({
+          ...prev,
+          streamingContent: prev.streamingContent + text
+        }));
+        break;
+      }
+      case 'progress': {
+        const progressValue = typeof data === 'number' ? data : data?.progress ?? 0;
+        setResearchState(prev => ({
+          ...prev,
+          progress: progressValue
+        }));
+        break;
+      }
+      case 'status': {
+        const statusMsg = typeof data === 'string' ? data : data?.status ?? '';
+        setResearchState(prev => ({
+          ...prev,
+          statusMessage: statusMsg
+        }));
+        break;
+      }
+      case 'node_complete': {
+        if (data?.node && data?.result) {
+          setResearchState(prev => {
+            const newResults = { ...prev.results };
+            switch (data.node) {
+              case 'rag':
+              case 'paper':
+              case 'example':
+                newResults.domainKnowledge = data.result;
+                break;
+              case 'domain_expert':
+                newResults.initSolution = data.result;
+                break;
+              case 'interdisciplinary':
+                newResults.iteratedSolution = data.result;
+                break;
+              case 'evaluation':
+              case 'persistence':
+                newResults.finalSolution = data.result;
+                break;
+            }
+            return { ...prev, results: newResults };
+          });
+        }
+        break;
+      }
+      case 'error': {
+        const errorMsg = typeof data === 'string' ? data : JSON.stringify(data);
+        setMessages(prev => [...prev, {
+          type: 'system' as const,
+          content: `Research Error: ${errorMsg}`
+        }]);
+        setResearchState(prev => ({ ...prev, isLoading: false }));
+        break;
+      }
+      case 'end': {
+        setResearchState(prev => ({
+          ...prev,
+          progress: 100,
+          statusMessage: 'Research Complete',
+          isLoading: false
+        }));
+        
+        setMessages(prev => [...prev, {
+          type: 'system' as const,
+          content: 'Research workflow completed successfully!'
+        }]);
+        
+        // 清理流式内容
+        setTimeout(() => {
+          setResearchState(prev => ({ ...prev, streamingContent: '' }));
+        }, 3000);
+        break;
+      }
+    }
+  };
 
-  async function handleStepApi(url, data) {
-    return callStepApi(
-      url,
-      data,
-      setProgress,
-      setStatusMessage,
-      setIntermediateData,
-      setStageEmoji,
-      setStageDescription,
-      setCompleteResult,
-      setIsCompleteLoading,
-      toast
-    );
-  }
-
+  // 开始研究
   const handleGenerate = async () => {
-    // Add a generate button click message
+    if (!analysisResult) {
+      toast({
+        title: "No Analysis Result",
+        description: "Please analyze a query first before generating research results.",
+      });
+      return;
+    }
+
+    if (researchState.isLoading) {
+      toast({
+        title: "Warning",
+        description: "A research task is already in progress",
+      });
+      return;
+    }
+
+    // 重置状态
+    setResearchState({
+      isLoading: true,
+      progress: 0,
+      statusMessage: "Initializing Research Workflow...",
+      elapsedTime: 0,
+      streamingContent: '',
+      results: {}
+    });
+
+
+    // 开始计时
+    timerRef.current = setInterval(() => {
+      setResearchState(prev => ({ ...prev, elapsedTime: prev.elapsedTime + 1 }));
+    }, 1000);
+
+    // 设置中止控制器
+    abortControllerRef.current?.abort();
+    const ac = new AbortController();
+    abortControllerRef.current = ac;
+
+    const payload = {
+      query: analysisResult.Query || "Research query",
+      query_analysis_result: analysisResult,
+      with_paper: selectedMode === "paper",
+      with_example: selectedMode === "inspiration",
+      is_drawing: drawMode
+    };
+
+    try {
+      const { fetchEventSource } = await import('@microsoft/fetch-event-source');
+      
+      await fetchEventSource('http://localhost:5000/api/research', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token') ?? ''}`,
+          Accept: 'text/event-stream',
+        },
+        body: JSON.stringify(payload),
+        signal: ac.signal,
+
+        onopen: async response => {
+          if (!response.ok || !response.headers.get('content-type')?.includes('text/event-stream')) {
+            throw new Error(`Failed to open SSE connection: ${response.status} ${response.statusText}`);
+          }
+        },
+
+        onmessage: (msg) => {
+          const eventType = msg.event || 'chunk';
+          let eventData: any = msg.data;
+          if (typeof eventData === 'string') {
+            try {
+              eventData = JSON5.parse(eventData);
+            } catch {
+              // 保留原始字符串
+            }
+          }
+          handleSSEEvent(eventType, eventData);
+        },
+
+        onerror: err => {
+          console.error('SSE error:', err);
+          if (!ac.signal.aborted) {
+            setMessages(prev => [...prev, {
+              type: 'system' as const,
+              content: `Research error: ${err instanceof Error ? err.message : 'Unknown SSE error'}`
+            }]);
+            setResearchState(prev => ({ ...prev, isLoading: false }));
+          }
+          throw err;
+        },
+
+        onclose: () => {
+          setResearchState(prev => ({ ...prev, isLoading: false }));
+        },
+
+        openWhenHidden: true,
+        fetch: fetch,
+      });
+    } catch (error: any) {
+      if (error.name !== 'AbortError' && !ac.signal.aborted) {
+        setMessages(prev => [...prev, {
+          type: 'system' as const,
+          content: `Research failed: ${error.message || 'Unknown error occurred'}`
+        }]);
+      } else if (ac.signal.aborted) {
+        setMessages(prev => [...prev, {
+          type: 'system' as const,
+          content: 'Research workflow cancelled'
+        }]);
+      }
+    } finally {
+      setResearchState(prev => ({ ...prev, isLoading: false }));
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+  };
+
+  // 停止研究
+  const stopResearch = () => {
+    abortControllerRef.current?.abort();
+    setResearchState(prev => ({
+      ...prev,
+      isLoading: false,
+      statusMessage: 'Research Stopped'
+    }));
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    
     setMessages(prev => [...prev, {
       type: 'system' as const,
-      content: 'Starting generation process...'
+      content: 'Research workflow stopped by user'
     }]);
+  };
+
+  // 文件处理函数
+  const handleFileUploadAsMessage = (uploadedFile: File) => {
+    const validation = validateFile(uploadedFile);
+    if (!validation.valid && validation.errorMessage) {
+      toast({
+        title: "Error",
+        description: validation.errorMessage,
+      });
+      return;
+    }
+
+    const newMessage = { 
+      type: 'file' as const, 
+      content: `Uploaded file: ${uploadedFile.name}`, 
+      fileData: uploadedFile 
+    };
+    setMessages([...messages, newMessage]);
+    setFile(uploadedFile);
+    setViewingFile(uploadedFile);
+
+    setMessages(prev => [...prev, { 
+      type: 'system' as const, 
+      content: `File "${uploadedFile.name}" has been uploaded.` 
+    }]);
+  };
+
+  const handleFileClick = (clickedFile: File) => {
+    setViewingFile(clickedFile);
+    setFile(clickedFile);
+  };
+
+  const handleCloseFileViewer = () => {
+    setViewingFile(null);
+  };
+
+  const handleDeleteFileMessage = (index: number) => {
+    const fileMessage = messages[index];
     
-    if (isCompleteLoading) {
-      toast({
-        title: "Warning",
-        description: "A generation task is already in progress",
-      });
-      return;
-    }
-
-    setIsCompleteLoading(true);
-    setStatusMessage("Starting task...");
-
-    try {
-      const initResponse = await handleStepApi('/api/complete/initialize', { data: JSON.stringify(analysisResult) });
-      setTaskId(initResponse.task_id);
-      logger.log("init:", initResponse);
-
-      const mode = selectedMode;
-      if (mode === "inspiration") {
-        await handleStepApi('/api/complete/rag', { task_id: initResponse.task_id });
-        await handleStepApi('/api/complete/example', { task_id: initResponse.task_id, data: JSON.stringify(selectedIds) });
-      } else if (mode === "paper") {
-        await handleStepApi('/api/complete/paper', { task_id: initResponse.task_id, data: JSON.stringify(selectedIds) });
-      } else {
-        await handleStepApi('/api/complete/rag', { task_id: initResponse.task_id });
+    if (file && fileMessage.fileData && 
+        file.name === fileMessage.fileData.name && 
+        file.size === fileMessage.fileData.size) {
+      setFile(null);
+      if (viewingFile) {
+        setViewingFile(null);
+      }
       }
 
-      await handleStepApi('/api/complete/domain', { task_id: initResponse.task_id });
-      await handleStepApi('/api/complete/interdisciplinary', { task_id: initResponse.task_id });
-      await handleStepApi('/api/complete/evaluation', { task_id: initResponse.task_id });
+    const newMessages = [...messages];
+    newMessages.splice(index, 1);
+    setMessages(newMessages);
 
-      if (drawMode) {
-        await handleStepApi('/api/complete/drawing', { task_id: initResponse.task_id });
+      toast({
+      title: "File Removed",
+      description: "The file has been removed from the conversation.",
+    });
+  };
+
+  const handleFileButtonClick = () => {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.txt';
+    fileInput.style.display = 'none';
+
+    fileInput.onchange = (e) => {
+      const target = e.target as HTMLInputElement;
+      if (target.files && target.files.length > 0) {
+        handleFileUploadAsMessage(target.files[0]);
       }
+    };
 
-      const result = await handleStepApi('/api/complete/final', { task_id: initResponse.task_id });
-      logger.log('Complete result:', result);
-      setCompleteResult(result);
-    } catch (error) {
-      logger.error("Error during task generation:", error);
-      toast({
-        title: "Error",
-        description: `Generation failed: ${error.message}`,
-      });
-      setTaskId('');
-      setIsCompleteLoading(false);
-    } finally {
-      setTaskId('');
-      setProgress(0);
-      setIsCompleteLoading(false);
-      
-      // 添加生成完成的消息
-      setMessages(prev => [...prev, {
-        type: 'system' as const,
-        content: 'Generation process completed'
-      }]);
-    }
+    document.body.appendChild(fileInput);
+    fileInput.click();
+    document.body.removeChild(fileInput);
   };
 
-  const handleRegenerate = async () => {
-    if (isCompleteLoading) {
-      toast({
-        title: "Warning",
-        description: "A generation task is already in progress",
-      });
-      return;
-    }
-
-    setIsCompleteLoading(true);
-    setStatusMessage("Starting task...");
-
-    try {
-      const solution_ids = JSON.stringify(
-        completeResult['solutions'].map((solution) => solution.id)
-      );
-      logger.log(solution_ids);
-
-      const initResponse = await handleStepApi('/api/complete/initialize', { data: JSON.stringify(analysisResult) });
-      setTaskId(initResponse.task_id);
-      logger.log("init:", initResponse);
-
-      await handleStepApi('/api/complete/example', { task_id: initResponse.task_id, data: solution_ids });
-      await handleStepApi('/api/complete/interdisciplinary', { task_id: initResponse.task_id });
-      await handleStepApi('/api/complete/evaluation', { task_id: initResponse.task_id });
-
-      if (drawMode) {
-        await handleStepApi('/api/complete/drawing', { task_id: initResponse.task_id });
-      }
-
-      const result = await handleStepApi('/api/complete/final', { task_id: initResponse.task_id });
-      logger.log('Complete result:', result);
-      setCompleteResult(result);
-
-      toast({
-        title: "Success",
-        description: "Regeneration completed successfully!",
-      });
-    } catch (error) {
-      logger.error("Error during task generation:", error);
-      toast({
-        title: "Error",
-        description: `Regeneration failed: ${error.message}`,
-      });
-      setTaskId('');
-      setIsCompleteLoading(false);
-    } finally {
-      setTaskId('');
-      setProgress(0);
-      setIsCompleteLoading(false);
-      
-      // 添加重新生成完成的消息
-      setMessages(prev => [...prev, {
-        type: 'system' as const,
-        content: 'Regeneration process completed'
-      }]);
-    }
-  };
-
-  // 添加测试中间态的函数
-  const testIntermediateRendering = () => {
-    setIntermediateData(testIntermediateData);
-    setIsCompleteLoading(true);
-    setProgress(60);
-    setStageEmoji("🧠");
-    setStageDescription("Domain Expert is Processing Materials");
-    setStatusMessage("Analyzing domain-specific concepts...");
-  };
-
-  // 处理 Regenerate 按钮点击的回调
+  // 重新生成点击处理
   const handleRegenerateClick = (messageIndex, userMessageIndex) => {
-    // 获取用户消息内容
     const lastUserMessage = messages[userMessageIndex];
     
-    // 添加新消息
     const newUserMessage = { 
       type: 'user' as const, 
       content: lastUserMessage.content 
     };
     
-    // 更新消息状态
     setMessages([
       ...messages, 
       newUserMessage, 
       { type: 'loading' as const, content: 'Analyzing...' }
     ]);
     
-    // 设置加载状态并触发分析
     setIsAnalysisLoading(true);
     
-    // 延迟执行以确保状态更新
     setTimeout(() => {
       fetchQueryAnalysis(lastUserMessage.content, "")
         .then((result) => {
           setIsAnalysisLoading(false);
           setAnalysisResult(result);
           
-          // 移除加载消息并添加分析结果
           setMessages(prev => {
             const filteredMessages = prev.filter(msg => msg.type !== 'loading');
             return [...filteredMessages, {
@@ -543,7 +575,6 @@ const GenerateSolution = () => {
           setIsAnalysisLoading(false);
           const errorMsg = extractErrorMessage(error);
           
-          // 移除加载消息并添加错误消息
           setMessages(prev => {
             const filteredMessages = prev.filter(msg => msg.type !== 'loading');
             return [...filteredMessages, {
@@ -560,100 +591,15 @@ const GenerateSolution = () => {
     }, 100);
   };
 
-  // 处理文件上传作为消息
-  const handleFileUploadAsMessage = (uploadedFile: File) => {
-    // 验证文件
-    const validation = validateFile(uploadedFile);
-    if (!validation.valid && validation.errorMessage) {
-      toast({
-        title: "Error",
-        description: validation.errorMessage,
-      });
-      return;
-    }
-
-    // 添加文件消息
-    const newMessage = { 
-      type: 'file' as const, 
-      content: `Uploaded file: ${uploadedFile.name}`, 
-      fileData: uploadedFile 
-    };
-    setMessages([...messages, newMessage]);
-
-    // 设置当前活动文件
-    setFile(uploadedFile);
-    
-    // 自动显示文件内容在右侧面板
-    setViewingFile(uploadedFile);
-
-    // 添加系统提示消息
-    setMessages(prev => [...prev, { 
-      type: 'system' as const, 
-      content: `File "${uploadedFile.name}" has been uploaded. You can now analyze its content.` 
-    }]);
-  };
-
-  // 处理文件点击
-  const handleFileClick = (clickedFile: File) => {
-    setViewingFile(clickedFile);
-    setFile(clickedFile); // 设置为当前活动文件
-  };
-
-  // 关闭文件查看器
-  const handleCloseFileViewer = () => {
-    setViewingFile(null);
-  };
-
-  // 删除文件消息
-  const handleDeleteFileMessage = (index: number) => {
-    // 获取要删除的消息
-    const fileMessage = messages[index];
-    
-    // 如果是当前活动文件，则清除活动文件
-    if (file && fileMessage.fileData && 
-        file.name === fileMessage.fileData.name && 
-        file.size === fileMessage.fileData.size) {
-      setFile(null);
-      
-      // 如果正在查看该文件，也关闭查看器
-      if (viewingFile) {
-        setViewingFile(null);
-      }
-    }
-    
-    // 从消息列表中删除该消息
-    const newMessages = [...messages];
-    newMessages.splice(index, 1);
-    setMessages(newMessages);
-    
-    // 显示通知
-    toast({
-      title: "File Removed",
-      description: "The file has been removed from the conversation.",
-    });
-  };
-
-  // 文件上传按钮的处理函数
-  const handleFileButtonClick = () => {
-    // 创建一个隐藏的文件输入元素
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = '.txt';
-    fileInput.style.display = 'none';
-
-    // 添加文件选择处理函数
-    fileInput.onchange = (e) => {
-      const target = e.target as HTMLInputElement;
-      if (target.files && target.files.length > 0) {
-        handleFileUploadAsMessage(target.files[0]);
+  // 清理函数
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
       }
     };
-
-    // 触发文件选择对话框
-    document.body.appendChild(fileInput);
-    fileInput.click();
-    document.body.removeChild(fileInput);
-  };
+  }, []);
 
   return (
     <div className='flex justify-center bg-primary text-text-primary min-h-full transition-colors duration-300'>
@@ -667,22 +613,24 @@ const GenerateSolution = () => {
           <PanelGroup direction="horizontal">
             <Panel defaultSize={40} minSize={30}>
               <div className='relative ml-8 h-full rounded-xl bg-primary shadow-lg overflow-hidden flex flex-col'>
-                {/* Header section with title and mode selector */}
+                {/* Header */}
                 <div className='flex justify-between items-center p-4 border-b border-gray-700/30'>
                   <div className='text-text-secondary text-xl font-semibold my-2'>Chat</div>
-
-                  <select
-                    className='px-3 py-1.5 rounded-lg bg-secondary text-text-secondary font-medium
-                      transition-colors hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-blue-500/50'
-                    value={selectedMode}
-                    onChange={handleModeChange}
-                  >
-                    <option value="chat">Chat</option>
-                    <option value="inspiration">Inspiration</option>
-                  </select>
+                  
+                  <div className="flex items-center gap-2">
+                    <select
+                      className='px-3 py-1.5 rounded-lg bg-secondary text-text-secondary font-medium
+                        transition-colors hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-blue-500/50'
+                      value={selectedMode}
+                      onChange={handleModeChange}
+                    >
+                      <option value="chat">Chat</option>
+                      <option value="inspiration">Inspiration</option>
+                    </select>
+                  </div>
                 </div>
 
-                {/* Main content area - 使用 ChatMessages 组件 */}
+                {/* Messages */}
                 <div className='flex-1 overflow-y-auto custom-scrollbar'>
                   <div className="p-4">
                     <ChatMessages 
@@ -695,7 +643,6 @@ const GenerateSolution = () => {
                     />
                   </div>
                   
-                  {/* 保留显示加载指示器 */}
                   {isAnalysisLoading && !messages.some(msg => msg.type === 'loading') && (
                     <div className="flex justify-center items-center py-4">
                       <CircularProgress size={30} />
@@ -703,9 +650,8 @@ const GenerateSolution = () => {
                   )}
                 </div>
 
-                {/* Input area - ChatGPT风格的输入区域 */}
+                {/* Input */}
                 <div className='p-4 border-t border-gray-700/10'>
-                  {/* 主输入区域 */}
                   <div className="relative">
                     <div className="rounded-xl border border-gray-700/30 bg-secondary/20 shadow-sm overflow-hidden">
                       <Textarea
@@ -714,11 +660,7 @@ const GenerateSolution = () => {
                         placeholder="Ask me anything..."
                         minRows={5}
                         maxRows={12}
-                        spellCheck={false}
-                        autoComplete="off"
-                        autoCorrect="off"
                         value={inputText}
-                        aria-label="Type your question"
                         onChange={(e) => setInputText(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
@@ -730,10 +672,8 @@ const GenerateSolution = () => {
                     </div>
                   </div>
                   
-                  {/* 底部功能区 */}
                   <div className="flex items-center justify-between mt-2 px-1">
                     <div className="flex items-center space-x-2">
-                      {/* 文件上传按钮 */}
                       <button 
                         type="button"
                         onClick={handleFileButtonClick}
@@ -742,17 +682,13 @@ const GenerateSolution = () => {
                       >
                         <FaPaperclip className="w-4 h-4" />
                       </button>
-                      
-                      {/* 其他功能按钮可以在这里添加 */}
                     </div>
                     
                     <div className="flex items-center space-x-3">
-                      {/* 文件格式提示 */}
                       <div className="text-xs text-gray-500">
                         Only .txt files (max 1MB)
                       </div>
                       
-                      {/* Draw模式切换 */}
                       {isDeveloper && (
                         <button
                           className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-colors duration-200 ${
@@ -766,7 +702,6 @@ const GenerateSolution = () => {
                         </button>
                       )}
                       
-                      {/* 发送按钮 */}
                       <button
                         type="button"
                         className={`flex items-center justify-center p-2 rounded-lg transition-colors duration-200 ${
@@ -775,7 +710,6 @@ const GenerateSolution = () => {
                             : 'bg-gray-300/20 text-gray-400 hover:bg-gray-300/30'
                         }`}
                         onClick={handleSendMessage}
-                        aria-label="Send message"
                         disabled={!inputText.trim()}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" className="w-5 h-5" strokeWidth="2">
@@ -792,33 +726,17 @@ const GenerateSolution = () => {
               <div className="h-full w-[3px] bg-gray-600/30 hover:bg-blue-500 rounded-full transition-colors duration-200"></div>
             </PanelResizeHandle>
 
-            {/* Right Panel - 保持不变 */}
+            {/* Right Panel */}
             <Panel defaultSize={60} minSize={40}>
-              <div className='relative h-full mr-8 rounded-lg bg-primary overflow-auto custom-scrollbar'>
+              <div className='relative h-full mr-8 rounded-lg bg-primary overflow-hidden'>
                 <div className="flex w-full h-full">
                   {viewingFile ? (
                     <FileContent file={viewingFile} onClose={handleCloseFileViewer} />
-                  ) : isCompleteLoading ? (
-                    <div className="flex flex-col h-full w-full overflow-y-auto custom-scrollbar">
-                      <div className="mt-12">
-                        <ProgressDisplay
-                          progress={progress}
-                          stageEmoji={stageEmoji}
-                          stageDescription={stageDescription}
-                          statusMessage={statusMessage}
-                        />
-                      </div>
-
-                      {intermediateData && intermediateData.solution && (
-                        <div>
-                          <IntermediateResult intermediateData={intermediateData} />
-                        </div>
-                      )}
-                    </div>
-                  ) : completeResult ? (
-                    <CompleteResult
-                      completeResult={completeResult}
-                      handleRegenerate={handleRegenerate}
+                  ) : (researchState.isLoading || researchState.progress > 0 || Object.keys(researchState.results).length > 0) ? (
+                    <ResearchDisplay
+                      researchState={researchState}
+                      onStop={stopResearch}
+                      onRegenerate={handleGenerate}
                     />
                   ) : (
                     <div className="flex w-full h-full justify-center items-center">
