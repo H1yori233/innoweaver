@@ -1,0 +1,39 @@
+{
+    "Target Definition": {
+      "Target User Group": "Experts and casual users involved in the analysis of biosignals in different domains (e.g., medical, research, or educational)",
+      "Tasks and application scenarios": "Interactive exploration and analysis of biosignals, such as EEG, using novel interaction techniques and visual analytics"
+    },
+    "Contributions": [
+      {
+        "Innovation type": "System",
+        "Supporting knowledge": "User-centered design principles & biosignal processing techniques",
+        "Embedded knowledge": {
+          "Architecture or framework": "The study introduces an integrated biosignal analysis platform that combines advanced processing algorithms with interactive visualization, allowing users to explore and analyze data in real-time.",
+          "Tool or tool kits": "A toolkit that includes pre-processing modules for signal cleaning and features extraction, along with interactive visualization widgets."
+        },
+        "Implementation": "Biosignal processing--Python libraries; Visualization--Web-based platform"
+      },
+      {
+        "Innovation type": "Interaction techniques",
+        "Supporting knowledge": "Human-centered interaction design & multimodal interfaces",
+        "Embedded knowledge": {
+          "Input or control techniques": "The study proposes a novel multimodal interaction technique combining touch gestures and voice commands to enhance the efficiency of biosignal analysis.",
+          "Output or feedback methods": "Provides real-time visual and haptic feedback based on the interaction context to help users quickly interpret biosignal patterns."
+        },
+        "Implementation": "Multimodal interaction--Custom hardware with haptic feedback"
+      }
+    ],
+    "Results": {
+      "Performance": "The study demonstrated significant improvements in analysis speed and accuracy, with users completing tasks 30% faster on average compared to traditional methods.",
+      "User feedback": "Users reported high satisfaction with the system, particularly appreciating the real-time feedback and the intuitive nature of the multimodal interaction, scoring it 4.7/5 in usability."
+    },
+    "Second Extraction": {
+      "Innovations": [
+        {
+          "Previous studies": "Previous studies primarily focused on offline biosignal analysis with limited user interaction capabilities.",
+          "This study": "This study introduces a real-time, interactive platform with multimodal input and feedback mechanisms, significantly improving user engagement and analysis efficiency."
+        }
+      ],
+      "Connection": "The study effectively addresses the needs of biosignal analysts by integrating advanced processing with intuitive interaction techniques, resulting in enhanced task performance and positive user feedback."
+    }
+  }

@@ -1,0 +1,282 @@
+.mini-card-container {
+    position: relative;
+}
+
+.card {
+    position: relative;
+    display: flex;
+    overflow: hidden;
+    width: 16rem;
+    height: 25rem;
+    color: white;
+    border-radius: 1rem;
+    pointer-events: auto;
+    text-decoration: none;
+    transition: transform 0.15s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card.has-image {
+    background-blend-mode: overlay;
+}
+
+.card-image-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.card-image {
+    filter: brightness(0.85);
+}
+
+.card:hover,
+.card:focus-within {
+    transform: translateY(-1px);
+}
+
+.favorite-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    font-size: 1.5rem;
+    color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    z-index: 20;
+    transition: transform 0.2s ease;
+}
+
+.favorite-button:hover {
+    transform: scale(1.1);
+}
+
+.favorite-button:active {
+    transform: scale(0.95);
+}
+
+.favorite-button.liked {
+    color: #ef4444;
+}
+
+.content {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 1.5rem;
+    background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0.85) 0%,
+        rgba(0, 0, 0, 0.6) 50%,
+        rgba(0, 0, 0, 0.3) 100%
+    );
+    transition: opacity 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    z-index: 15;
+}
+
+.card:hover .content,
+.card:focus-within .content {
+    opacity: 1;
+}
+
+.function {
+    font-size: 1rem;
+    font-weight: 520;
+    line-height: 1.5;
+    opacity: 0;
+    transform: translateY(1rem);
+    transition: all 0.3s ease;
+    display: -webkit-box;
+    -webkit-line-clamp: 8;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-align: center;
+    max-width: 100%;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.card:hover .function,
+.card:focus-within .function {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.error-message {
+    color: #fca5a5;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.title-text {
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+}
+
+.card-content-wrapper {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 1.5rem;
+    z-index: 10;
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.05) 0%,
+        rgba(255, 255, 255, 0.02) 50%,
+        rgba(0, 0, 0, 0.05) 100%
+    );
+    transition: opacity 0.3s ease;
+}
+
+.card:hover .card-content-wrapper,
+.card:focus-within .card-content-wrapper {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.card-gradient-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.1) 0%,
+        transparent 50%,
+        rgba(0, 0, 0, 0.1) 100%
+    );
+    z-index: 1;
+    transition: opacity 0.3s ease;
+}
+
+.card:hover .card-gradient-overlay {
+    opacity: 0.7;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .card {
+        width: 14rem;
+        height: 22rem;
+    }
+    
+    .favorite-button {
+        padding: 0.25rem;
+        font-size: 1.25rem;
+    }
+    
+    .content {
+        padding: 1rem;
+    }
+    
+    .function {
+        font-size: 0.75rem;
+        -webkit-line-clamp: 6;
+    }
+}
+
+/* 深色主题优化 - 简化阴影 */
+@media (prefers-color-scheme: dark) {
+    .card {
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+    
+    .card:hover {
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+}
+
+/* 浅色主题优化 - 简化阴影 */
+@media (prefers-color-scheme: light) {
+    .card {
+        border-color: rgba(0, 0, 0, 0.08);
+    }
+    
+    .card:hover {
+        border-color: rgba(0, 0, 0, 0.12);
+    }
+    
+    .favorite-button {
+        color: rgba(0, 0, 0, 0.8);
+    }
+}
+
+/* 加载动画 - 简化 */
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.card-loading {
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.1) 25%,
+        rgba(255, 255, 255, 0.2) 50%,
+        rgba(255, 255, 255, 0.1) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+}
+
+/* 聚焦状态优化 */
+.card:focus-visible {
+    outline: 2px solid rgba(59, 130, 246, 0.5);
+    outline-offset: 2px;
+}
+
+/* 减少动画对于偏好减少动画的用户 */
+@media (prefers-reduced-motion: reduce) {
+    .card,
+    .card-image,
+    .favorite-button,
+    .content,
+    .function,
+    .title-text,
+    .card-gradient-overlay {
+        transition: none;
+        animation: none;
+    }
+    
+    .card:hover {
+        transform: none;
+    }
+    
+    .card:hover .card-image {
+        transform: none;
+    }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+    .card {
+        border-width: 2px;
+        border-color: currentColor;
+    }
+    
+    .favorite-button {
+        border-width: 2px;
+        border-color: currentColor;
+    }
+}

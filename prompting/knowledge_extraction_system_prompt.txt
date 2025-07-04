@@ -1,0 +1,116 @@
+## Background
+
+Now I will give you a research paper in the field of Human-Computer Interaction (HCI). Please extract the content of this paper according to the following requirements and in the specified JSON format. Emphasize reading the tables and figures on paper.
+
+## Part 1. Target Definition
+Does this study's artifact demo have a clearly, specifically defined target user group? 
+Expected answer: {"**Target User Group**": "……"}
+Example 1: {" Target User Group": "Blind or weak-sighted people"}
+
+Does this study's artifact provide clear tasks?
+Expected answer: {"**Tasks**": "……"}
+Example 1: {" Tasks": "Interactions between passengers and the voice assistant in an automatic driving vehicle"}
+
+Does this study's artifact provide clear application scenarios?
+Expected answer: {"**Application scenarios**": "……"}
+Example 1: {" Application scenarios": "A collaboration situation between several remote front-end developers"}
+
+Please provide the answers to this part in the following JSON format: {"Target Definition": {"Target User Group": "......", "Tasks": "......", "Application Scenarios": "…"}}
+
+## Part 2. Artifact Features
+Are the functions of this artifact primarily in the **[System]**, **[Interaction techniques]**, or **[Design]**? Please select the aspect with the highest research contribution. If the artifact has equally significant functions in multiple aspects, multiple selections are allowed. The 'Functions' field should be a JSON array, and each of your choices will add a JSON element to this array. The meaning of each option is as follows:
+- Novel systems including architectures, tools, and toolkits, provide new knowledge by showing how to accomplish new things formerly impossible or how to accomplish formerly possible things more easily.
+- Novel interaction techniques provide new ways of user input and output methods. These techniques often rely on new methods of interaction, such as gestures, tangible interfaces, touchless controls, or interfaces that blend physical and digital inputs.
+- Novel designs may be prototypes, sketches, mockups, demos, or other envisionments whose purpose is to convey or motivate new possible futures. With new designs, form is the priority over function.
+Expected answer: {"**Function type**": "……"}
+Example 1: {" Function type": "Interaction techniques"}
+
+Is there any supporting knowledge used in this artifact when designing the [System], [Interaction techniques], or [Design], like psychological models or theories? If the answer is "yes", what is the supporting knowledge?
+Expected answer: {"**Supporting knowledge**": "……"}
+Example 1: {"Supporting knowledge": "CoT structure & User modeling method"}
+
+1. ### IF YOUR ANSWER to "Function type" INCLUDES "System":
+Function
+What is the specific function and design purpose of this innovation?
+Expected answer: {"**Function**": "……"}
+Example 1: {" Function": "clarify the extent of user engagement during a social event"}
+
+Embedded Knowledge
+What innovative architecture or framework does this artifact propose? Use numbered bullet points and descriptive phrases to describe. Please briefly describe the innovations compared to previous work within 100 words. If there is no innovative architecture or framework, you can answer "None".
+Expected answer: {" **Architecture or framework**": "……"}
+
+Does this artifact create any new tools or toolkits? Use numbered bullet points and descriptive phrases to describe. Please briefly describe the innovations compared to previous work within 100 words.  If there are no new tools or toolkits, you can answer "None."
+Expected answer: {" **Tool or tool kits**": "……"}
+
+Implementation
+What basic model, environment configuration, and other implementation methods does this artifact use? Focus on the implementation or apparatus section of the paper and extract the information in the form of 'FUNCTION--SPECIFIC TOOL'.
+Expected answer: {"**Implementation**": "……"}
+Example: {"Implementation": "Figma file conversion--Locofy；GUI generation--Gradio & Python；LLM generation--GPT4"}
+
+1. ### IF YOUR ANSWER to "Function type" INCLUDES "Interaction techniques":
+What is the specific function and design purpose of this innovation?
+Expected answer: {"**Function**": "……"}
+Example 1: {" Function": "Help the weak-sight people to locate objects accurately"}
+
+Embedded knowledge
+Did this artifact propose innovative user input or control techniques? Use numbered bullet points and descriptive phrases to describe. Please briefly describe the innovations compared to previous work within 100 words.  If there are no innovative input or control techniques, you can answer "None."
+Expected answer: {" **Input** **or control techniques**": "……"}
+Example 1: {" Input or control techniques": "1. Recognize users’ intentions to connect to the voice assistance through a head-down gesture. 2. When the user lowers their head to speak, transmit the voice to the voice assistant instead of the other party on the call."}
+
+Did this artifact propose innovative output or user feedback methods? Use numbered bullet points and descriptive phrases to describe. Please briefly describe the innovations compared to previous work within 100 words.  If there is no innovative output or feedback method, you can answer "None."
+Expected answer: {" **Output** **or feedback methods**": "……"}
+Example 1: {" Output or feedback methods": "1. Output positive/negative emotions through temperature changes."}
+
+Implementation
+What are the platforms, hardware, and other implementation methods for these innovative interaction techniques?  Focus on the implementation or apparatus section of the paper and extract the information in the form of 'FUNCTION--PLATFORM'.
+Expected answer: {"**Implementation**": "……"}
+
+1. ### IF YOUR ANSWER to "Function type" INCLUDES "Design":
+What is the specific function and design purpose of this innovation?
+Expected answer: {"**Function**": "……"}
+Example 1: {" Function": "Improve "}
+
+Embedded knowledge
+Did this artifact propose innovative interface design, prototypes, scripts, or models? Use numbered bullet points and descriptive phrases to describe. Please briefly describe the innovations compared to previous work within 100 words.  If there are no innovative prototypes, scripts or models, you can answer "None."
+Expected answer: {" **Prototype, script or models**": "……"}
+
+Did this artifact propose innovative materials or crafts? Use numbered bullet points and descriptive phrases to describe. Please briefly describe the innovations compared to previous work within 100 words.  If there are no innovative innovative materials or crafts, you can answer "None."
+Expected answer: {" **Material or crafts**": "……"}
+
+Implementation
+What are the specific parameters of these prototypes, materials, and processes?  Focus on the implementation or apparatus section of the paper and extract the information in the form of 'FUNCTION--PARAMETERS'.
+Expected answer: {"**Implementation**": "……"}
+
+### Output
+NOTE that EACH 'Innovation type' you choose needs to CORRESPOND to an ELEMENT of the JSON array in this part.
+Expected answer: {"Artifact Knowledge": [{"Function type": "System", "Supporting knowledge": "...", "Function": "…", "Embedded knowledge": {"Architecture or framework": "...", "Tool or tool kits": "..."}, "Implementation": "..."}, …]}
+
+## Part 3. Evaluation Results
+How does this artifact perform in the target tasks? The target tasks include user performance and system performance in certain tasks. Summarize in 100 words, it is better if there are concrete statistical descriptions. If the artifact does not conduct experiments on target performance, you can answer "None".
+Expected answer: {"**Task performance**": "……"}
+
+What is the user experience and feedback on the results of this artifact? Please summarize in 100 words, it is better if there are concrete statistical descriptions. If the artifact does not conduct experiments on user feedback, you can answer "None".
+Expected answer: {"**User Experience**": "……"}
+
+Please provide the answers to this part in the following JSON format:
+{"Results": {"Task performance": "......", "User feedback": "......"}}
+
+
+## Part 4. Reflection
+Please review your responses for Parts 1 to 3 and check for any repeated content. For example, if 'architecture and framework' already mentions the toolkits proposed by this artifact, but they are also described again under 'tool and toolkits,' please allocate the content to the most appropriate section and remove redundant descriptions from other sections.
+
+### Innovative Features
+Please summarize the innovation/breakthrough/contribution of this artifact compared to previous research from the Embedded Knowledge you have identified. Meanwhile, you should conclude the variation in results caused by the innovative features. Your answer should be in the format of a JSON array, with each element containing two JSON fields: 'Previous artifacts' and 'This artifact'.
+Expected answer: {"**Innovative Feature**": [{"Previous artifacts": "…", "This artifact": "…"}, …]}
+Expected answer: {"**Variation in Result**": [{"Previous artifacts": "…", "This artifact": "…"}, …]}
+
+Now that we have the <Innovative features, Result> pairs, please reorganize and present these pairs using a JSON array, with each element containing two JSON fields: 'Innovation' and 'Result'.
+Expected answer: {"Pairs": [{"**Innovative Feature**": "…", "**Variation in Result**": "…"}, …]}
+
+Please provide the answers to this part in the following JSON format:
+{"Reflection": {"Innovations": "......", "Pairs": "......"}}
+
+
+## Output Requirements
+Your response should ONLY include the answers to the above parts and be integrated into a JSON format using curly braces. Before you output the answers, you should check again.
+Expected format: {" Target Definition": {" Target User Group": "……", "Tasks": "……", "Application scenarios": "……"}, "Artifact Knowledge": [], "Results": {" Performance": "…", "User feedback": "…"}, "Second Extraction": {" Innovations": [], "Pairs": []}}

@@ -1,0 +1,43 @@
+{
+    "Target Definition": {
+      "Target User Group": "Data analysts with experience in statistical analysis and programming",
+      "Tasks and application scenarios": "Assistance in planning and executing data analysis tasks, focusing on improving workflow and decision-making"
+    },
+    "Contributions": [
+      {
+        "Innovation type": "System",
+        "Supporting knowledge": "Human-AI interaction design & Wizard of Oz study",
+        "Embedded knowledge": {
+          "Architecture or framework": "The study proposes a planning and execution assistant integrated into JupyterLab, designed to support data analysts by providing relevant suggestions during analysis tasks.",
+          "Tool or tool kits": "A JupyterLab extension used for providing real-time suggestions during data analysis"
+        },
+        "Implementation": "Assistant interface—JupyterLab extension; Planning assistance—Wizard of Oz study setup; Execution assistance—Prewritten and LLM-generated suggestions"
+      },
+      {
+        "Innovation type": "Interaction techniques",
+        "Supporting knowledge": "Sensemaking theory & Multiverse analysis",
+        "Embedded knowledge": {
+          "Input or control techniques": "The assistant responds to analyst comments in the notebook, allowing for tailored suggestions based on the ongoing analysis.",
+          "Output or feedback methods": "Suggestions are provided in the form of cards within the JupyterLab interface, with the ability to give feedback via thumbs-up and thumbs-down buttons."
+        },
+        "Implementation": "Interaction mechanism—Triggered by comments and context-aware suggestions"
+      }
+    ],
+    "Results": {
+      "Performance": "Analysts found the assistant helpful for planning and executing data analysis tasks, with 51.6% of planning suggestions integrated into their workflows.",
+      "User feedback": "Analysts appreciated the assistant's ability to save time, provide relevant suggestions, and offer execution assistance. However, some analysts found certain suggestions distracting or too basic, indicating a need for better alignment with user expertise."
+    },
+    "Second Extraction": {
+      "Innovations": [
+        {
+          "Previous studies": "Existing AI assistants focus primarily on code execution with limited support for analysis planning.",
+          "This study": "Introduced a planning assistant that aids in decision-making throughout the entire data analysis process, offering tailored suggestions based on the current analysis context."
+        },
+        {
+          "Previous studies": "Traditional code assistants provide generic code completion and debugging assistance.",
+          "This study": "Developed an AI assistant that not only assists with code execution but also offers context-aware planning suggestions, helping analysts consider alternative approaches and improve their analysis process."
+        }
+      ],
+      "Connection": "The study addresses the need for a more comprehensive data analysis assistant by combining planning and execution support. The system's effectiveness was demonstrated through positive user feedback and successful integration of suggestions into workflows, highlighting its potential to enhance data analysis tasks."
+    }
+  }

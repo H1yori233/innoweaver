@@ -1,0 +1,43 @@
+{
+    "Target Definition": {
+      "Target User Group": "Clinicians in the Intensive Care Unit (ICU)",
+      "Tasks and application scenarios": "Concepts to support coordination, workload management, and decision-making in the ICU"
+    },
+    "Contributions": [
+      {
+        "Innovation type": "System",
+        "Supporting knowledge": "AI Brainstorming Kit & Task expertise-AI performance matrix",
+        "Embedded knowledge": {
+          "Architecture or framework": "The Do-Reason-Know worksheet was used to untangle model reasoning, data dependencies, and interaction behavior, allowing a structured approach to AI concept development.",
+          "Tool or tool kits": "AI Brainstorming Kit to facilitate multidisciplinary ideation and problem formulation in AI development"
+        },
+        "Implementation": "Workshop facilitation—Design Workshops; Concept detailing—Do-Reason-Know worksheet; AI Model—Task expertise-AI performance matrix"
+      },
+      {
+        "Innovation type": "Design",
+        "Supporting knowledge": "Service design & Interaction design",
+        "Embedded knowledge": {
+          "Prototype, script or models": "Low-fidelity sketches for a shared dashboard to support SAT/SBT protocol execution",
+          "Material or crafts": "None"
+        },
+        "Implementation": "Concept sketching—Low-fidelity sketches; Co-design workshops—Conducted with 11 clinicians"
+      }
+    ],
+    "Results": {
+      "Performance": "The study identified concepts that required low implementation effort with potentially high impact, focusing on simpler AI models to deliver value in the ICU.",
+      "User feedback": "Clinicians found the AI-generated schedule and patient ranking dashboard concepts valuable for improving coordination and reducing cognitive load during shifts."
+    },
+    "Second Extraction": {
+      "Innovations": [
+        {
+          "Previous studies": "Traditional user-centered design focused solely on user needs without leveraging AI capabilities.",
+          "This study": "Blended user-centered and tech-centered approaches using the AI Brainstorming Kit, resulting in broader ideation with concepts that are easier to implement and provide high value."
+        },
+        {
+          "Previous studies": "Complex AI systems requiring near-perfect performance for high-stakes tasks.",
+          "This study": "Focused on simpler, lower-risk AI concepts that are easier to implement and still deliver meaningful value in the ICU."
+        }
+      ],
+      "Connection": "The study used a blend of user-centered and tech-centered approaches to identify AI concepts that balance feasibility with clinical relevance. The resulting designs and systems aimed at improving ICU workflow and decision-making were well-received by clinicians, showing promise in real-world applicability."
+    }
+  }

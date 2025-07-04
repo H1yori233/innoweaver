@@ -1,0 +1,30 @@
+{
+    "Target Definition": {
+      "Target User Group": "Individuals engaged in human-AI decision-making, specifically in trip-planning tasks",
+      "Tasks and application scenarios": "Exploring how task complexity and uncertainty impact trust and reliance in human-AI decision-making, using a trip-planning scenario as a case study"
+    },
+    "Contributions": [
+      {
+        "Innovation type": "System",
+        "Supporting knowledge": "Trust in Automation (TiA) model & Trustworthiness Assessment Model (TrAM)",
+        "Embedded knowledge": {
+          "Architecture or framework": "A system designed to explore the effects of task complexity and uncertainty on human reliance on AI systems in decision-making, using manipulated levels of complexity and uncertainty in trip-planning tasks.",
+          "Tool or tool kits": "None"
+        },
+        "Implementation": "Experimental setup—3x2 factorial design; Task scenario implementation—Trip-planning interface with varying levels of complexity and uncertainty; Trust measurement—Trust in Automation questionnaire"
+      }
+    ],
+    "Results": {
+      "Performance": "The study found that higher task complexity and uncertainty led to increased reliance on AI systems, with participants showing reduced appropriate reliance in medium complexity tasks but improved performance in highly complex, uncertain scenarios.",
+      "User feedback": "Participants indicated that they tended to rely heavily on AI in uncertain and complex tasks, often over-relying on AI when self-confidence was low, though trust in the AI system remained stable across different conditions."
+    },
+    "Second Extraction": {
+      "Innovations": [
+        {
+          "Previous studies": "Human-AI decision-making studies focused primarily on low to medium complexity tasks without systematically exploring the impact of uncertainty.",
+          "This study": "Introduced a systematic exploration of task complexity and uncertainty in decision-making, revealing how these factors interact to influence appropriate reliance and performance in human-AI teams."
+        }
+      ],
+      "Connection": "The study contributes by empirically investigating the interaction between task complexity and uncertainty in human-AI decision-making. The findings highlight the importance of considering these factors in system design to promote appropriate reliance on AI systems, especially in complex and uncertain scenarios."
+    }
+  }

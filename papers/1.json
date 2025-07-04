@@ -1,0 +1,43 @@
+{
+    "Target Definition": {
+      "Target User Group": "Programmers engaged in collaborative natural language programming",
+      "Tasks and application scenarios": "Collaborative prompt engineering to enhance the workflow of programming using large language models"
+    },
+    "Contributions": [
+      {
+        "Innovation type": "System",
+        "Supporting knowledge": "Prompt engineering, collaborative programming",
+        "Embedded knowledge": {
+          "Architecture or framework": "CoPrompt introduces four mechanisms (referring, requesting, sharing, and linking) to support collaborative prompt engineering by providing a shared, multi-level hierarchical view of prompts, automatic updates, and non-interruptive request features.",
+          "Tool or tool kits": "None"
+        },
+        "Implementation": "Prompt blocks--CoPrompt; Real-time collaboration--Y.js; Code generation--OpenAI GPT-4 API"
+      },
+      {
+        "Innovation type": "Interaction techniques",
+        "Supporting knowledge": "Collaborative programming techniques, natural language interfaces",
+        "Embedded knowledge": {
+          "Input or control techniques": "The refer mechanism enables programmers to locate and access collaborators’ prompts efficiently, while the request mechanism facilitates non-interruptive feedback requests and the linking mechanism reduces repetitive updates.",
+          "Output or feedback methods": "The share mechanism allows programmers to proactively share intermediate results and relevant information, improving collaboration efficiency."
+        },
+        "Implementation": "Prompt co-engineering--CoPrompt; Real-time editing--TipTap and ProseMirror; Code execution--Pyodide"
+      }
+    ],
+    "Results": {
+      "Performance": "CoPrompt effectively supported programmers in understanding collaborators’ prompts, reducing repetitive updates, and improving communication efficiency, as shown in user studies with 12 experienced programmers.",
+      "User feedback": "Users found CoPrompt significantly reduced the cognitive load and communication cost, making collaborative programming more efficient. The SUS score was significantly higher for CoPrompt (Mdn = 90.61) compared to the baseline (Mdn = 68.94)."
+    },
+    "Second Extraction": {
+      "Innovations": [
+        {
+          "Previous studies": "Traditional collaborative programming tools without specialized support for natural language prompt engineering.",
+          "This study": "CoPrompt introduces a prototype system with mechanisms for referring, requesting, sharing, and linking prompts to facilitate collaborative natural language programming."
+        },
+        {
+          "Previous studies": "Manual and interruptive methods for requesting feedback and assistance in collaborative programming.",
+          "This study": "CoPrompt provides non-interruptive request and share mechanisms, enabling automatic updates and reducing the need for direct communication."
+        }
+      ],
+      "Connection": "CoPrompt addresses the challenges of collaborative natural language programming by introducing mechanisms that reduce cognitive load and communication cost. The system’s innovations in referring, requesting, sharing, and linking prompts effectively support the collaborative prompt engineering workflow, leading to improved performance and user satisfaction."
+    }
+  }

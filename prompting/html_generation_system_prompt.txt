@@ -1,0 +1,168 @@
+# Task:
+You will receive two objects, one is the "Usage Scenario" and the other is the list of the solutions. Your task is to generate an HTML file that shows
+each solution of this scenario in a structured format. 
+
+# Input Format:
+{
+  useage_scenario: "The context or situation in which the targeted user would engage with the solution",
+  solutions: [
+    "solution 1",
+    "solution 2",
+    ...
+  ]
+}
+
+each solution should be structured according to the following format:
+{
+    "Title": "The title of the solution",    
+    "Function": "The main function of the solution",
+    "Technical Method": {
+      "Original": "The original technical method used in the solution, which is provided by the domain expert agent",
+      "Iteration": [
+        "new Technical Method 1 from the interdisciplinary expert agent",
+        "new Technical Method 2 from the interdisciplinary expert agent",
+        ...
+      ]
+    },
+    "Possible Results": {
+      "Original": {
+        "Performance": "The performance of the solution",
+        "User Experience": "The user experience of the solution"
+      },
+      "Iteration": [
+        {
+          "Performance": "The performance of the new Technical Method 1",
+          "User Experience": "The user experience of new Technical Method 1"
+        },
+        {
+          "Performance": "The performance of the new Technical Method 2",
+          "User Experience": "The user experience of new Technical Method 2"
+        }
+        ...
+      ]
+    }
+    "Evaluation_Result": {
+      "score": "The score you assigned to the solution",
+      "analysis": "The detailed evaluation of the solution, including feasibility and popularity analysis"
+    }
+    "Use Case": "The use case of the solution",
+    "image_url": "The URL of the user interface prototype image"
+  }
+
+# HTML Generation Requirements:
+1. The HTML file should be well-structured and easy to read, it should be progressive and responsive. Hence, you should use the appropriate HTML tags and CSS styles to create a visually appealing and user-friendly layout. The HTML file should be suitable for viewing on different devices and screen sizes.
+2. The HTML file should include the following sections:
+* The title of the scenario. Here ,you should summarize the scenario in a clear and concise manner.
+* The description of the scenario. Here, you should provide a detailed description of the scenario, including the context, situation, and user interaction.
+* The solutions section, where each solution should be presented in a structured format. One solution generates one "section" in the HTML file. Each solution should include the following information:
+  * The main function of the solution.
+  * The description of the technical method used in the solution.
+  * The design prototype of the solution. Which is the image URL in the solution.
+  * The possible results of the solution, including performance and user experienc
+3. You can use CSS styles to enhance the visual appearance of the HTML file. The CSS styles should be well-organized and easy to maintain. You can use CSS styles to define the font family, font size, colors, margins, padding, and other visual properties of the HTML elements. Please refer to the example below for the CSS styles you can use. You can also add your own styles to improve the appearance of the HTML file.
+4. If the device is a PC, the whole content should be in the center of the screen. AND the content witdh should 50% of the screen width. If the device is a mobile phone, the whole content should be in the center of the screen. AND the content width should be 98% of the screen width.
+
+# Output Format:
+A HTML string. It should be a well-structured HTML file that includes the title, description, and solutions sections. The solutions section should include each solution in a structured format, as described above. The HTML file should be visually appealing, user-friendly, and responsive. You can not include "```html" and "```" in the output, just show the HTML string.
+
+
+# Example:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Reminder System for Autonomous Vehicles</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+        }
+        .solution {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
+        h2 {
+            color: #008cba;
+        }
+        .details {
+            margin: 15px 0;
+        }
+        .performance, .user-experience {
+            margin: 10px 0;
+            padding: 5px;
+            background: #e9f7fe;
+            border-left: 5px solid #008cba;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Driver Reminder System for Autonomous Vehicles</h1>
+
+<p>The context or situation in which the targeted user would engage with the solution is centered on developing a driver reminder system aimed at maintaining driver alertness and ensuring timely control when necessary in autonomous vehicles. The solutions incorporate innovative technologies to keep drivers engaged while prioritizing their safety.</p>
+
+<div class="solutions">
+
+    <div class="solution">
+        <h2>Solution 1: Multi-Modal Reminder System</h2>
+        <p class="details"><strong>Function:</strong> Creating a multi-modal reminder system for drivers.</p>
+        <p class="details"><strong>Technical Method:</strong> Utilizing data visualization techniques to alert drivers through visual and auditory signals.</p>
+        <img src="https://oaidalleapiprodscus.blob.core.windows.net/private/org-chQEqXHSu8xbOfwoy3WZvASF/user-e3NNEkO5o4QSFPR7I4r8M3BC/img-JTEmyGUNHnqfIjhRd1yrnHYo.png?st=2024-09-01T09%3A06%3A06Z&se=2024-09-01T11%3A06%3A06Z&sp=r&sv=2024-08-04&sr=b&rscd=inline&rsct=image/png&skoid=d505667d-d6c1-4a0a-bac7-5c84a87759f8&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2024-08-31T23%3A32%3A55Z&ske=2024-09-01T23%3A32%3A55Z&sks=b&skv=2024-08-04&sig=ffs5ot7JEVkAnavsnRt6S6dlT7mqWQZ7VcRO4TQ0Qsg%3D" alt="Multi-Modal Reminder System Prototype">
+        <div class="performance"><strong>Possible Result - Original:</strong> The system effectively communicates critical reminders and alerts without distracting the driver, helping maintain focus on the road.</div>
+        <div class="user-experience"><strong>User Experience - Original:</strong> Users report feeling more secure and attentive while driving, appreciating the balance between reminders and driving experience.</div>
+    </div>
+
+    <div class="solution">
+        <h2>Solution 2: Interactive Visualizations</h2>
+        <p class="details"><strong>Function:</strong> Employing interactive visualizations as reminders integrated into the driving interface.</p>
+        <p class="details"><strong>Technical Method:</strong> Integration of eHMIs to present reminders using visual signals.</p>
+        <img src="https://oaidalleapiprodscus.blob.core.windows.net/private/org-SiVZ8Yw5AEQ4Nemkn05Ntpp2/user-e3NNEkO5o4QSFPR7I4r8M3BC/img-TbzBOgcuu7O7CZKz5Ia54Mpv.png?st=2024-09-01T09%3A06%3A19Z&se=2024-09-01T11%3A06%3A19Z&sp=r&sv=2024-08-04&sr=b&rscd=inline&rsct=image/png&skoid=d505667d-d6c1-4a0a-bac7-5c84a87759f8&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2024-08-31T23%3A39%3A09Z&ske=2024-09-01T23%3A39%3A09Z&sks=b&skv=2024-08-04&sig=xO3zSUxieSWeTfTSSmTyYsrfzRHl0PXSceC9MBODgys%3D" alt="Interactive Visualizations Prototype">
+        <div class="performance"><strong>Possible Result - Original:</strong> Visual signals are perceived as clear and easy to understand, reducing the cognitive load on the driver.</div>
+        <div class="user-experience"><strong>User Experience - Original:</strong> Drivers express increased confidence and safety while receiving reminders.</div>
+    </div>
+
+    <div class="solution">
+        <h2>Solution 3: Gamification Elements</h2>
+        <p class="details"><strong>Function:</strong> Integrating gamification elements in reminder systems.</p>
+        <p class="details"><strong>Technical Method:</strong> Implementing a scoring system based on driver attentiveness.</p>
+        <img src="https://oaidalleapiprodscus.blob.core.windows.net/private/org-SiVZ8Yw5AEQ4Nemkn05Ntpp2/user-e3NNEkO5o4QSFPR7I4r8M3BC/img-ft7WshxSV9n0Sb2ZnfbZsgsC.png?st=2024-09-01T09%3A06%3A34Z&se=2024-09-01T11%3A06%3A34Z&sp=r&sv=2024-08-04&sr=b&rscd=inline&rsct=image/png&skoid=d505667d-d6c1-4a0a-bac7-5c84a87759f8&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2024-08-31T23%3A28%3A17Z&ske=2024-09-01T23%3A28%3A17Z&sks=b&skv=2024-08-04&sig=fnrHjOTMdybkDxphR525AGEm9i0uXVn9JziZvIyKQ6I%3D" alt="Gamification Elements Prototype">
+        <div class="performance"><strong>Possible Result - Original:</strong> Increases engagement and encourages drivers to remain vigilant through competitive elements.</div>
+        <div class="user-experience"><strong>User Experience - Original:</strong> Drivers feel empowered and motivated to maintain attentiveness.</div>
+    </div>
+
+    <div class="solution">
+        <h2>Solution 4: Real-Time Feedback</h2>
+        <p class="details"><strong>Function:</strong> Providing real-time feedback using color-coded signaling systems.</p>
+        <p class="details"><strong>Technical Method:</strong> Using red/green indicators to communicate driver alertness status.</p>
+        <img src="https://oaidalleapiprodscus.blob.core.windows.net/private/org-4ImTtNT1Ivz9rxV5xLpezWis/user-e3NNEkO5o4QSFPR7I4r8M3BC/img-m9BhhD2KkucWmzBWMZwighOo.png?st=2024-09-01T09%3A06%3A45Z&se=2024-09-01T11%3A06%3A45Z&sp=r&sv=2024-08-04&sr=b&rscd=inline&rsct=image/png&skoid=d505667d-d6c1-4a0a-bac7-5c84a87759f8&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2024-09-01T00%3A07%3A54Z&ske=2024-09-02T00%3A07%3A54Z&sks=b&skv=2024-08-04&sig=F4Rl/TAE3m4Y6BwcyMI1gzGjkl/PY4mKzq/PpJmt/T8%3D" alt="Real-Time Feedback System Prototype">
+        <div class="performance"><strong>Possible Result - Original:</strong> Increases awareness of the driver's attentiveness level to the road.</div>
+        <div class="user-experience"><strong>User Experience - Original:</strong> Drivers enjoy a clearer understanding of their alertness level.</div>
+    </div>
+
+    <div class="solution">
+        <h2>Solution 5: Contextual Data-Based Reminders</h2>
+        <p class="details"><strong>Function:</strong> Designing a flexible reminder system based on contextual data.</p>
+        <p class="details"><strong>Technical Method:</strong> Using AI algorithms to assess external driving conditions.</p>
+        <img src="https://oaidalleapiprodscus.blob.core.windows.net/private/org-chQEqXHSu8xbOfwoy3WZvASF/user-e3NNEkO5o4QSFPR7I4r8M3BC/img-FJw7n3LvgA57wJJizeurnZAl.png?st=2024-09-01T09%3A06%3A59Z&se=2024-09-01T11%3A06%3A59Z&sp=r&sv=2024-08-04&sr=b&rscd=inline&rsct=image/png&skoid=d505667d-d6c1-4a0a-bac7-5c84a87759f8&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2024-08-31T23%3A34%3A22Z&ske=2024-09-01T23%3A34%3A22Z&sks=b&skv=2024-08-04&sig=iLBHbW//gsuXbi4Y9zGA1vfk0uMTkPOwbojxkMfBLF0%3D" alt="Contextual Data-Based Reminders Prototype">
+        <div class="performance"><strong>Possible Result - Original:</strong> Reminders become more relevant and timely, adapting to the driver's engagement level.</div>
+        <div class="user-experience"><strong>User Experience - Original:</strong> Users appreciate personalized interaction that feels intuitive.</div>
+    </div>
+
+</div>
+
+</body>
+</html>

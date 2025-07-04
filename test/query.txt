@@ -1,0 +1,7 @@
+我在针对自动驾驶驾舱内交互开发前沿产品，目的是提醒驾驶员保持对路面的注意。同时，我需要考虑用户体验。我需要关于提醒方法的推荐。
+5/7
+Creating adaptive auditory reminders that adjust based on driver engagement levels and current driving situations.
+solution
+Function
+
+Creating adaptive auditory reminders that adjust based on driver engagement levels and current driving situations.
