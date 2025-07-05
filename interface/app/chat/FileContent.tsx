@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FaFileAlt, FaTimes } from 'react-icons/fa';
-import { readFileContent } from './FileUtils';
+import { FaTimes } from 'react-icons/fa';
+import { readFileContent, renderFileIcon, getFileExtension } from './FileUtils';
 
 interface FileContentProps {
   file: File | null;
@@ -40,11 +40,11 @@ const FileContent: React.FC<FileContentProps> = ({ file, onClose }) => {
       {/* Header with file info and close button */}
       <div className="flex justify-between items-center p-4 border-b border-gray-700/30">
         <div className="flex items-center">
-          <FaFileAlt className="mr-3 text-gray-400 text-xl" />
+          {renderFileIcon(file)}
           <div>
             <h2 className="text-xl font-semibold text-text-primary">{file.name}</h2>
             <div className="text-sm text-gray-400">
-              {(file.size / 1024).toFixed(2)} KB • Plain Text
+              {(file.size / 1024).toFixed(2)} KB • {getFileExtension(file.name).toUpperCase()}
             </div>
           </div>
         </div>
@@ -76,5 +76,4 @@ const FileContent: React.FC<FileContentProps> = ({ file, onClose }) => {
     </div>
   );
 };
-
 export default FileContent; 

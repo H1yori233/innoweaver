@@ -52,5 +52,5 @@ async def modify_prompt(
     except FileNotFoundError:
         raise HTTPException(status_code=500, detail=f'无法找到 Prompt 文件: {file_path}')
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f'更新 Prompt 时发生错误: {e}') 
+        raise HTTPException(status_code=500, detail=f'更新 Prompt 时发生错误: {e}')
     

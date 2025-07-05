@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import * as React from 'react';
 import { useDropzone } from 'react-dropzone';
-import { FaArrowCircleUp, FaPaperclip, FaRedo, FaFileAlt } from 'react-icons/fa';
+import { FaArrowCircleUp, FaPaperclip, FaRedo, FaFileAlt, FaTimes } from 'react-icons/fa';
 import Textarea from 'react-textarea-autosize';
 import {
   fetchQueryAnalysis,
@@ -68,7 +68,7 @@ const GenerateSolution = () => {
   >([]);
   const [inputText, setInputText] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [analysisResult, setAnalysisResult] = useState(null);
+  const [analysisResult, setAnalysisResult] = useState<any>(null);
   const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
 
   // 研究工作流状态
@@ -87,7 +87,7 @@ const GenerateSolution = () => {
   const [id, setId] = useState('');
 
   // Refs
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<any>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -122,14 +122,14 @@ const GenerateSolution = () => {
     router.push(url.pathname + url.search);
   };
 
-  const handleModeChange = (event) => {
+  const handleModeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const mode = event.target.value;
     setSelectedMode(mode);
     setSelectedIds([]);
     updateURL(mode);
   };
 
-  const handleIDSelection = (ids) => {
+  const handleIDSelection = (ids: string[]) => {
     setSelectedIds(ids);
     updateURL(selectedMode, ids);
   };
@@ -163,26 +163,33 @@ const GenerateSolution = () => {
     },
     accept: {
       'text/plain': ['.txt'],
+      'text/markdown': ['.md', '.markdown'],
+      'application/pdf': ['.pdf'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      'application/msword': ['.doc'],
+      'text/csv': ['.csv'],
+      'application/vnd.ms-excel': ['.xls'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
     },
     maxSize: MAX_FILE_SIZE,
     maxFiles: 1,
-    onDropRejected: (fileRejections) => {
+    onDropRejected: (fileRejections: any[]) => {
       const rejection = fileRejections[0];
       if (rejection) {
-        if (rejection.errors.some(e => e.code === 'file-too-large')) {
+        if (rejection.errors.some((e: any) => e.code === 'file-too-large')) {
           toast({
-            title: "File Too Large",
-            description: "File size exceeds the 1MB limit.",
+            title: "文件过大",
+            description: "文件大小不能超过 1MB。",
           });
-        } else if (rejection.errors.some(e => e.code === 'file-invalid-type')) {
+        } else if (rejection.errors.some((e: any) => e.code === 'file-invalid-type')) {
           toast({
-            title: "Invalid File Type",
-            description: "Only .txt files are supported.",
+            title: "不支持的文件类型",
+            description: "支持的文件格式：.txt, .md, .pdf, .docx, .doc, .csv, .xls, .xlsx",
           });
         } else {
           toast({
-            title: "Upload Failed",
-            description: "Could not upload the file. Please try again.",
+            title: "上传失败",
+            description: "无法上传文件，请重试。",
           });
         }
       }
@@ -196,9 +203,9 @@ const GenerateSolution = () => {
     const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
     const queryText = lastMessage && lastMessage.type === 'user' ? lastMessage.content : inputText;
     
-    const processAnalysisResult = (result) => {
+    const processAnalysisResult = (result: any) => {
       setIsAnalysisLoading(false);
-      
+      setAnalysisResult(result);
       setMessages(prev => {
         const filteredMessages = prev.filter(msg => msg.type !== 'loading');
         return [...filteredMessages, {
@@ -207,26 +214,22 @@ const GenerateSolution = () => {
           data: result
         }];
       });
-      
-      setAnalysisResult(result);
     };
     
-    const handleError = (error) => {
-            setIsAnalysisLoading(false);
-            const errorMsg = extractErrorMessage(error);
-            
-            setMessages(prev => {
-              const filteredMessages = prev.filter(msg => msg.type !== 'loading');
-              return [...filteredMessages, {
-                type: 'system' as const,
-                content: `Analysis failed: ${errorMsg}`
-              }];
-            });
-            
-            toast({
-              title: "Error",
-              description: `Analysis failed: ${errorMsg}`,
-            });
+    const handleError = (error: any) => {
+      setIsAnalysisLoading(false);
+      const errorMsg = extractErrorMessage(error);
+      setMessages(prev => {
+        const filteredMessages = prev.filter(msg => msg.type !== 'loading');
+        return [...filteredMessages, {
+          type: 'system' as const,
+          content: `Analysis failed: ${errorMsg}`
+        }];
+      });
+      toast({
+        title: "Error",
+        description: `Analysis failed: ${errorMsg}`,
+      });
     };
     
     if (file) {
@@ -421,8 +424,7 @@ const GenerateSolution = () => {
           setResearchState(prev => ({ ...prev, isLoading: false }));
         },
 
-        openWhenHidden: true,
-        fetch: fetch,
+        openWhenHidden: true
       });
     } catch (error: any) {
       if (error.name !== 'AbortError' && !ac.signal.aborted) {
@@ -527,10 +529,15 @@ const GenerateSolution = () => {
     fileInput.accept = '.txt';
     fileInput.style.display = 'none';
 
-    fileInput.onchange = (e) => {
+    // @ts-ignore
+    fileInput.onchange = (e: Event) => {
       const target = e.target as HTMLInputElement;
       if (target.files && target.files.length > 0) {
-        handleFileUploadAsMessage(target.files[0]);
+        handleFileUpload(
+          target.files[0],
+          setFile,
+          (title, description) => toast({ title, description })
+        );
       }
     };
 
@@ -540,7 +547,7 @@ const GenerateSolution = () => {
   };
 
   // 重新生成点击处理
-  const handleRegenerateClick = (messageIndex, userMessageIndex) => {
+  const handleRegenerateClick = (messageIndex: number, userMessageIndex: number) => {
     const lastUserMessage = messages[userMessageIndex];
     
     const newUserMessage = { 
@@ -623,6 +630,8 @@ const GenerateSolution = () => {
                         transition-colors hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-blue-500/50'
                       value={selectedMode}
                       onChange={handleModeChange}
+                      aria-label="选择聊天模式"
+                      title="选择聊天模式"
                     >
                       <option value="chat">Chat</option>
                       <option value="inspiration">Inspiration</option>
@@ -661,8 +670,8 @@ const GenerateSolution = () => {
                         minRows={5}
                         maxRows={12}
                         value={inputText}
-                        onChange={(e) => setInputText(e.target.value)}
-                        onKeyDown={(e) => {
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInputText(e.target.value)}
+                        onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
                           if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
                             handleSendMessage();
@@ -678,7 +687,7 @@ const GenerateSolution = () => {
                         type="button"
                         onClick={handleFileButtonClick}
                         className="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-blue-500 transition-colors rounded-lg hover:bg-gray-200/10"
-                        title="Upload .txt file (max 1MB)"
+                        title="上传文件 (支持 .txt, .md, .pdf, .docx, .csv, .xls, .xlsx，最大 1MB)"
                       >
                         <FaPaperclip className="w-4 h-4" />
                       </button>
@@ -686,7 +695,7 @@ const GenerateSolution = () => {
                     
                     <div className="flex items-center space-x-3">
                       <div className="text-xs text-gray-500">
-                        Only .txt files (max 1MB)
+                        支持多种格式 (最大 1MB)
                       </div>
                       
                       {isDeveloper && (
@@ -711,6 +720,8 @@ const GenerateSolution = () => {
                         }`}
                         onClick={handleSendMessage}
                         disabled={!inputText.trim()}
+                        aria-label="发送消息"
+                        title="发送消息"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none" className="w-5 h-5" strokeWidth="2">
                           <path d="M.5 1.163A1 1 0 0 1 1.97.28l12.868 6.837a1 1 0 0 1 0 1.766L1.969 15.72A1 1 0 0 1 .5 14.836V10.33a1 1 0 0 1 .816-.983L8.5 8 1.316 6.653A1 1 0 0 1 .5 5.67V1.163Z" fill="currentColor" />

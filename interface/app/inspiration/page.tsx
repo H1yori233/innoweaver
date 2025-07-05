@@ -18,7 +18,7 @@ const Solution = () => {
 
     return (
         <div className='user_history_container'>
-            <div style={{ margin: '100px' }}>
+            <div className="my-24">
                 favlist : {id}
             </div>
         </div>

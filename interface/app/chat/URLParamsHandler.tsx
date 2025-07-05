@@ -28,5 +28,4 @@ const URLParamsHandler = ({ setSelectedMode, setSelectedIds }: URLParamsHandlerP
 
   return null;
 };
-
 export default URLParamsHandler; 

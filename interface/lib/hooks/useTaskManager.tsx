@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { logger } from '@/lib/logger';
 
-const useTaskManager = (analysisResult) => {
+const useTaskManager = (analysisResult: any) => {
     const [isCompleteLoading, setIsCompleteLoading] = useState(false);
     const [progress, setProgress] = useState(0);
-    const [completeResult, setCompleteResult] = useState(null);
+    const [completeResult, setCompleteResult] = useState<any>(null);
 
-    async function callStepApi(url, data) {
+    async function callStepApi(url: string, data: any) {
         const apiUrl = process.env.API_URL;
         // const apiUrl = "http://120.55.193.195:5001";
         const token = localStorage.getItem("token");

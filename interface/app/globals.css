@@ -6,6 +6,10 @@
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
+  /* 滚动条颜色变量 */
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #c1c1c1;
+  --scrollbar-thumb-hover: #a8a8a8;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -13,6 +17,10 @@
     --foreground-rgb: 255, 255, 255;
     --background-start-rgb: 0, 0, 0;
     --background-end-rgb: 0, 0, 0;
+    /* 暗色主题滚动条颜色 */
+    --scrollbar-track: #2a2a2a;
+    --scrollbar-thumb: #555555;
+    --scrollbar-thumb-hover: #777777;
   }
 }
 
@@ -23,13 +31,31 @@ html, body {
 
 @layer utilities {
   .text-balance {
-    text-wrap: balance;
+    /* 基础兼容性文本换行 */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    -webkit-hyphens: auto;
+    hyphens: auto;
   }
   
-  /* 优化自定义滚动条样式 */
+  /* 现代浏览器支持text-wrap时使用 */
+  @supports (text-wrap: balance) {
+    .text-balance {
+      text-wrap: balance;
+    }
+  }
+  
+  /* 基础滚动条样式 - 所有浏览器都支持 */
   .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    /* 默认滚动条样式 */
+  }
+  
+  /* Firefox滚动条样式 - 仅在支持时应用 */
+  @supports (scrollbar-width: thin) {
+    .custom-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    }
   }
   
   .custom-scrollbar::-webkit-scrollbar {
@@ -91,6 +117,8 @@ html, body {
   padding: 16px;
   font-size: 0.85rem;
   width: 400px;
+  -webkit-border-radius: 12px;
+  -moz-border-radius: 12px;
   border-radius: 12px;
   background-color: #333333;
 }
@@ -102,6 +130,8 @@ html, body {
 
 .other-message {
   align-items: center;
+  width: -webkit-fit-content;
+  width: -moz-fit-content;
   width: fit-content;
   max-width: 70%;
   background-color: #333333;
@@ -115,8 +145,14 @@ html, body {
 
 /* 文件消息的整体容器 */
 .file-wrapper {
+  display: -webkit-flex;
+  display: -moz-flex;
   display: flex;
+  -webkit-align-items: center;
+  -moz-align-items: center;
   align-items: center;
+  -webkit-justify-content: flex-end;
+  -moz-justify-content: flex-end;
   justify-content: flex-end;
   padding: 10px;
   background-color: transparent;
@@ -126,11 +162,17 @@ html, body {
 }
 
 .file-message {
+  display: -webkit-flex;
+  display: -moz-flex;
   display: flex;
+  -webkit-align-items: center;
+  -moz-align-items: center;
   align-items: center;
   padding: 10px;
   /* background-color: #f5f5f5; */
   background-color: #353535;
+  -webkit-border-radius: 8px;
+  -moz-border-radius: 8px;
   border-radius: 8px;
   margin-bottom: 10px;
   max-width: 100%;
@@ -138,8 +180,14 @@ html, body {
 
 /* 图标的容器，用于控制图标大小和布局 */
 .file-icon-wrapper {
+  display: -webkit-flex;
+  display: -moz-flex;
   display: flex;
+  -webkit-align-items: center;
+  -moz-align-items: center;
   align-items: center;
+  -webkit-justify-content: center;
+  -moz-justify-content: center;
   justify-content: center;
   width: 50px;
   height: 50px;
@@ -154,8 +202,14 @@ html, body {
 
 /* 文件内容的容器，包含文件名和元数据 */
 .file-content-wrapper {
+  display: -webkit-flex;
+  display: -moz-flex;
   display: flex;
+  -webkit-flex-direction: column;
+  -moz-flex-direction: column;
   flex-direction: column;
+  -webkit-justify-content: center;
+  -moz-justify-content: center;
   justify-content: center;
 }
 
@@ -179,15 +233,40 @@ html, body {
 
 .message-actions {
   margin-top: 8px;
+  display: -webkit-flex;
+  display: -moz-flex;
   display: flex;
-  gap: 8px;
+  /* 为不支持gap的浏览器提供回退 */
+}
+
+.message-actions > * {
+  margin-right: 8px;
+}
+
+.message-actions > *:last-child {
+  margin-right: 0;
+}
+
+/* 现代浏览器支持gap时使用 */
+@supports (gap: 8px) {
+  .message-actions {
+    gap: 8px;
+  }
+  
+  .message-actions > * {
+    margin-right: 0;
+  }
 }
 
 .action-button {
   background-color: #d3d3d3;
   padding: 8px 16px;
+  -webkit-border-radius: 8px;
+  -moz-border-radius: 8px;
   border-radius: 8px;
   cursor: pointer;
+  -webkit-transition: background-color 0.3s ease;
+  -moz-transition: background-color 0.3s ease;
   transition: background-color 0.3s ease;
 }
 
@@ -202,12 +281,55 @@ html, body {
   background-color: #333333;
   position: sticky;
   bottom: 0;
+  display: -webkit-flex;
+  display: -moz-flex;
   display: flex;
+  -webkit-align-items: center;
+  -moz-align-items: center;
   align-items: center;
   margin-left: 2rem;
   margin-right: 1rem;
   margin-bottom: 1rem;
+  -webkit-border-radius: 1.5rem;
+  -moz-border-radius: 1.5rem;
   border-radius: 1.5rem;
+}
+
+/* LikeButton styles */
+.favorite-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  -webkit-transition: color 0.2s ease;
+  -moz-transition: color 0.2s ease;
+  transition: color 0.2s ease;
+}
+
+.favorite-button.liked {
+  color: #ff6961;
+}
+
+.favorite-button.not-liked {
+  color: #BBBBBB;
+}
+
+.favorite-button:hover {
+  opacity: 0.8;
+}
+
+.favorite-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #ff4444;
+  font-size: 0.8rem;
+  margin-top: 4px;
 }
 
 /* min-h-[40px] w-full resize-none bg-transparent 
@@ -234,9 +356,17 @@ html, body {
 /* 子页面 */
 
 .user_container {
+  display: -webkit-flex;
+  display: -moz-flex;
   display: flex;
+  -webkit-flex-direction: column;
+  -moz-flex-direction: column;
   flex-direction: column;
+  -webkit-justify-content: center;
+  -moz-justify-content: center;
   justify-content: center;
+  -webkit-align-items: center;
+  -moz-align-items: center;
   align-items: center;
   height: 100vh;
   background-color: #000000;
@@ -248,16 +378,41 @@ html, body {
   padding: 10px;
   font-size: 16px;
   border: 1px solid #ccc;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
   border-radius: 5px;
   color: black;
 }
 
 .input_field_container {
+  display: -webkit-flex;
+  display: -moz-flex;
   display: flex;
+  -webkit-flex-direction: column;
+  -moz-flex-direction: column;
   flex-direction: column;
-  gap: 10px;
+  /* 为不支持gap的浏览器提供回退 */
   width: 300px;
   margin-top: 5px;
+}
+
+.input_field_container > * {
+  margin-bottom: 10px;
+}
+
+.input_field_container > *:last-child {
+  margin-bottom: 0;
+}
+
+/* 现代浏览器支持gap时使用 */
+@supports (gap: 10px) {
+  .input_field_container {
+    gap: 10px;
+  }
+  
+  .input_field_container > * {
+    margin-bottom: 0;
+  }
 }
 
 .user_type_button {
@@ -270,28 +425,59 @@ html, body {
 
   background-color: #888888;
   color: #FFFFFF;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
   border-radius: 5px;
   padding: 10px 20px;
   border: none;
   cursor: pointer;
+  -webkit-transition: background-color 0.3s ease;
+  -moz-transition: background-color 0.3s ease;
   transition: background-color 0.3s ease;
 }
 
-user_type_button:hover {
+.user_type_button:hover {
   background-color: #0056b3;
 }
 
 
 .user_type_button_container {
+  display: -webkit-flex;
+  display: -moz-flex;
   display: flex;
+  -webkit-justify-content: space-between;
+  -moz-justify-content: space-between;
   justify-content: space-between;
-  gap: 10px;
+  /* 为不支持gap的浏览器提供回退 */
+}
+
+.user_type_button_container > * {
+  margin-right: 10px;
+}
+
+.user_type_button_container > *:last-child {
+  margin-right: 0;
+}
+
+/* 现代浏览器支持gap时使用 */
+@supports (gap: 10px) {
+  .user_type_button_container {
+    gap: 10px;
+  }
+  
+  .user_type_button_container > * {
+    margin-right: 0;
+  }
 }
 
 /* -------------------------------------------------------------- */
 
 .user_history_container {
+  display: -webkit-flex;
+  display: -moz-flex;
   display: flex;
+  -webkit-justify-content: center;
+  -moz-justify-content: center;
   justify-content: center;
   background-color: #171717;
   font-family: 'Inter', sans-serif;
@@ -300,10 +486,16 @@ user_type_button:hover {
 }
 
 .user_history_content_container {
+  display: -webkit-flex;
+  display: -moz-flex;
   display: flex;
   width: 80%;
   min-height: 87vh;
+  -webkit-flex-direction: column;
+  -moz-flex-direction: column;
   flex-direction: column;
+  -webkit-align-items: center;
+  -moz-align-items: center;
   align-items: center;
   /* margin-left: 6.25rem; */
   /* margin-top: 50px; */
@@ -312,9 +504,17 @@ user_type_button:hover {
 }
 
 .empty-container {
+  display: -webkit-flex;
+  display: -moz-flex;
   display: flex;
+  -webkit-flex-direction: column;
+  -moz-flex-direction: column;
   flex-direction: column;
+  -webkit-justify-content: center;
+  -moz-justify-content: center;
   justify-content: center;
+  -webkit-align-items: center;
+  -moz-align-items: center;
   align-items: center;
   min-height: 87vh;
   color: rgb(255, 255, 255);
@@ -326,13 +526,34 @@ user_type_button:hover {
 .card-page-content {
   /* display: grid; */
   /* grid-template-columns: repeat(5, 1fr); */
+  display: -webkit-flex;
+  display: -moz-flex;
   display: flex;
-  gap: 0.2rem;
+  /* 为不支持gap的浏览器提供回退 */
   padding: 2rem;
   margin: 0 auto;
   color: #FFFFFF;
   min-height: 90%;
   /* margin-left: -0.5rem; */
+}
+
+.card-page-content > * {
+  margin-right: 0.2rem;
+}
+
+.card-page-content > *:last-child {
+  margin-right: 0;
+}
+
+/* 现代浏览器支持gap时使用 */
+@supports (gap: 0.2rem) {
+  .card-page-content {
+    gap: 0.2rem;
+  }
+  
+  .card-page-content > * {
+    margin-right: 0;
+  }
 }
 
 .masonry-grid_column {
@@ -356,9 +577,15 @@ user_type_button:hover {
 }
 
 .prompts_container {
+  display: -webkit-flex;
+  display: -moz-flex;
   display: flex;
   min-height: 100vh;
+  -webkit-flex-direction: column;
+  -moz-flex-direction: column;
   flex-direction: column;
+  -webkit-align-items: center;
+  -moz-align-items: center;
   align-items: center;
   margin-left: 12.5rem;
 }

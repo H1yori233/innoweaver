@@ -23,7 +23,7 @@ export async function fetchLogin(email: string, password: string) {
         });
 
         return { success: true, data: result };
-    } catch (error) {
+    } catch (error: any) {
         return { success: false, error: error.message };
     }
 }
@@ -37,7 +37,7 @@ export async function fetchRegister(email: string, name: string, password: strin
         });
 
         return { success: true, data: result };
-    } catch (error) {
+    } catch (error: any) {
         return { success: false, error: error.message };
     }
 }

@@ -1,9 +1,9 @@
 import tinycolor from 'tinycolor2';
 import { useEffect, useState } from 'react';
 
-function colorLerp(color1, color2, weight) {
+function colorLerp(color1: number, color2: number, weight: number): number {
     return color1 * weight + color2 * (1 - weight);
-};
+}
 
 // 为浅色主题定义的颜色调色板 - 折中方案，既不太鲜艳也不太淡
 const lightColorPalette: string[] = [
