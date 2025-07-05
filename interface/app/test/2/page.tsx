@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 
 export default function ApiTestPage() {
-    const [data, setData] = useState(null);
+    const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<string | null>(null);
 
     const fetchData = async () => {
         setLoading(true);
@@ -18,7 +18,7 @@ export default function ApiTestPage() {
             }
             const result = await response.json();
             setData(result);
-        } catch (err) {
+        } catch (err: any) {
             setError(err.message);
         } finally {
             setLoading(false);

@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown } from 'lucide-react';
 import MasonryGallery from '@/components/inspiration/MasonryGallery';
 
 interface ResearchState {
@@ -276,7 +275,7 @@ const ResearchDisplay: React.FC<ResearchDisplayProps> = ({
                               <p className="text-text-secondary font-bold mb-2">Technical Method:</p>
                               {Array.isArray(sol["Technical Method"]) ? (
                                 <ul className="list-disc pl-5 space-y-1">
-                                  {sol["Technical Method"].map((method, i) => (
+                                  {sol["Technical Method"].map((method: any, i: number) => (
                                     <li key={i} className="text-text-primary">{method}</li>
                                   ))}
                                 </ul>
@@ -286,7 +285,7 @@ const ResearchDisplay: React.FC<ResearchDisplayProps> = ({
                                     <p className="text-blue-400 font-medium">Original:</p>
                                     {Array.isArray(sol["Technical Method"].Original) ? (
                                       <ul className="list-disc pl-5 space-y-1 mt-1">
-                                        {sol["Technical Method"].Original.map((method, i) => (
+                                        {sol["Technical Method"].Original.map((method: any, i: number) => (
                                           <li key={i} className="text-text-primary">{method}</li>
                                         ))}
                                       </ul>
@@ -299,7 +298,7 @@ const ResearchDisplay: React.FC<ResearchDisplayProps> = ({
                                     <div className="pl-3 border-l-2 border-purple-400">
                                       <p className="text-purple-400 font-medium">Iteration:</p>
                                       <ul className="list-disc pl-5 space-y-1 mt-1">
-                                        {sol["Technical Method"].Iteration.map((iter, i) => (
+                                        {sol["Technical Method"].Iteration.map((iter: any, i: number) => (
                                           <li key={i} className="text-text-primary">{iter}</li>
                                         ))}
                                       </ul>
@@ -346,7 +345,7 @@ const ResearchDisplay: React.FC<ResearchDisplayProps> = ({
                                     <div className="pl-3 border-l-2 border-purple-400">
                                       <p className="text-purple-400 font-medium">Iteration:</p>
                                       <div className="space-y-3 mt-2">
-                                        {sol["Possible Results"].Iteration.map((iter, i) => (
+                                        {sol["Possible Results"].Iteration.map((iter: any, i: number) => (
                                           <div key={i} className="space-y-2">
                                             <div className="bg-purple-400/10 p-2 rounded">
                                               <p className="font-medium text-purple-300">Performance:</p>
@@ -484,11 +483,11 @@ const ResearchDisplay: React.FC<ResearchDisplayProps> = ({
                 transition={{ duration: 0.4, delay: 0.4 }}
               >
                 <MasonryGallery 
-                  solutions={completeResult['solutions'].map((solution, index) => ({
+                  solutions={completeResult['solutions'].map((solution: any, index: number) => ({
                     ...solution,
                     id: solution.id || `solution-${index}`
                   }))}
-                  likedSolutions={completeResult['solutions'].reduce((acc, solution, index) => {
+                  likedSolutions={completeResult['solutions'].reduce((acc: any, solution: any, index: number) => {
                     acc[solution.id || `solution-${index}`] = false;
                     return acc;
                   }, {})}
@@ -571,8 +570,14 @@ const ResearchDisplay: React.FC<ResearchDisplayProps> = ({
           </div>
           <div className="w-full bg-secondary/30 rounded-full h-2">
             <div
-              className="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-300 ease-out"
-              style={{ width: `${researchState.progress}%` }}
+              className={`bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-300 ease-out ${
+                researchState.progress === 0 ? 'w-0' :
+                researchState.progress === 25 ? 'w-1/4' :
+                researchState.progress === 50 ? 'w-1/2' :
+                researchState.progress === 75 ? 'w-3/4' :
+                researchState.progress === 100 ? 'w-full' :
+                'w-auto'
+              }`}
             />
           </div>
         </div>
@@ -637,12 +642,26 @@ const ResearchDisplay: React.FC<ResearchDisplayProps> = ({
               <button
                 onClick={() => toggleStageCollapse(stage.id)}
                 className="p-1 hover:bg-secondary/20 rounded transition-colors"
+                title="Toggle stage collapse"
               >
                 <motion.div
                   animate={{ rotate: collapsedStages.has(stage.id) ? 0 : 180 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <ChevronDown className="w-5 h-5 text-text-secondary" />
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    width="20" 
+                    height="20" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    className="w-5 h-5 text-text-secondary"
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
                 </motion.div>
               </button>
             </div>

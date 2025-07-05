@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FaSignOutAlt, FaKey } from "react-icons/fa";
 import useAuthStore from "@/lib/hooks/auth-store";
 
 // 用户信息组件
-const UserInfo = ({ user }) => (
+const UserInfo = ({ user }: { user: any }) => (
   <div className="bg-white p-6 rounded-lg shadow-md border border-secondary transition-transform transform hover:scale-105">
     <h2 className="text-xl font-semibold text-text-primary">User Info</h2>
     <div className="mt-4 text-text-secondary">
@@ -17,7 +16,7 @@ const UserInfo = ({ user }) => (
 );
 
 // API Key 输入和保存区块
-const ApiKeySection = ({ apiKey, onApiKeyChange, onSave }) => (
+const ApiKeySection = ({ apiKey, onApiKeyChange, onSave }: { apiKey: string; onApiKeyChange: (key: string) => void; onSave: () => void }) => (
   <div className="bg-white p-6 rounded-lg shadow-md mt-6 border border-secondary">
     <h3 className="text-xl font-semibold text-text-primary">API Key</h3>
     <input
@@ -37,13 +36,28 @@ const ApiKeySection = ({ apiKey, onApiKeyChange, onSave }) => (
 );
 
 // 退出按钮组件
-const AuthButtons = ({ onLogout }) => (
+const AuthButtons = ({ onLogout }: { onLogout: () => void }) => (
   <div className="flex justify-center mt-6">
     <button
       onClick={onLogout}
       className="bg-primary text-text-primary p-3 rounded-lg w-full max-w-sm hover:bg-primary-dark transition-colors"
     >
-      <FaSignOutAlt className="mr-2 inline-block" />
+      <svg 
+        xmlns="http://www.w3.org/2000/svg" 
+        width="16" 
+        height="16" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        stroke="currentColor" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+        className="mr-2 inline-block"
+      >
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+        <polyline points="16,17 21,12 16,7"></polyline>
+        <line x1="21" y1="12" x2="9" y2="12"></line>
+      </svg>
       Logout
     </button>
   </div>
@@ -52,7 +66,7 @@ const AuthButtons = ({ onLogout }) => (
 // 主页面组件
 const UserPage = () => {
   const [apiKey, setApiKey] = useState('');
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null);
   const authStore = useAuthStore();
   const [isMounted, setIsMounted] = useState(false);
 
@@ -77,7 +91,7 @@ const UserPage = () => {
     authStore.clearUserData();
   };
 
-  const handleApiKeyChange = (newApiKey) => setApiKey(newApiKey);
+  const handleApiKeyChange = (newApiKey: string) => setApiKey(newApiKey);
 
   const handleSaveApiKey = () => {
     alert('API Key saved!');

@@ -4,13 +4,12 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { MeiliSearch } from 'meilisearch';
 import useAuthStore from '@/lib/hooks/auth-store';
-import { History } from 'lucide-react';
 
 const apiUrl = 'http://120.55.193.195:7700';
 const meiliSearchClient = new MeiliSearch({ host: apiUrl });
 
 const UserHistory: React.FC = () => {
-    const [history, setHistory] = useState([]);
+    const [history, setHistory] = useState<any[]>([]);
     const [error, setError] = useState<string | null>(null);
     const { email } = useAuthStore();
 

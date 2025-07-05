@@ -1,6 +1,7 @@
 import React from 'react';
 import CircularProgress from '@mui/material/CircularProgress';
-import { FaRedo, FaFileAlt, FaTimes } from 'react-icons/fa';
+import { FaRedo, FaTimes } from 'react-icons/fa';
+import { renderFileIcon } from './FileUtils';
 
 // 消息类型
 type MessageType = 'user' | 'system' | 'analysis' | 'loading' | 'file';
@@ -76,7 +77,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
                 onClick={() => onFileClick && onFileClick(message.fileData)}
                 title="Click to view file content"
               >
-                <FaFileAlt className="mr-2 text-gray-400" /> 
+                {message.fileData && renderFileIcon(message.fileData)}
                 <span className="truncate">{message.fileData.name}</span>
                 <span className="ml-2 text-xs text-gray-400">
                   ({Math.round(message.fileData.size / 1024)} KB)

@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
 
 interface DialogProps {
   isOpen: boolean;
@@ -30,13 +29,28 @@ const Dialog: React.FC<DialogProps> = ({ isOpen, onClose, title, message, button
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
             className="bg-primary rounded-lg p-6 max-w-sm w-full relative"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e: React.MouseEvent) => e.stopPropagation()}
           >
             <button
               onClick={onClose}
               className="absolute top-2 right-2 p-1 rounded-full text-gray-500 hover:bg-gray-100 focus:outline-none"
+              title="Close dialog"
+              aria-label="Close dialog"
             >
-              <X size={20} />
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="20" 
+                height="20" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
             </button>
             <h2 className="text-xl text-text-primary font-semibold mb-4">{title}</h2>
             <p className="text-text-secondary mb-6">{message}</p>
@@ -59,4 +73,3 @@ const Dialog: React.FC<DialogProps> = ({ isOpen, onClose, title, message, button
 };
 
 export default Dialog;
-
