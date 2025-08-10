@@ -96,3 +96,4 @@ async def get_log_stats(current_user: Dict[str, Any] = Depends(fastapi_token_req
         return stats
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) 
+

@@ -7,6 +7,9 @@ from utils.redis import redis_client, async_redis
 from pydantic import BaseModel
 from .utils import route_handler
 import json
+from utils.tasks.research import start_research
+import asyncio
+from sse_starlette.sse import EventSourceResponse
 
 task_router = APIRouter()
 
@@ -29,29 +32,7 @@ class TaskData(BaseModel):
     data: Optional[Dict[str, Any]] = {}
     task_id: Optional[str] = None
 
-@task_router.post("/knowledge_extraction")
-@route_handler()
-@fastapi_validate_input(["paper"])
-async def knowledge(
-    request: Request,
-    current_user: Dict[str, Any] = Depends(fastapi_token_required),
-    _: Dict = Depends(rate_limit_dependency)
-):
-    data = await request.json()
-    return await USER.knowledge(current_user, data["paper"])
-
-@task_router.post("/query")
-@route_handler()
-@fastapi_validate_input(["query"])
-async def query(
-    request: Request,
-    current_user: Dict[str, Any] = Depends(fastapi_token_required),
-    _: Dict = Depends(rate_limit_dependency)
-):
-    data = await request.json()
-    result = await USER.query(current_user, data["query"], data.get("design_doc", ""))
-    print(result)
-    return result
+# ------------------------------------------------------------------------
 
 @task_router.post("/user/like_solution")
 @route_handler()
@@ -102,15 +83,57 @@ async def test_api_connection(
 
 # ------------------------------------------------------------------------
 
-@task_router.get("/complete/status/{task_id}")
+@task_router.post("/query")
 @route_handler()
-async def task_status(task_id: str):
-    task_data = await async_redis.get(task_id)
-    if task_data:
-        return json.loads(task_data)
-    return {"status": "unknown", "progress": 0} 
+@fastapi_validate_input(["query"])
+async def query(
+    request: Request,
+    current_user: Dict[str, Any] = Depends(fastapi_token_required),
+    _: Dict = Depends(rate_limit_dependency)
+):
+    data = await request.json()
+    query_text = data["query"]
+    design_doc = data.get("design_doc", "")
 
-# ------------------------------------------------------------------------
+    async def event_generator():
+        queue: asyncio.Queue = asyncio.Queue()
+
+        async def send_event(event_type: str, payload: Any):
+            if await request.is_disconnected():
+                raise asyncio.CancelledError()
+            await queue.put({"event": event_type, "data": payload})
+
+        async def run_workflow():
+            try:
+                await USER.query(
+                    current_user=current_user,
+                    query_text=query_text,
+                    design_doc=design_doc,
+                    send_event=send_event
+                )
+            except asyncio.CancelledError:
+                print("query cancelled")
+                raise
+            except Exception as e:
+                await queue.put({"event": "error", "data": str(e)})
+            finally:
+                await queue.put({"event": "end", "data": "complete"})
+
+        task = asyncio.create_task(run_workflow())
+        try:
+            while True:
+                msg = await queue.get()
+                yield msg
+                if msg["event"] == "end":
+                    break
+        except asyncio.CancelledError:
+            task.cancel()
+            raise
+        finally:
+            if not task.done():
+                task.cancel()
+    
+    return EventSourceResponse(event_generator(), media_type="text/event-stream")
 
 @task_router.post("/inspiration/chat")
 @route_handler()
@@ -122,16 +145,47 @@ async def inspiration_chat(
     inspiration_id = data.get("inspiration_id")
     new_message = data.get("new_message")
     chat_history = data.get("chat_history", [])
-    stream = data.get("stream", False)
     
-    return await USER.handle_inspiration_chat(current_user, inspiration_id, new_message, chat_history, stream=stream)
+    async def event_generator():
+        queue: asyncio.Queue = asyncio.Queue()
 
-# ------------------------------------------------------------------------
+        async def send_event(event_type: str, payload: Any):
+            if await request.is_disconnected():
+                raise asyncio.CancelledError()
+            await queue.put({"event": event_type, "data": payload})
 
-from utils.tasks.research import start_research
-import asyncio
-from sse_starlette.sse import EventSourceResponse
+        async def run_workflow():
+            try:
+                await USER.handle_inspiration_chat(
+                    current_user=current_user,
+                    inspiration_id=inspiration_id,
+                    new_message=new_message,
+                    chat_history=chat_history,
+                    send_event=send_event
+                )
+            except asyncio.CancelledError:
+                print("inspiration_chat cancelled")
+                raise
+            except Exception as e:
+                await queue.put({"event": "error", "data": str(e)})
+            finally:
+                await queue.put({"event": "end", "data": "complete"})
 
+        task = asyncio.create_task(run_workflow())
+        try:
+            while True:
+                msg = await queue.get()
+                yield msg
+                if msg["event"] == "end":
+                    break
+        except asyncio.CancelledError:
+            task.cancel()
+            raise
+        finally:
+            if not task.done():
+                task.cancel()
+
+    return EventSourceResponse(event_generator(), media_type="text/event-stream")
 
 @task_router.post("/research")
 @route_handler()

@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useMemo } from 'react';
 import useAuthStore from '@/lib/hooks/auth-store';
 import Link from 'next/link';
 import { FaUser } from 'react-icons/fa';
@@ -12,25 +11,24 @@ interface UserAvatarProps {
 }
 
 const UserAvatar: React.FC<UserAvatarProps> = ({ isCollapsed }) => {
-  const authStore = useAuthStore();
-  const [initials, setInitials] = useState('');
+  const { name, email, id } = useAuthStore();
 
-  useEffect(() => {
-    if (authStore.name) {
-      setInitials(authStore.name.substring(0, 2).toUpperCase());
-    } else {
-        setInitials(''); // Clear initials if name is not available
+  const initials = useMemo(() => {
+    if (name) {
+      return name.substring(0, 2).toUpperCase();
     }
-  }, [authStore.name]);
+    return '';
+  }, [name]);
 
-  const displayName = authStore.name || 'Guest';
-  const targetHref = authStore.email ? `/user/${authStore.id}` : '/user/login';
+  const displayName = name || 'Guest';
+  const targetHref = email ? `/user/${id}` : '/user/login';
 
   return (
     <Link 
       href={targetHref} 
-      className={`w-full block transition-all duration-200 
-        ${isCollapsed ? 'py-2' : 'p-3 hover:bg-secondary/50 rounded-lg'}`}
+      className={`w-full block transition-all duration-200 ${
+        isCollapsed ? 'py-2' : 'p-3 hover:bg-secondary/50 rounded-lg'
+      }`}
     >
       <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-start space-x-3'}`}>
         <div 
@@ -38,7 +36,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ isCollapsed }) => {
             flex items-center justify-center shadow-sm
             ${isCollapsed ? 'w-10 h-10' : 'w-10 h-10'}`}
         >
-          {authStore.email ? (initials || <FaUser className="text-sm" />) : <FaUser className="text-sm" />}
+          {email ? (initials || <FaUser className="text-sm" />) : <FaUser className="text-sm" />}
         </div>
         
         {!isCollapsed && (
@@ -50,11 +48,11 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ isCollapsed }) => {
               {displayName}
             </span>
             
-            {authStore.email ? (
-              <span className="text-xs text-text-secondary truncate">
-                {authStore.email.length > 18 
-                  ? authStore.email.substring(0, 16) + '...' 
-                  : authStore.email}
+            {email ? (
+              <span className="text-xs text-text-secondary truncate" title={email}>
+                {email.length > 18 
+                  ? `${email.substring(0, 16)}...` 
+                  : email}
               </span>
             ) : (
               <span className="text-xs text-blue-400 font-medium">
@@ -68,5 +66,5 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ isCollapsed }) => {
   );
 };
 
-export default UserAvatar;
-
+// Memoize the component to prevent unnecessary re-renders
+export default React.memo(UserAvatar);

@@ -1,232 +1,168 @@
-import os
 import re
 from dotenv import load_dotenv
-import utils.main as MAIN
-import utils.db as RAG
-from utils.tasks.config import *
-from utils.tasks.config import solution_eval
-import utils.tasks.task as TASK
-from utils.redis import *
+import utils.log as LOG
 import utils.tasks.query_load as QUERY
+import utils.prompting as prompting
 import json
-import time
-import requests
-from io import BytesIO
-from PIL import Image
-import asyncio
-import httpx
-from utils.image import process_and_upload_image
+from typing import Callable, Any, Awaitable
+from langchain.chat_models import init_chat_model
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import SystemMessage, HumanMessage
 
 class OpenAIClient:
     def __init__(self, api_key, base_url, model_name=None):
         self.api_key = api_key
         self.base_url = base_url
         self.model_name = model_name
-        
-def knowledge(current_user, paper):
-    print(f"用户 {current_user['email']} 正在调用 /api/knowledge")
-    
-    load_dotenv()
-    API_KEY = current_user['api_key']
-    
-    # 优先使用用户设置的URL，如果没有则使用默认值
-    BASE_URL = current_user.get('api_url') or "https://api.deepseek.com/v1"
-    # 获取用户设置的模型名称（如果有）
-    MODEL_NAME = current_user.get('model_name') or "deepseek-chat"
-    
-    print(API_KEY, ' ', BASE_URL, ' ', MODEL_NAME)
-    
-    client = OpenAIClient(
-        api_key=API_KEY,
-        base_url=BASE_URL,
-        model_name=MODEL_NAME  # 传递模型名称给客户端
-    )
-    
-    user_type = current_user.get("user_type", "None Type")
-    result = MAIN.knowledge_extraction(paper, client, user_type=user_type)
-    return result
 
-async def query(current_user, query, design_doc):
-    print(f"用户 {current_user['email']} 正在调用 /api/query")
-    print(current_user.get("user_type", "None Type"))
-    
-    load_dotenv()
-    API_KEY = current_user['api_key']
-    
-    # 优先使用用户设置的URL，如果没有则使用默认值
-    BASE_URL = current_user.get('api_url') or "https://api.deepseek.com/v1"
-    # 获取用户设置的模型名称（如果有）
-    MODEL_NAME = current_user.get('model_name') or "deepseek-chat"
-    
-    print(API_KEY, ' ', BASE_URL, ' ', MODEL_NAME)
-    
-    client = OpenAIClient(
-        api_key=API_KEY,
-        base_url=BASE_URL,
-        model_name=MODEL_NAME  # 传递模型名称给客户端
-    )
-    
-    user_type = current_user.get("user_type", "None Type")
-    result = await MAIN.query_analysis(query, design_doc, client, user_type=user_type)
-    return result
+# --- Helper Functions  ---
 
-# -------------------------------------------------------------------- #
+def process_llm_response(content: str) -> dict:
+    """
+    Parses the LLM's string response into a dictionary.
+    Handles raw JSON strings and JSON within markdown code blocks.
+    """
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        json_match = re.search(r'```json\s*([\s\S]*?)\s*```', content, re.DOTALL)
+        if json_match:
+            try:
+                return json.loads(json_match.group(1))
+            except json.JSONDecodeError:
+                return {"text": content} # Return original content if extracted JSON is invalid
+        else:
+            return {"text": content} # Return original content if no JSON is found
 
-async def initialize_task(current_user, data):
-    task_id = await start_task(current_user)
-    query_analysis_result = json.loads(data)
-    query = query_analysis_result.get("Query")
-    await update_task_status(task_id, "Task started", 10, {
-        "query_analysis_result": query_analysis_result,
-        "query": query
-    })
-    return task_id
+async def stream_simple_chain(chain, inputs, send_event: Callable[[str, Any], Awaitable[None]]) -> str:
+    """
+    Streams a simple chain for tasks like query_analysis.
+    Sends text chunks to the client.
+    """
+    full_content = ""
+    try:
+        async for chunk in chain.astream(inputs):
+            content_piece = chunk.content
+            if content_piece:
+                full_content += content_piece
+                await send_event("chunk", {"text": content_piece})
+    except Exception as e:
+        LOG.logger.error(f"Error during LangChain stream: {e}", exc_info=True)
+        await send_event("error", f"Streaming Error: {e}")
+    return full_content
 
-async def rag_step(current_user, task_id):
-    task_data = json.loads(await async_redis.get(task_id) or "{}")
-    query_analysis_result = task_data.get("result", {}).get("query_analysis_result", {})
-    query = task_data.get("result", {}).get("query")
-    print(current_user.get("user_type", "None Type"))
-    print(query_analysis_result)
-    # rag_results = await RAG.search_in_meilisearch(query, query_analysis_result.get("Requirement", ""))
-    rag_results = RAG.search_in_meilisearch(query, query_analysis_result.get("Requirement", ""))
-    await update_task_status(task_id, "RAG search completed", 30, {"rag_results": rag_results})
-    return rag_results
+async def stream_chat_chain(chain, inputs, send_event: Callable[[str, Any], Awaitable[None]]) -> str:
+    """
+    Streams a chain specifically for the inspiration chat.
+    Sends a richer payload (`delta`, `content`, `message`) for the chat UI.
+    """
+    full_content = ""
+    try:
+        async for chunk in chain.astream(inputs):
+            content_piece = chunk.content
+            if content_piece:
+                full_content += content_piece
+                payload = {
+                    "delta": content_piece,
+                    "content": full_content,
+                    "message": {"role": "assistant", "content": full_content}
+                }
+                await send_event("chunk", payload)
+    except Exception as e:
+        LOG.logger.error(f"Error during LangChain chat stream: {e}", exc_info=True)
+        await send_event("error", f"Streaming Error: {e}")
+    return full_content
 
-async def paper_step(current_user, data, task_id):
-    paper_ids = data
-    papers = await asyncio.gather(*[
-        QUERY.query_paper(paper_id) for paper_id in paper_ids
+# --- Refactored Core Logic ---
+
+async def query_analysis(query: str, documents: str, model, send_event: Callable[[str, Any], Awaitable[None]]):
+    """
+    Refactored to use LangChain for query analysis.
+    """
+    LOG.logger.info(f"Using LangChain model for query analysis (Stream: True)")
+
+    user_content = f'''
+        query: {query if query else "No query provided"}
+        context: {documents if documents else "No additional context provided"}
+    '''
+    prompt = ChatPromptTemplate.from_messages([
+        SystemMessage(content=prompting.get_prompt('QUERY_EXPLAIN_SYSTEM_PROMPT')),
+        HumanMessage(content=user_content)
     ])
-    rag_results = {
-        "hits": [{"paper_id": paper_id, "content": paper} 
-                for paper_id, paper in zip(paper_ids, papers)]
-    }
-    await update_task_status(task_id, "Paper processing completed", 30, {"rag_results": rag_results})
-    return rag_results
+    chain = prompt | model
 
-async def example_step(current_user, example_ids, task_id):
-    task_data = json.loads(await async_redis.get(task_id) or "{}")
-    existing_rag_results = task_data.get("result", {}).get("rag_results", {"hits": []})
+    # Use the new streaming helper
+    full_content = await stream_simple_chain(chain, {}, send_event)
+
+    if full_content:
+        processed_response = process_llm_response(full_content)
+        await send_event("result", processed_response)
+
+
+async def query(current_user: dict, query_text: str, design_doc: str, send_event: Callable[[str, Any], Awaitable[None]]):
+    """
+    Endpoint entry function. Now initializes a LangChain model.
+    """
+    print(f"User {current_user['email']} is calling /api/query")
+    load_dotenv()
     
-    if not isinstance(existing_rag_results, dict) or 'hits' not in existing_rag_results:
-        existing_rag_results = {"hits": []} # 如果格式不正确，则初始化
-    if not isinstance(existing_rag_results['hits'], list):
-        existing_rag_results['hits'] = [] # 确保 hits 是一个列表
-
-    solutions = await asyncio.gather(*[
-        QUERY.query_solution(str(solution_id)) for solution_id in example_ids
-    ])
-    new_hits = [
-        {"solution_id": str(solution_id), "content": solution} 
-        for solution_id, solution in zip(example_ids, solutions) if solution is not None
-    ]
-    existing_rag_results['hits'].extend(new_hits)
-    
-    await update_task_status(task_id, "Example solutions added", 35, {"rag_results": existing_rag_results})
-    return existing_rag_results
-
-# -------------------------------------------------------------------- #
-
-async def drawing_step(current_user, task_id):
-    task_data = json.loads(await async_redis.get(task_id) or "{}")
-    query_analysis_result = task_data.get("result", {}).get("query_analysis_result", {})
-    final_solution = task_data.get("result", {}).get("final_solution")
-    final_solution = solution_eval(final_solution)
-    user_type = current_user.get("user_type", "None Type")
-
-    if not final_solution or "solutions" not in final_solution:
-        raise ValueError("final_solution 解析失败或不包含 'solutions' 字段")
-
-    target_user = query_analysis_result.get('Target User', 'null')
-    
-    BASE_URL = os.getenv("DRAW_URL")
-    API_KEY = os.getenv("DRAW_API_KEY")
-    MODEL_NAME = os.getenv("DRAW_MODEL")
-    
-    client = OpenAIClient(
-        api_key=API_KEY,
-        base_url=BASE_URL,
-        model_name=MODEL_NAME
-    )
-    SM_MS_API_KEY = os.getenv("SM_MS_API_KEY")
-    
-    for i, solution in enumerate(final_solution["solutions"]):
-        technical_method = solution.get("Technical Method")
-        possible_results = solution.get("Possible Results")
-        await update_task_status(task_id, f"Generating image {i+1}/{len(final_solution['solutions'])}...", 80 + (i+1)*10/len(final_solution["solutions"]))
-        
-        # 生成图片 (Calls the updated drawing_expert_system -> make_image_request)
-        image_data = await MAIN.drawing_expert_system(target_user, technical_method, possible_results, client, user_type=user_type)
-        try:
-            # 处理并上传图片
-            image_url, image_name = await process_and_upload_image(image_data['url'], SM_MS_API_KEY)
-            final_solution["solutions"][i]["image_url"] = image_url
-            final_solution["solutions"][i]["image_name"] = image_name
-        except Exception as e:
-            print(f"Failed to process image {i}: {e}")
-            continue
-            
-    await update_task_status(task_id, "Image generation completed", 90, {"final_solution": final_solution})
-    return final_solution
-
-# -------------------------------------------------------------------- #
-
-async def update_task_status(task_id, status, progress, result=None):
-    task_data = json.loads(await async_redis.get(task_id) or "{}")
-    
-    # 浅层合并（适用于单层数据结构）
-    if result:
-        existing = task_data.get("result", {})
-        existing.update(result)  # 新字段添加/更新，旧字段保留
-        task_data["result"] = existing
-    
-    task_data.update({
-        "status": status,
-        "progress": progress
-    })
-    
-    await async_redis.setex(task_id, 3600, json.dumps(task_data))
-
-async def start_task(current_user):
-    task_id = f"task_{int(time.time())}"
-    await async_redis.setex(task_id, 3600, json.dumps({
-        "user_id": str(current_user['_id']),
-        "status": "started",
-        "progress": 0,
-        "result": {}
-    }))
-    return task_id
-
-# -------------------------------------------------------------------- #
-
-async def handle_inspiration_chat(current_user, inspiration_id, new_message, chat_history=None, stream=False):
-    print(f"用户 {current_user['email']} 正在调用 /task/inspiration/chat (Stream: {stream})")
-    inspiration = await QUERY.query_solution(inspiration_id)
-    user_type = current_user.get("user_type", "None Type")
-    
-    BASE_URL = current_user.get('api_url') or "https://api.deepseek.com/v1"
-    MODEL_NAME = current_user.get('model_name') or "deepseek-chat"
-    
-    client = OpenAIClient(
-        api_key=current_user['api_key'],
-        base_url=BASE_URL,
-        model_name=MODEL_NAME
+    # Initialize LangChain model instead of custom client
+    model = init_chat_model(
+        model=current_user.get('model_name') or "deepseek-chat",
+        model_provider="openai",
+        api_key=current_user.get('api_key'),
+        base_url=current_user.get('api_url') or "https://api.deepseek.com/v1",
+        streaming=True
     )
     
-    if stream:
-        from fastapi.responses import StreamingResponse
-        
-        # Get the stream generator from MAIN.inspiration_chat
-        stream_generator = await MAIN.inspiration_chat(inspiration, new_message, client, chat_history, user_type=user_type, stream=True)
+    await query_analysis(query_text, design_doc, model, send_event)
 
-        # Wrap it for SSE format
-        async def sse_wrapper():
-            async for chunk in stream_generator:
-                 yield f"data: {json.dumps(chunk)}\n\n"
 
-        return StreamingResponse(sse_wrapper(), media_type="text/event-stream")
+async def _inspiration_chat_streamer(inspiration: str, new_message: str, model, chat_history: list, send_event: Callable[[str, Any], Awaitable[None]]):
+    """
+    Refactored to use LangChain for inspiration chat.
+    """
+    LOG.logger.info(f"Using LangChain model for inspiration chat (Stream: True)")
+    
+    system_prompt = prompting.get_prompt('INSPIRATION_CHAT_SYSTEM_PROMPT')
+    messages = [SystemMessage(content=system_prompt)]
+    
+    if chat_history and isinstance(chat_history, list):
+        messages.extend([HumanMessage(content=msg['content']) if msg['role'] == 'user' else SystemMessage(content=msg['content']) for msg in chat_history])
+        messages.append(HumanMessage(content=new_message))
     else:
-        # Call MAIN.inspiration_chat for non-streamed response
-        result = await MAIN.inspiration_chat(inspiration, new_message, client, chat_history, user_type=user_type, stream=False)
-        return result
+        messages.append(HumanMessage(content=f"Inspiration: {inspiration}\nContext: {new_message}"))
+
+    prompt = ChatPromptTemplate.from_messages(messages)
+    chain = prompt | model
+    
+    # Use the chat-specific streaming helper
+    full_content = await stream_chat_chain(chain, {}, send_event)
+    
+    if full_content:
+        final_payload = {
+            "content": full_content,
+            "message": {"role": "assistant", "content": full_content}
+        }
+        await send_event("result", final_payload)
+
+
+async def handle_inspiration_chat(current_user: dict, inspiration_id: str, new_message: str, chat_history: list, send_event: Callable[[str, Any], Awaitable[None]]):
+    """
+    Endpoint entry function for inspiration chat. Now initializes a LangChain model.
+    """
+    print(f"User {current_user['email']} is calling /task/inspiration/chat (Stream: True)")
+    inspiration_doc = await QUERY.query_solution(inspiration_id)
+    # Extract the relevant inspiration content, assuming it's in a specific field
+    inspiration_text = json.dumps(inspiration_doc) if inspiration_doc else "No inspiration found."
+
+    # Initialize LangChain model
+    model = init_chat_model(
+        model=current_user.get('model_name') or "deepseek-chat",
+        model_provider="openai",
+        api_key=current_user.get('api_key'),
+        base_url=current_user.get('api_url') or "https://api.deepseek.com/v1",
+        streaming=True
+    )
+    
+    await _inspiration_chat_streamer(inspiration_text, new_message, model, chat_history, send_event)

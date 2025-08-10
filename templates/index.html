@@ -7,63 +7,116 @@
     <title>Research Knowledge Transfer</title>
 </head>
 <body>
-  <div class="container">
-    <div class="left-panel">
-        <h2>Designer’s Input</h2>
-        <textarea placeholder="Type your question..."></textarea>
-        <button class="upload-btn">Document Name</button>
-        <div class="info-box">
-            <p><strong>TARGET USER:</strong> "drivers"</p>
-            <p><strong>USAGE SCENARIO:</strong> "Developing an interactive reminder system for autonomous vehicle cockpits to keep drivers attentive to the road."</p>
-            <p><strong>REQUIREMENTS:</strong> ["reminder methods", "user experience", "interaction design", "alert systems"]</p>
-        </div>
-        <div class="buttons">
-            <button class="generate-btn">Generate Again...</button>
-            <button class="explore-btn">Explore Solutions!</button>
-        </div>
-        <div class="chat-input">
-            <input type="text" placeholder="Type your question...">
-        </div>
-    </div>
+    <div class="container">
+        <!-- Left Panel - Chat Interface -->
+        <div class="left-panel">
+            <!-- Header -->
+            <div class="header">
+                <div class="title">Chat</div>
+                <div class="controls">
+                    <!-- SSE Connection Status -->
+                    <div class="connection-status">
+                        <div class="status-indicator" id="status-indicator"></div>
+                        <span class="status-text" id="status-text">Disconnected</span>
+                    </div>
+                    
+                    <select id="mode-selector" class="mode-selector">
+                        <option value="chat">Chat</option>
+                        <option value="inspiration">Inspiration</option>
+                    </select>
+                </div>
+            </div>
 
-    <div class="right-panel">
-        <h2>Applying Music Therapy to Alleviate Depression</h2>
-        <p>The context or situation in which the targeted user would engage with the solution...</p>
+            <!-- Messages Area -->
+            <div class="messages-container">
+                <div class="chat-log" id="chat-log">
+                    <!-- Messages will be dynamically added here -->
+                </div>
+            </div>
 
-        <div class="solution">
-            <h3>Solution 01: Real-Time Adaptation of Music Therapy</h3>
-            <div class="solution-content">
-                <img src="image1.png" alt="Music Therapy Session">
-                <div class="solution-text">
-                    <p><strong>Function:</strong> Utilizing real-time physiological data to dynamically adjust music therapy sessions.</p>
-                    <p><strong>Use Case:</strong> A patient undergoes a music therapy session where a wearable device feeds real-time physiological data into software...</p>
-                    <div class="scale">
-                        <p><strong>Unique</strong> <span class="scale-bar"></span> <strong>Mainstream</strong></p>
-                        <p><strong>Conceptual</strong> <span class="scale-bar"></span> <strong>Practical</strong></p>
+            <!-- Input Area -->
+            <div class="input-area">
+                <div class="input-container">
+                    <textarea 
+                        id="user-input" 
+                        placeholder="Ask me anything..." 
+                        rows="5"
+                    ></textarea>
+                </div>
+                
+                <div class="input-controls">
+                    <div class="left-controls">
+                        <button id="file-upload-btn" class="icon-btn" title="Upload files">
+                            📎
+                        </button>
+                    </div>
+                    
+                    <div class="right-controls">
+                        <span class="file-info">PDF, Word, Excel, text & code files (max 10MB)</span>
+                        <button id="send-button" class="send-btn">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path d="M.5 1.163A1 1 0 0 1 1.97.28l12.868 6.837a1 1 0 0 1 0 1.766L1.969 15.72A1 1 0 0 1 .5 14.836V10.33a1 1 0 0 1 .816-.983L8.5 8 1.316 6.653A1 1 0 0 1 .5 5.67V1.163Z" fill="currentColor"/>
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="solution">
-            <h3>Solution 02: AI-Generated Music Content</h3>
-            <div class="solution-content">
-                <img src="image2.png" alt="AI-Generated Music">
-                <div class="solution-text">
-                    <p><strong>Function:</strong> Incorporating AI-generated content to enhance music therapy.</p>
-                    <p><strong>Use Case:</strong> A music therapist uses AI-generated content to enhance a patient's music therapy experience...</p>
+        <!-- Right Panel - Research Results -->
+        <div class="right-panel">
+            <div class="research-container" id="research-container">
+                <!-- Progress Display -->
+                <div class="progress-section" id="progress-section" style="display: none;">
+                    <div class="progress-header">
+                        <h2>Research Progress</h2>
+                        <div class="progress-controls">
+                            <div class="timer" id="timer">0:00</div>
+                            <button id="stop-btn" class="stop-btn" style="display: none;">Stop</button>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-info">
+                        <div class="progress-status">
+                            <span id="status-message">Ready to start research</span>
+                            <span id="progress-percent">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Research Stages -->
+                <div class="stages-container" id="stages-container">
+                    <!-- Stages will be dynamically added here -->
+                </div>
+
+                <!-- Streaming Output -->
+                <div class="streaming-section" id="streaming-section" style="display: none;">
+                    <div class="streaming-header">
+                        <div class="streaming-icon">⚡</div>
+                        <div class="streaming-info">
+                            <span class="streaming-title">Processing...</span>
+                            <div class="streaming-subtitle">Generating solutions</div>
+                        </div>
+                    </div>
+                    <div class="streaming-output" id="streaming-output"></div>
+                </div>
+
+                <!-- Default State -->
+                <div class="default-state" id="default-state">
+                    <div class="default-icon">🔬</div>
+                    <h3>Ready to Research</h3>
+                    <p>Start a research workflow to see real-time progress and results here.</p>
                 </div>
             </div>
         </div>
     </div>
-</div>
-    
-        <script src="/static/index.js"></script>
-    
-      
-      
-      
-      
 
+    <!-- Hidden file input -->
+    <input type="file" id="file-input" style="display: none;" accept=".pdf,.docx,.doc,.xlsx,.xls,.txt,.md,.json,.csv,.html,.xml,.js,.ts,.css,.py,.java,.cpp,.cc,.cxx,.c,.cs,.php,.rb,.go,.rs,.kt,.swift">
+
+    <script src="/static/index.js"></script>
 </body>
 </html>

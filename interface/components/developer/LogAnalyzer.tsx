@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useToast } from '@/components/ui/toast';
-import { fetchLogs, fetchLogStats, LogEntry, LogStats } from '@/lib/actions/logActions';
+import { fetchLogs, fetchLogStats, LogEntry, LogStats } from '@/lib/actions/loadActions';
 import { RefreshCw, AlertCircle, Info, AlertTriangle, Bug } from 'lucide-react';
 import Dialog from '@/components/ui/dialog';
 

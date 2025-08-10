@@ -18,7 +18,7 @@ const Gallery = () => {
     const authStore = useAuthStore();
     const { toast } = useToast();
 
-    // 使用URL查询管理器
+    // Use URL query manager
     const urlManager = useMemo(() => new URLQueryManager(router, '/gallery'), [router]);
     const currentParams = useMemo(() => URLQueryManager.parseSearchParams(searchParams), [searchParams]);
     
@@ -116,12 +116,12 @@ const Gallery = () => {
         }
     }, [client, fetchSolutionCount, authStore.email, toast]);
 
-    // 同步URL参数变化到本地状态
+    // Sync URL parameter changes to local state
     useEffect(() => {
         setQuery(query);
     }, [query]);
 
-    // 当URL参数变化时重新获取数据
+    // Re-fetch data when URL parameters change
     useEffect(() => {
         setSolutions([]);
         setLikedSolutions({});
@@ -151,7 +151,7 @@ const Gallery = () => {
 
     const renderPagination = () => {
         const pagesToShow = [];
-        const range = 2;
+        const range = window.innerWidth < 768 ? 1 : 2; // Smaller range on mobile
         let startPage = Math.max(1, pageNumber - range);
         let endPage = Math.min(totalPages, pageNumber + range);
 
@@ -172,11 +172,11 @@ const Gallery = () => {
         return pagesToShow.map((page, index) => (
             <React.Fragment key={index}>
                 {page === '...' ? (
-                    <span className="px-3 py-2 text-gray-500 dark:text-gray-400">...</span>
+                    <span className="px-2 py-2 text-gray-500 dark:text-gray-400 text-sm">...</span>
                 ) : (
                     <button
                         onClick={() => handlePageChange(page)}
-                        className={`px-3 py-2 rounded-md transition-colors duration-200 ${
+                        className={`px-2 md:px-3 py-2 rounded-md transition-colors duration-200 text-sm md:text-base touch-target ${
                             page === pageNumber
                                 ? 'bg-blue-500 text-white'
                                 : 'bg-primary text-text-secondary hover:bg-secondary'
@@ -195,19 +195,19 @@ const Gallery = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="h-screen overflow-y-auto bg-primary text-text-primary transition-colors duration-300">
-            <div className="flex justify-center mt-4">
+            <div className="flex justify-center mt-4 mobile-padding pt-16 md:pt-4">
                 <header className="text-center w-full">
                     <form onSubmit={handleSearch} className="flex justify-center">
-                        <div className="relative w-[80%] max-w-3xl">
-                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-text-placeholder">
-                                <FaSearch />
+                        <div className="relative w-full max-w-3xl">
+                            <span className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 text-text-placeholder">
+                                <FaSearch className="text-sm md:text-base" />
                             </span>
                             <input
                                 type="text"
                                 value={queryState}
                                 onChange={(e) => setQuery(e.target.value)}
-                                placeholder="Search Inspirtaions"
-                                className="w-full pl-12 pr-4 py-3 text-lg border border-secondary rounded-lg bg-primary text-text-primary outline-none shadow 
+                                placeholder="Search Inspirations"
+                                className="w-full pl-10 md:pl-12 pr-4 py-2 md:py-3 text-base md:text-lg border border-secondary rounded-lg bg-primary text-text-primary outline-none shadow 
                                 focus:ring focus:ring-secondary focus:border-neutral-500 focus:bg-secondary transition-all duration-300"
                             />
                         </div>
@@ -218,7 +218,7 @@ const Gallery = () => {
             {loading && pageNumber === 1 ? (
                 <MasonryGallery solutions={[]} likedSolutions={{}} />
             ) : error ? (
-                <div className="text-center mt-24 text-red-500">
+                <div className="text-center mt-12 md:mt-24 text-red-500 mobile-padding">
                     {error}
                 </div>
             ) : (
@@ -229,28 +229,31 @@ const Gallery = () => {
                     )}
 
                     {/* Pagination Controls */}
-                    <div className="flex justify-center mt-2 mb-6 space-x-3">
+                    <div className="flex flex-col sm:flex-row justify-center items-center mt-2 mb-6 space-y-2 sm:space-y-0 sm:space-x-2 mobile-padding">
                         <button
                             onClick={() => handlePageChange(pageNumber - 1)}
                             disabled={pageNumber === 1}
-                            className="px-4 py-2 rounded-md bg-primary text-text-primary 
-                                disabled:opacity-50 hover:bg-secondary
-                                focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                            className="w-full sm:w-auto px-3 md:px-4 py-2 rounded-md bg-primary text-text-primary 
+                                disabled:opacity-50 hover:bg-secondary touch-target
+                                focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-sm md:text-base"
                         >
-                            <FaChevronLeft className="inline mr-2" />
+                            <FaChevronLeft className="inline mr-1 md:mr-2" />
                             Previous
                         </button>
-                        {renderPagination()}
+                        
+                        <div className="flex flex-wrap justify-center gap-1 sm:gap-2">
+                            {renderPagination()}
+                        </div>
 
                         <button
                             onClick={() => handlePageChange(pageNumber + 1)}
                             disabled={pageNumber === totalPages}
-                            className="px-4 py-2 rounded-md bg-primary text-text-primary 
-                                disabled:opacity-50 hover:bg-secondary
-                                focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                            className="w-full sm:w-auto px-3 md:px-4 py-2 rounded-md bg-primary text-text-primary 
+                                disabled:opacity-50 hover:bg-secondary touch-target
+                                focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-sm md:text-base"
                         >
                             Next
-                            <FaChevronRight className="inline ml-2" />
+                            <FaChevronRight className="inline ml-1 md:ml-2" />
                         </button>
                     </div>
                 </div>
@@ -260,7 +263,14 @@ const Gallery = () => {
 };
 
 const GalleryPage = () => (
-    <Suspense fallback={<div>Loading gallery...</div>}>
+    <Suspense fallback={
+        <div className="flex items-center justify-center min-h-screen mobile-padding">
+            <div className="text-center">
+                <div className="animate-spin w-8 h-8 border-4 border-text-link border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-text-secondary mobile-text">Loading gallery...</p>
+            </div>
+        </div>
+    }>
         <Gallery />
     </Suspense>
 );

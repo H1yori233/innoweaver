@@ -1,11 +1,11 @@
+import json
 from bson.objectid import ObjectId
-from utils.tasks.config import *
+from typing import List
 from utils.redis import async_redis
 from utils.db import (
     solutions_collection, papers_collection,
     solutions_liked_collection, papers_cited_collection
 )
-from typing import List
 
 ## Query #######################################################################
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { fetchViewPrompts, fetchModifyPrompt } from '@/lib/actions/promptsAction';
+import { fetchViewPrompts, fetchModifyPrompt } from '@/lib/actions/loadActions';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';

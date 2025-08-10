@@ -5,7 +5,6 @@ import useRouterHook from '@/lib/hooks/router-hook';
 import Link from 'next/link';
 import { fetchLikeSolution } from '@/lib/actions';
 import { FaHeart } from 'react-icons/fa';
-import { getLargeEmojiForTitle } from '@/lib/emoji-utils';
 import { logger } from '@/lib/logger';
 import Image from 'next/image';
 

@@ -3,13 +3,13 @@
 import { useState, useEffect, useRef, Suspense } from 'react';
 import * as React from 'react';
 import { useDropzone } from 'react-dropzone';
-import { FaArrowCircleUp, FaPaperclip, FaRedo, FaFileAlt } from 'react-icons/fa';
+import { FaArrowCircleUp, FaPaperclip, FaRedo, FaFileAlt, FaCloudUploadAlt, FaFilePdf, FaFileWord, FaFileCode } from 'react-icons/fa';
 import Textarea from 'react-textarea-autosize';
-import {
-  fetchQueryAnalysis,
-} from "@/lib/actions";
+import { useQuerySSE } from '@/lib/hooks/useQuerySSE';
+import ResearchDisplay from '@/app/chat/ResearchDisplay';
+import { useResearchSSE } from '@/lib/hooks/useResearchSSE';
+
 import CircularProgress from '@mui/material/CircularProgress';
-import SolutionSearch from '@/components/main/SolutionSearch';
 import { motion } from 'framer-motion';
 import { useToast } from '@/components/ui/toast';
 import { useRouter, usePathname } from 'next/navigation';
@@ -21,20 +21,19 @@ import {
   PanelResizeHandle
 } from 'react-resizable-panels';
 
-import ResearchDisplay from '@/app/chat/ResearchDisplay';
-
-import { 
-  readFileContent, 
-  extractErrorMessage, 
-  validateFile, 
-  handleFileUpload, 
-  MAX_FILE_SIZE 
+import {
+  readFileContent,
+  extractErrorMessage,
+  validateFile,
+  handleFileUpload,
+  MAX_FILE_SIZE,
+  SUPPORTED_FILE_TYPES
 } from './FileUtils';
 import ChatMessages from './ChatMessages';
+import SolutionSearch from './SolutionSearch';
 import FileContent from './FileContent';
-import JSON5 from 'json5';
 
-// 研究状态接口
+// Research state interface
 interface ResearchState {
   isLoading: boolean;
   progress: number;
@@ -55,23 +54,29 @@ const GenerateSolution = () => {
   const { userType } = useAuthStore();
   const isDeveloper = userType === 'developer';
 
-  // 基础状态
+  // Basic state
   const [selectedMode, setSelectedMode] = useState('chat');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [drawMode, setDrawMode] = useState(false);
   const [viewingFile, setViewingFile] = useState<File | null>(null);
 
-  // 消息和分析相关
+  // Messages and analysis
   const [messages, setMessages] = useState<{
-    type: 'user' | 'system' | 'analysis' | 'loading' | 'file', 
-    content: string, data?: any, fileData?: File}[]
+    type: 'user' | 'system' | 'analysis' | 'loading' | 'file' | 'streaming',
+    content: string, data?: any, fileData?: File, streamingContent?: string
+  }[]
   >([]);
   const [inputText, setInputText] = useState('');
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [isAnalysisLoading, setIsAnalysisLoading] = useState(false);
+  const [streamingAnalysisContent, setStreamingAnalysisContent] = useState('');
 
-  // 研究工作流状态
+  // Drag and drop state
+  const [isDragActive, setIsDragActive] = useState(false);
+  const [dragCounter, setDragCounter] = useState(0);
+
+  // Research workflow state
   const [researchState, setResearchState] = useState<ResearchState>({
     isLoading: false,
     progress: 0,
@@ -81,14 +86,29 @@ const GenerateSolution = () => {
     results: {}
   });
 
-  // 完成结果和其他状态
-
   const { toast } = useToast();
   const [id, setId] = useState('');
 
   // Refs
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const chatAreaRef = useRef<HTMLDivElement>(null);
+
+  const apiUrl = process.env.API_URL;
+
+  // Initialize SSE hooks
+  const { connectionState: sseConnectionState, connect: connectSSE, disconnect: disconnectSSE } = useResearchSSE({
+    url: `${apiUrl}/api/research`,
+    maxReconnectAttempts: 5,
+    reconnectInterval: 1000,
+    maxReconnectInterval: 30000,
+    heartbeatInterval: 30000,
+    connectionTimeout: 10000,
+    messageTimeout: 60000,
+  });
+
+  const { connectionState: querySSEConnectionState, connect: connectQuerySSE, disconnect: disconnectQuerySSE } = useQuerySSE({
+    url: `${apiUrl}/api/query`,
+  });
 
   useEffect(() => {
     const storedId = localStorage.getItem("id");
@@ -97,7 +117,7 @@ const GenerateSolution = () => {
     }
   }, []);
 
-  // URL 参数处理
+  // URL parameter handling
   useEffect(() => {
     const url = new URL(window.location.href);
     const mode = url.searchParams.get('mode');
@@ -110,6 +130,69 @@ const GenerateSolution = () => {
       setSelectedIds(ids.split(','));
     }
   }, []);
+
+  // Drag and drop handlers for chat area
+  useEffect(() => {
+    const handleDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragCounter(prev => prev + 1);
+      if (e.dataTransfer?.items && e.dataTransfer.items.length > 0) {
+        setIsDragActive(true);
+      }
+    };
+
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragCounter(prev => prev - 1);
+      if (dragCounter <= 1) {
+        setIsDragActive(false);
+      }
+    };
+
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragActive(false);
+      setDragCounter(0);
+
+      const files = Array.from(e.dataTransfer?.files || []);
+      if (files.length > 0) {
+        files.forEach(file => {
+          const validation = validateFile(file);
+          if (validation.valid) {
+            handleFileUploadAsMessage(file);
+          } else {
+            toast({
+              title: "Upload Error",
+              description: validation.errorMessage || "Failed to upload file",
+            });
+          }
+        });
+      }
+    };
+
+    const chatArea = chatAreaRef.current;
+    if (chatArea) {
+      chatArea.addEventListener('dragenter', handleDragEnter);
+      chatArea.addEventListener('dragleave', handleDragLeave);
+      chatArea.addEventListener('dragover', handleDragOver);
+      chatArea.addEventListener('drop', handleDrop);
+
+      return () => {
+        chatArea.removeEventListener('dragenter', handleDragEnter);
+        chatArea.removeEventListener('dragleave', handleDragLeave);
+        chatArea.removeEventListener('dragover', handleDragOver);
+        chatArea.removeEventListener('drop', handleDrop);
+      };
+    }
+  }, [dragCounter]);
 
   const updateURL = (mode: string, ids: string[] = []) => {
     const url = new URL(window.location.href);
@@ -138,111 +221,186 @@ const GenerateSolution = () => {
     setDrawMode(!drawMode);
   };
 
-  // 消息处理
+  // Message handling
   const handleSendMessage = () => {
     if (!inputText.trim()) return;
-    
+
     const newMessage = { type: 'user' as const, content: inputText };
     setMessages([...messages, newMessage]);
     setInputText('');
-    
+
     setMessages(prev => [...prev, { type: 'loading' as const, content: 'Analyzing...' }]);
     handleQueryAnalysis();
   };
 
-  // 文件上传处理
+  // File upload handling - support multiple files
   const { getRootProps, getInputProps } = useDropzone({
     onDrop: (acceptedFiles) => {
-      if (acceptedFiles.length > 0) {
-        handleFileUpload(
-          acceptedFiles[0], 
-          setFile, 
-          (title, description) => toast({ title, description })
-        );
-      }
+      acceptedFiles.forEach(file => {
+        const validation = validateFile(file);
+        if (validation.valid) {
+          handleFileUploadAsMessage(file);
+        } else {
+          toast({
+            title: "Upload Error",
+            description: validation.errorMessage || "Failed to upload file",
+          });
+        }
+      });
     },
-    accept: {
-      'text/plain': ['.txt'],
-    },
+    accept: SUPPORTED_FILE_TYPES,
     maxSize: MAX_FILE_SIZE,
-    maxFiles: 1,
+    multiple: true,
+    noClick: true, // Disable click to avoid conflicts with chat area
+    noKeyboard: true,
     onDropRejected: (fileRejections) => {
-      const rejection = fileRejections[0];
-      if (rejection) {
+      fileRejections.forEach(rejection => {
         if (rejection.errors.some(e => e.code === 'file-too-large')) {
           toast({
             title: "File Too Large",
-            description: "File size exceeds the 1MB limit.",
+            description: `${rejection.file.name} exceeds the ${Math.round(MAX_FILE_SIZE / (1024 * 1024))}MB limit.`,
           });
         } else if (rejection.errors.some(e => e.code === 'file-invalid-type')) {
           toast({
             title: "Invalid File Type",
-            description: "Only .txt files are supported.",
+            description: `${rejection.file.name} is not a supported format. Please upload PDF, Word, TXT, or Markdown files.`,
           });
         } else {
           toast({
             title: "Upload Failed",
-            description: "Could not upload the file. Please try again.",
+            description: `Could not upload ${rejection.file.name}. Please try again.`,
           });
         }
-      }
+      });
     }
   });
 
-  // 查询分析
-  const handleQueryAnalysis = () => {
-    setIsAnalysisLoading(true);
-    
-    const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
-    const queryText = lastMessage && lastMessage.type === 'user' ? lastMessage.content : inputText;
-    
-    const processAnalysisResult = (result) => {
-      setIsAnalysisLoading(false);
+  // Query analysis SSE event handler
+  const handleQuerySSEEvent = (eventType: string, data: any) => {
+    switch (eventType) {
+      case 'chunk':
+        if (data?.text) {
+          setStreamingAnalysisContent(prev => prev + data.text);
+        }
+        break;
       
-      setMessages(prev => {
-        const filteredMessages = prev.filter(msg => msg.type !== 'loading');
-        return [...filteredMessages, {
-          type: 'analysis' as const,
-          content: 'Query Analysis',
-          data: result
-        }];
-      });
+      case 'result':
+        // Final result received, process and display
+        setIsAnalysisLoading(false);
+        setAnalysisResult(data);
+        
+        setMessages(prev => {
+          const filteredMessages = prev.filter(msg => msg.type !== 'loading' && msg.type !== 'streaming');
+          return [...filteredMessages, {
+            type: 'analysis' as const,
+            content: 'Query Analysis',
+            data: data
+          }];
+        });
+        
+        setStreamingAnalysisContent('');
+        break;
       
-      setAnalysisResult(result);
-    };
-    
-    const handleError = (error) => {
-            setIsAnalysisLoading(false);
-            const errorMsg = extractErrorMessage(error);
-            
-            setMessages(prev => {
-              const filteredMessages = prev.filter(msg => msg.type !== 'loading');
-              return [...filteredMessages, {
-                type: 'system' as const,
-                content: `Analysis failed: ${errorMsg}`
-              }];
-            });
-            
-            toast({
-              title: "Error",
-              description: `Analysis failed: ${errorMsg}`,
-            });
-    };
-    
-    if (file) {
-      readFileContent(file).then((fileContent) => {
-        fetchQueryAnalysis(queryText, fileContent)
-          .then(processAnalysisResult)
-          .catch(handleError);
-      });
-    } else {
-      fetchQueryAnalysis(queryText, "")
-        .then(processAnalysisResult)
-        .catch(handleError);
+      case 'error':
+        setIsAnalysisLoading(false);
+        const errorMsg = typeof data === 'string' ? data : JSON.stringify(data);
+        
+        setMessages(prev => {
+          const filteredMessages = prev.filter(msg => msg.type !== 'loading' && msg.type !== 'streaming');
+          return [...filteredMessages, {
+            type: 'system' as const,
+            content: `Analysis failed: ${errorMsg}`
+          }];
+        });
+        
+        setStreamingAnalysisContent('');
+        
+        toast({
+          title: "Error",
+          description: `Analysis failed: ${errorMsg}`,
+        });
+        break;
+      
+      case 'end':
+        setIsAnalysisLoading(false);
+        setStreamingAnalysisContent('');
+        disconnectQuerySSE();
+        break;
     }
   };
 
-  // SSE 事件处理
+  // Combine all file contents for analysis
+  const getCombinedFileContent = async (): Promise<string> => {
+    if (files.length === 0) return "";
+    
+    try {
+      const fileContents = await Promise.all(
+        files.map(async (file) => {
+          try {
+            const content = await readFileContent(file);
+            return `=== File: ${file.name} ===\n${content}\n\n`;
+          } catch (error) {
+            console.error(`Error reading ${file.name}:`, error);
+            return `=== File: ${file.name} ===\n[Error reading file: ${error instanceof Error ? error.message : 'Unknown error'}]\n\n`;
+          }
+        })
+      );
+      
+      return fileContents.join('');
+    } catch (error) {
+      console.error('Error combining file contents:', error);
+      return "";
+    }
+  };
+
+  // Query analysis - using streaming generation
+  const handleQueryAnalysis = async () => {
+    setIsAnalysisLoading(true);
+    setStreamingAnalysisContent('');
+
+    const lastMessage = messages.length > 0 ? messages[messages.length - 1] : null;
+    const queryText = lastMessage && lastMessage.type === 'user' ? lastMessage.content : inputText;
+
+    // Add streaming message placeholder
+    setMessages(prev => {
+      const filteredMessages = prev.filter(msg => msg.type !== 'loading');
+      return [...filteredMessages, {
+        type: 'streaming' as const,
+        content: 'Query Analysis',
+        streamingContent: ''
+      }];
+    });
+
+    try {
+      const design_doc = await getCombinedFileContent();
+      const payload = {
+        query: queryText,
+        design_doc: design_doc
+      };
+
+      await connectQuerySSE(payload, handleQuerySSEEvent);
+    } catch (error: any) {
+      setIsAnalysisLoading(false);
+      const errorMsg = extractErrorMessage(error);
+      
+      setMessages(prev => {
+        const filteredMessages = prev.filter(msg => msg.type !== 'loading' && msg.type !== 'streaming');
+        return [...filteredMessages, {
+          type: 'system' as const,
+          content: `Analysis failed: ${errorMsg}`
+        }];
+      });
+      
+      setStreamingAnalysisContent('');
+      
+      toast({
+        title: "Error",
+        description: `Analysis failed: ${errorMsg}`,
+      });
+    }
+  };
+
+  // SSE event handler
   const handleSSEEvent = (eventType: string, data: any) => {
     switch (eventType) {
       case 'chunk': {
@@ -311,13 +469,13 @@ const GenerateSolution = () => {
           statusMessage: 'Research Complete',
           isLoading: false
         }));
-        
+
         setMessages(prev => [...prev, {
           type: 'system' as const,
           content: 'Research workflow completed successfully!'
         }]);
-        
-        // 清理流式内容
+
+        // Clear streaming content after delay
         setTimeout(() => {
           setResearchState(prev => ({ ...prev, streamingContent: '' }));
         }, 3000);
@@ -326,7 +484,7 @@ const GenerateSolution = () => {
     }
   };
 
-  // 开始研究
+  // Start research
   const handleGenerate = async () => {
     if (!analysisResult) {
       toast({
@@ -344,7 +502,7 @@ const GenerateSolution = () => {
       return;
     }
 
-    // 重置状态
+    // Reset state
     setResearchState({
       isLoading: true,
       progress: 0,
@@ -354,16 +512,10 @@ const GenerateSolution = () => {
       results: {}
     });
 
-
-    // 开始计时
+    // Start timer
     timerRef.current = setInterval(() => {
       setResearchState(prev => ({ ...prev, elapsedTime: prev.elapsedTime + 1 }));
     }, 1000);
-
-    // 设置中止控制器
-    abortControllerRef.current?.abort();
-    const ac = new AbortController();
-    abortControllerRef.current = ac;
 
     const payload = {
       query: analysisResult.Query || "Research query",
@@ -374,70 +526,24 @@ const GenerateSolution = () => {
     };
 
     try {
-      const { fetchEventSource } = await import('@microsoft/fetch-event-source');
-      
-      await fetchEventSource('http://localhost:5000/api/research', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token') ?? ''}`,
-          Accept: 'text/event-stream',
-        },
-        body: JSON.stringify(payload),
-        signal: ac.signal,
-
-        onopen: async response => {
-          if (!response.ok || !response.headers.get('content-type')?.includes('text/event-stream')) {
-            throw new Error(`Failed to open SSE connection: ${response.status} ${response.statusText}`);
-          }
-        },
-
-        onmessage: (msg) => {
-          const eventType = msg.event || 'chunk';
-          let eventData: any = msg.data;
-          if (typeof eventData === 'string') {
-            try {
-              eventData = JSON5.parse(eventData);
-            } catch {
-              // 保留原始字符串
-            }
-          }
-          handleSSEEvent(eventType, eventData);
-        },
-
-        onerror: err => {
-          console.error('SSE error:', err);
-          if (!ac.signal.aborted) {
-            setMessages(prev => [...prev, {
-              type: 'system' as const,
-              content: `Research error: ${err instanceof Error ? err.message : 'Unknown SSE error'}`
-            }]);
-            setResearchState(prev => ({ ...prev, isLoading: false }));
-          }
-          throw err;
-        },
-
-        onclose: () => {
-          setResearchState(prev => ({ ...prev, isLoading: false }));
-        },
-
-        openWhenHidden: true,
-        fetch: fetch,
-      });
+      await connectSSE(payload, handleSSEEvent);
     } catch (error: any) {
-      if (error.name !== 'AbortError' && !ac.signal.aborted) {
+      console.error('Research generation error:', error);
+
+      if (sseConnectionState.error) {
+        setMessages(prev => [...prev, {
+          type: 'system' as const,
+          content: `Research failed: ${sseConnectionState.error}`
+        }]);
+      } else {
         setMessages(prev => [...prev, {
           type: 'system' as const,
           content: `Research failed: ${error.message || 'Unknown error occurred'}`
         }]);
-      } else if (ac.signal.aborted) {
-        setMessages(prev => [...prev, {
-          type: 'system' as const,
-          content: 'Research workflow cancelled'
-        }]);
       }
-    } finally {
+
       setResearchState(prev => ({ ...prev, isLoading: false }));
+
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -445,9 +551,9 @@ const GenerateSolution = () => {
     }
   };
 
-  // 停止研究
+  // Stop research
   const stopResearch = () => {
-    abortControllerRef.current?.abort();
+    disconnectSSE();
     setResearchState(prev => ({
       ...prev,
       isLoading: false,
@@ -457,14 +563,14 @@ const GenerateSolution = () => {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    
+
     setMessages(prev => [...prev, {
       type: 'system' as const,
       content: 'Research workflow stopped by user'
     }]);
   };
 
-  // 文件处理函数
+  // File handling functions
   const handleFileUploadAsMessage = (uploadedFile: File) => {
     const validation = validateFile(uploadedFile);
     if (!validation.valid && validation.errorMessage) {
@@ -475,24 +581,26 @@ const GenerateSolution = () => {
       return;
     }
 
-    const newMessage = { 
-      type: 'file' as const, 
-      content: `Uploaded file: ${uploadedFile.name}`, 
-      fileData: uploadedFile 
+    // Add file to files array
+    setFiles(prev => [...prev, uploadedFile]);
+
+    // Add file message
+    const newMessage = {
+      type: 'file' as const,
+      content: `Uploaded file: ${uploadedFile.name}`,
+      fileData: uploadedFile
     };
     setMessages([...messages, newMessage]);
-    setFile(uploadedFile);
     setViewingFile(uploadedFile);
 
-    setMessages(prev => [...prev, { 
-      type: 'system' as const, 
-      content: `File "${uploadedFile.name}" has been uploaded.` 
+    setMessages(prev => [...prev, {
+      type: 'system' as const,
+      content: `File "${uploadedFile.name}" has been uploaded and added to the analysis.`
     }]);
   };
 
   const handleFileClick = (clickedFile: File) => {
     setViewingFile(clickedFile);
-    setFile(clickedFile);
   };
 
   const handleCloseFileViewer = () => {
@@ -501,21 +609,27 @@ const GenerateSolution = () => {
 
   const handleDeleteFileMessage = (index: number) => {
     const fileMessage = messages[index];
-    
-    if (file && fileMessage.fileData && 
-        file.name === fileMessage.fileData.name && 
-        file.size === fileMessage.fileData.size) {
-      setFile(null);
-      if (viewingFile) {
+
+    if (fileMessage.fileData) {
+      // Remove from files array
+      setFiles(prev => prev.filter(f => 
+        !(f.name === fileMessage.fileData!.name && f.size === fileMessage.fileData!.size)
+      ));
+
+      // Close file viewer if it's the deleted file
+      if (viewingFile && 
+          viewingFile.name === fileMessage.fileData.name &&
+          viewingFile.size === fileMessage.fileData.size) {
         setViewingFile(null);
       }
-      }
+    }
 
+    // Remove message
     const newMessages = [...messages];
     newMessages.splice(index, 1);
     setMessages(newMessages);
 
-      toast({
+    toast({
       title: "File Removed",
       description: "The file has been removed from the conversation.",
     });
@@ -524,13 +638,16 @@ const GenerateSolution = () => {
   const handleFileButtonClick = () => {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = '.txt';
+    fileInput.accept = '.pdf,.docx,.doc,.txt,.md';
+    fileInput.multiple = true;
     fileInput.style.display = 'none';
 
     fileInput.onchange = (e) => {
       const target = e.target as HTMLInputElement;
       if (target.files && target.files.length > 0) {
-        handleFileUploadAsMessage(target.files[0]);
+        Array.from(target.files).forEach(file => {
+          handleFileUploadAsMessage(file);
+        });
       }
     };
 
@@ -539,67 +656,63 @@ const GenerateSolution = () => {
     document.body.removeChild(fileInput);
   };
 
-  // 重新生成点击处理
-  const handleRegenerateClick = (messageIndex, userMessageIndex) => {
+  // Regenerate click handling - using streaming generation
+  const handleRegenerateClick = async (messageIndex, userMessageIndex) => {
     const lastUserMessage = messages[userMessageIndex];
-    
-    const newUserMessage = { 
-      type: 'user' as const, 
-      content: lastUserMessage.content 
+
+    const newUserMessage = {
+      type: 'user' as const,
+      content: lastUserMessage.content
     };
-    
+
     setMessages([
-      ...messages, 
-      newUserMessage, 
-      { type: 'loading' as const, content: 'Analyzing...' }
+      ...messages,
+      newUserMessage,
+      { type: 'streaming' as const, content: 'Query Analysis', streamingContent: '' }
     ]);
-    
+
     setIsAnalysisLoading(true);
-    
-    setTimeout(() => {
-      fetchQueryAnalysis(lastUserMessage.content, "")
-        .then((result) => {
-          setIsAnalysisLoading(false);
-          setAnalysisResult(result);
-          
-          setMessages(prev => {
-            const filteredMessages = prev.filter(msg => msg.type !== 'loading');
-            return [...filteredMessages, {
-              type: 'analysis' as const,
-              content: 'Query Analysis',
-              data: result
-            }];
-          });
-        })
-        .catch((error) => {
-          setIsAnalysisLoading(false);
-          const errorMsg = extractErrorMessage(error);
-          
-          setMessages(prev => {
-            const filteredMessages = prev.filter(msg => msg.type !== 'loading');
-            return [...filteredMessages, {
-              type: 'system' as const,
-              content: `Analysis failed: ${errorMsg}`
-            }];
-          });
-          
-          toast({
-            title: "Error",
-            description: `Analysis failed: ${errorMsg}`,
-          });
-        });
-    }, 100);
+    setStreamingAnalysisContent('');
+
+    try {
+      const design_doc = await getCombinedFileContent();
+      const payload = {
+        query: lastUserMessage.content,
+        design_doc: design_doc
+      };
+
+      await connectQuerySSE(payload, handleQuerySSEEvent);
+    } catch (error: any) {
+      setIsAnalysisLoading(false);
+      const errorMsg = extractErrorMessage(error);
+      
+      setMessages(prev => {
+        const filteredMessages = prev.filter(msg => msg.type !== 'loading' && msg.type !== 'streaming');
+        return [...filteredMessages, {
+          type: 'system' as const,
+          content: `Analysis failed: ${errorMsg}`
+        }];
+      });
+      
+      setStreamingAnalysisContent('');
+      
+      toast({
+        title: "Error",
+        description: `Analysis failed: ${errorMsg}`,
+      });
+    }
   };
 
-  // 清理函数
+  // Cleanup function
   useEffect(() => {
     return () => {
-      abortControllerRef.current?.abort();
+      disconnectSSE();
+      disconnectQuerySSE();
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
     };
-  }, []);
+  }, [disconnectSSE, disconnectQuerySSE]);
 
   return (
     <div className='flex justify-center bg-primary text-text-primary min-h-full transition-colors duration-300'>
@@ -615,9 +728,35 @@ const GenerateSolution = () => {
               <div className='relative ml-8 h-full rounded-xl bg-primary shadow-lg overflow-hidden flex flex-col'>
                 {/* Header */}
                 <div className='flex justify-between items-center p-4 border-b border-gray-700/30'>
-                  <div className='text-text-secondary text-xl font-semibold my-2'>Chat</div>
-                  
-                  <div className="flex items-center gap-2">
+                  <div className='text-text-secondary text-xl font-semibold my-2'>
+                    Chat {files.length > 0 && (
+                      <span className="text-sm text-blue-400">({files.length} file{files.length > 1 ? 's' : ''})</span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {/* SSE Connection Status */}
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full transition-colors ${sseConnectionState.isConnected
+                          ? 'bg-green-500'
+                          : sseConnectionState.isConnecting
+                            ? 'bg-yellow-500 animate-pulse'
+                            : sseConnectionState.error
+                              ? 'bg-red-500'
+                              : 'bg-gray-500'
+                        }`} />
+                      <span className="text-xs text-text-secondary">
+                        {sseConnectionState.isConnected
+                          ? 'Connected'
+                          : sseConnectionState.isConnecting
+                            ? 'Connecting...'
+                            : sseConnectionState.error
+                              ? `Error (${sseConnectionState.reconnectAttempts}/5)`
+                              : 'Disconnected'
+                        }
+                      </span>
+                    </div>
+
                     <select
                       className='px-3 py-1.5 rounded-lg bg-secondary text-text-secondary font-medium
                         transition-colors hover:bg-secondary/80 focus:outline-none focus:ring-2 focus:ring-blue-500/50'
@@ -630,19 +769,75 @@ const GenerateSolution = () => {
                   </div>
                 </div>
 
-                {/* Messages */}
-                <div className='flex-1 overflow-y-auto custom-scrollbar'>
+                {/* Messages with drag and drop */}
+                <div 
+                  ref={chatAreaRef}
+                  className={`flex-1 overflow-y-auto custom-scrollbar relative transition-all duration-300 ${
+                    isDragActive ? 'bg-blue-500/5' : ''
+                  }`}
+                  {...getRootProps()}
+                >
+                  {/* Drag overlay */}
+                  {isDragActive && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute inset-4 z-50 bg-gradient-to-br from-blue-500/20 to-purple-500/20 backdrop-blur-sm border-2 border-dashed border-blue-500 rounded-xl flex items-center justify-center"
+                    >
+                      <div className="text-center">
+                        <motion.div
+                          animate={{ 
+                            y: [0, -10, 0],
+                            scale: [1, 1.1, 1]
+                          }}
+                          transition={{ 
+                            duration: 2, 
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                          }}
+                        >
+                          <FaCloudUploadAlt className="mx-auto text-6xl text-blue-500 mb-4" />
+                        </motion.div>
+                        <div className="text-xl font-semibold text-blue-400 mb-2">Drop your files here</div>
+                        <div className="text-sm text-blue-300 mb-4">
+                          PDF, Word, TXT, Markdown files (max 10MB each)
+                        </div>
+                        <div className="flex justify-center space-x-4 text-xs text-blue-400">
+                          <div className="flex items-center">
+                            <FaFilePdf className="mr-1" />
+                            PDF
+                          </div>
+                          <div className="flex items-center">
+                            <FaFileWord className="mr-1" />
+                            Word
+                          </div>
+                          <div className="flex items-center">
+                            <FaFileAlt className="mr-1" />
+                            TXT
+                          </div>
+                          <div className="flex items-center">
+                            <FaFileCode className="mr-1" />
+                            Markdown
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
                   <div className="p-4">
-                    <ChatMessages 
+                    <ChatMessages
                       messages={messages}
                       onRegenerateClick={handleRegenerateClick}
                       onGenerateClick={handleGenerate}
                       onFileClick={handleFileClick}
-                      activeFile={file}
+                      activeFile={viewingFile}
                       onDeleteFileMessage={handleDeleteFileMessage}
+                      streamingAnalysisContent={streamingAnalysisContent}
                     />
                   </div>
-                  
+
                   {isAnalysisLoading && !messages.some(msg => msg.type === 'loading') && (
                     <div className="flex justify-center items-center py-4">
                       <CircularProgress size={30} />
@@ -657,7 +852,7 @@ const GenerateSolution = () => {
                       <Textarea
                         className="w-full bg-transparent text-text-primary placeholder:text-gray-400/60 px-4 py-3
                           focus:ring-0 focus:outline-none resize-none transition-all text-sm min-h-[150px] max-h-[350px] overflow-auto"
-                        placeholder="Ask me anything..."
+                        placeholder="Ask me anything... (or drag and drop files here)"
                         minRows={5}
                         maxRows={12}
                         value={inputText}
@@ -671,44 +866,42 @@ const GenerateSolution = () => {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center justify-between mt-2 px-1">
                     <div className="flex items-center space-x-2">
-                      <button 
+                      <button
                         type="button"
                         onClick={handleFileButtonClick}
                         className="flex items-center justify-center w-8 h-8 text-gray-400 hover:text-blue-500 transition-colors rounded-lg hover:bg-gray-200/10"
-                        title="Upload .txt file (max 1MB)"
+                        title="Upload files (PDF, Word, TXT, Markdown - max 10MB each)"
                       >
                         <FaPaperclip className="w-4 h-4" />
                       </button>
                     </div>
-                    
+
                     <div className="flex items-center space-x-3">
                       <div className="text-xs text-gray-500">
-                        Only .txt files (max 1MB)
+                        PDF, Word, TXT, Markdown files (max 10MB each)
                       </div>
-                      
+
                       {isDeveloper && (
                         <button
-                          className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-colors duration-200 ${
-                            drawMode 
-                              ? 'bg-blue-500/10 text-blue-500 hover:bg-blue-500/20' 
+                          className={`px-3 py-1.5 text-xs rounded-lg font-medium transition-colors duration-200 ${drawMode
+                              ? 'bg-blue-500/10 text-blue-500 hover:bg-blue-500/20'
                               : 'bg-gray-200/10 text-gray-400 hover:bg-gray-200/20'
-                          }`}
+                            }`}
                           onClick={toggleDrawMode}
                         >
                           Draw: {drawMode ? 'ON' : 'OFF'}
                         </button>
                       )}
-                      
+
                       <button
                         type="button"
-                        className={`flex items-center justify-center p-2 rounded-lg transition-colors duration-200 ${
-                          inputText.trim() 
-                            ? 'text-white bg-blue-600 hover:bg-blue-700' 
+                        className={`flex items-center justify-center p-2 rounded-lg transition-colors duration-200 ${inputText.trim()
+                            ? 'text-white bg-blue-600 hover:bg-blue-700'
                             : 'bg-gray-300/20 text-gray-400 hover:bg-gray-300/30'
-                        }`}
+                          }`}
                         onClick={handleSendMessage}
                         disabled={!inputText.trim()}
                       >
@@ -735,6 +928,7 @@ const GenerateSolution = () => {
                   ) : (researchState.isLoading || researchState.progress > 0 || Object.keys(researchState.results).length > 0) ? (
                     <ResearchDisplay
                       researchState={researchState}
+                      sseConnectionState={sseConnectionState}
                       onStop={stopResearch}
                       onRegenerate={handleGenerate}
                     />

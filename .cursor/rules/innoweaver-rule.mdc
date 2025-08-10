@@ -1,0 +1,35 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# InnoWeaver Rule
+This project is a website that contains both frontend and backend,
+the **ROOT** is the backend part, written by `Python` `FastAPI`,
+the **/interface** is the frontend part, written by `NextJS`, `Tailwind CSS`
+
+Please Keep your code clean and simple, you dont have to write a lot of comments.
+
+## Code Standards
+- All code and comments must be in English
+- Use meaningful variable names, minimal comments
+- Follow industrial-grade practices
+
+## Frontend Guidelines (/interface)
+- Modify only within /interface directory
+- Use pnpm for package management
+- Apply Apple's design principles: clean, minimal, intuitive
+- Implement responsive design with Tailwind utilities
+- Use TypeScript for type safety
+- Implement proper error handling and loading states
+
+## Backend Guidelines (ROOT)
+the API part is in the **/fast_routes**, and core code is in **utils**.
+The program use MongoDB, Redis and Meilisearch as Database.
+You should always consider the performance of System, make the server compatible with high concurrency.
+
+## Development Workflow
+- No documentation generation required
+- No automated testing setup needed
+- Focus on production-ready, scalable code
+- Prioritize code readability and maintainability

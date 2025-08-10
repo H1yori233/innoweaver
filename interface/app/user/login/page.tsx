@@ -55,15 +55,15 @@ export default function Login() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="flex min-h-screen"
+      className="flex flex-col md:flex-row min-h-screen"
     >
       {/* Left Section - Design */}
-      <div className="relative w-1/2 bg-gradient-to-b from-blue-600 to-emerald-700 p-8 flex items-center justify-center text-white">
-        <div className="relative z-10 max-w-2xl mx-auto text-center space-y-6">
-          <h2 className="text-3xl md:text-4xl font-bold">
+      <div className="relative w-full md:w-1/2 bg-gradient-to-b from-blue-600 to-emerald-700 p-4 md:p-8 flex items-center justify-center text-white min-h-[40vh] md:min-h-screen">
+        <div className="relative z-10 max-w-2xl mx-auto text-center space-y-4 md:space-y-6">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold">
             Bridging Research and Innovation
           </h2>
-          <p className="text-lg text-blue-50 max-w-xl mx-auto">
+          <p className="text-base md:text-lg text-blue-50 max-w-xl mx-auto px-4">
             Connecting academic research with design practice, inspiring innovation, and creating better user experiences.
           </p>
         </div>
@@ -71,11 +71,11 @@ export default function Login() {
       </div>
 
       {/* Right Section - Login Form */}
-      <div className="w-1/2 bg-primary p-8 flex items-center justify-center">
+      <div className="w-full md:w-1/2 bg-primary p-4 md:p-8 flex items-center justify-center min-h-[60vh] md:min-h-screen">
         <div className="max-w-md w-full">
           <div className="space-y-6">
             <div className="space-y-2 text-center">
-              <h1 className="text-3xl font-bold text-text-primary">Welcome back</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-text-primary">Welcome back</h1>
               <p className="text-text-secondary">Enter your account information</p>
             </div>
 
@@ -109,7 +109,7 @@ export default function Login() {
                 />
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
                 <div className="flex items-center space-x-2">
                   <Checkbox id="remember" className="border-border-secondary" />
                   <label

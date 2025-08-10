@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/toast';
 import { fetchSetAPIKey, fetchTestAPIConnection } from '@/lib/actions/taskActions';
-import { fetchLogin } from '@/lib/actions/userActions';
+import { fetchLogin } from '@/lib/actions/taskActions';
 import { 
   FaKey, 
   FaCheck, 
@@ -206,7 +206,7 @@ const UserPage = () => {
               </p>
               <Button 
                 onClick={() => router.push('/')}
-                                 className="bg-text-link hover:bg-text-linkHover text-white px-6 py-2 rounded-lg transition-all duration-200"
+                className="bg-text-link hover:bg-text-linkHover text-white px-6 py-2 rounded-lg transition-all duration-200"
               >
                 Return Home
               </Button>
@@ -220,7 +220,7 @@ const UserPage = () => {
   return (
     <div className="min-h-screen bg-primary">
       {/* Header with back button */}
-      <div className="sticky top-0 z-10 bg-primary/80">
+      <div className="sticky top-0 z-10 bg-primary/80 md:pt-4 pt-16">
         <div className="container mx-auto px-4 py-4 max-w-7xl">
           <div className="flex items-center justify-between">
             <Button
@@ -231,40 +231,40 @@ const UserPage = () => {
               <FaArrowLeft className="mr-2" />
               Back
             </Button>
-            <h1 className="text-2xl font-bold text-text-primary">Profile Settings</h1>
-            <div className="w-20"></div> {/* Spacer for centering */}
+            <h1 className="text-xl md:text-2xl font-bold text-text-primary">Profile Settings</h1>
+            <div className="w-16 md:w-20"></div> {/* Spacer for centering */}
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+      <div className="container mx-auto px-4 py-4 md:py-8 max-w-7xl">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 md:gap-8">
           {/* User Profile Card */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="xl:col-span-1"
+            className="lg:col-span-1"
           >
-            <Card className="border border-border-primary backdrop-blur-sm bg-primary/80 shadow-xl h-fit sticky top-24">
-                             <CardHeader className="bg-gradient-to-br from-text-link/10 to-text-linkHover/10 border-b border-border-secondary">
-                 <div className="flex items-center space-x-2 text-text-primary">
-                   <FaUser className="text-text-link" />
+            <Card className="border border-border-primary backdrop-blur-sm bg-primary/80 shadow-xl h-fit lg:sticky lg:top-24">
+              <CardHeader className="bg-gradient-to-br from-text-link/10 to-text-linkHover/10 border-b border-border-secondary">
+                <div className="flex items-center space-x-2 text-text-primary">
+                  <FaUser className="text-text-link" />
                   <CardTitle className="text-lg">User Profile</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 md:p-6">
                 {/* Avatar and basic info */}
                 <div className="text-center mb-6">
                   <div className="relative inline-block">
-                                         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-text-link to-text-linkHover flex items-center justify-center text-3xl font-bold text-white shadow-lg">
+                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-text-link to-text-linkHover flex items-center justify-center text-2xl md:text-3xl font-bold text-white shadow-lg">
                       {authStore.name ? authStore.name.substring(0, 2).toUpperCase() : 'U'}
                     </div>
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-primary flex items-center justify-center">
+                    <div className="absolute -bottom-1 -right-1 w-5 h-5 md:w-6 md:h-6 bg-green-500 rounded-full border-2 border-primary flex items-center justify-center">
                       <div className="w-2 h-2 bg-white rounded-full"></div>
                     </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-text-primary mt-4">
+                  <h3 className="text-lg md:text-xl font-semibold text-text-primary mt-4">
                     {authStore.name || 'User'}
                   </h3>
                   <p className="text-text-secondary text-sm">
@@ -274,16 +274,16 @@ const UserPage = () => {
 
                 {/* User details */}
                 <div className="space-y-4">
-                  <div className="bg-secondary/50 rounded-lg p-4 border border-border-secondary">
+                  <div className="bg-secondary/50 rounded-lg p-3 md:p-4 border border-border-secondary">
                     <Label className="text-text-secondary text-xs font-medium uppercase tracking-wide">
                       Email Address
                     </Label>
-                    <p className="text-text-primary text-sm mt-1 break-all font-mono">
+                    <p className="text-text-primary text-xs md:text-sm mt-1 break-all font-mono">
                       {authStore.email || 'Not available'}
                     </p>
                   </div>
 
-                  <div className="bg-secondary/50 rounded-lg p-4 border border-border-secondary">
+                  <div className="bg-secondary/50 rounded-lg p-3 md:p-4 border border-border-secondary">
                     <Label className="text-text-secondary text-xs font-medium uppercase tracking-wide">
                       User ID
                     </Label>
@@ -313,25 +313,25 @@ const UserPage = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="xl:col-span-3"
+            className="lg:col-span-3"
           >
             <Card className="border border-border-primary backdrop-blur-sm bg-primary/80 shadow-xl">
-                             <CardHeader className="bg-gradient-to-br from-text-link/10 to-text-linkHover/10 border-b border-border-secondary">
-                 <div className="flex items-center space-x-2 text-text-primary">
-                   <FaCog className="text-text-link" />
+              <CardHeader className="bg-gradient-to-br from-text-link/10 to-text-linkHover/10 border-b border-border-secondary">
+                <div className="flex items-center space-x-2 text-text-primary">
+                  <FaCog className="text-text-link" />
                   <CardTitle className="text-lg">API Configuration</CardTitle>
                 </div>
                 <p className="text-text-secondary text-sm mt-2">
                   Configure your AI model settings for optimal performance
                 </p>
               </CardHeader>
-              <CardContent className="p-8">
-                <div className="space-y-8">
+              <CardContent className="p-4 md:p-8">
+                <div className="space-y-6 md:space-y-8">
                   {/* API Key Section */}
                   <div className="space-y-4">
-                                         <div className="flex items-center space-x-2 mb-4">
-                       <FaKey className="text-text-link" />
-                      <h3 className="text-lg font-semibold text-text-primary">API Authentication</h3>
+                    <div className="flex items-center space-x-2 mb-4">
+                      <FaKey className="text-text-link" />
+                      <h3 className="text-base md:text-lg font-semibold text-text-primary">API Authentication</h3>
                     </div>
                     
                     <div>
@@ -345,7 +345,7 @@ const UserPage = () => {
                           placeholder="Enter your API Key"
                           value={apiKey}
                           onChange={(e) => setApiKey(e.target.value)}
-                                                     className="bg-secondary/50 border-border-secondary text-text-primary pr-12 h-12 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-text-link/20 focus:border-text-link"
+                          className="bg-secondary/50 border-border-secondary text-text-primary pr-12 h-10 md:h-12 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-text-link/20 focus:border-text-link"
                         />
                         <button 
                           type="button"
@@ -353,7 +353,7 @@ const UserPage = () => {
                           className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors duration-200 p-1"
                           aria-label={showApiKey ? "Hide API Key" : "Show API Key"}
                         >
-                          {showApiKey ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                          {showApiKey ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
                         </button>
                       </div>
                       {apiKey ? (
@@ -370,22 +370,22 @@ const UserPage = () => {
 
                   {/* Model Configuration */}
                   <div className="space-y-4">
-                                         <div className="flex items-center space-x-2 mb-4">
-                       <FaRocket className="text-text-link" />
-                      <h3 className="text-lg font-semibold text-text-primary">Model Configuration</h3>
+                    <div className="flex items-center space-x-2 mb-4">
+                      <FaRocket className="text-text-link" />
+                      <h3 className="text-base md:text-lg font-semibold text-text-primary">Model Configuration</h3>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                       <div>
                         <Label htmlFor="apiUrl" className="text-text-secondary mb-2 block font-medium">
                           API Endpoint
                         </Label>
-                                                 <Input
-                           id="apiUrl"
-                           placeholder="Enter API URL"
-                           value={apiUrl}
-                           onChange={(e) => setApiUrl(e.target.value || DEFAULT_API_URL)}
-                           className="bg-secondary/50 border-border-secondary text-text-primary h-12 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-text-link/20 focus:border-text-link"
+                        <Input
+                          id="apiUrl"
+                          placeholder="Enter API URL"
+                          value={apiUrl}
+                          onChange={(e) => setApiUrl(e.target.value || DEFAULT_API_URL)}
+                          className="bg-secondary/50 border-border-secondary text-text-primary h-10 md:h-12 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-text-link/20 focus:border-text-link"
                         />
                         <div className="mt-2">
                           {apiUrl === DEFAULT_API_URL ? (
@@ -393,12 +393,12 @@ const UserPage = () => {
                               <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>
                               Using default endpoint
                             </p>
-                                                     ) : (
-                             <p className="text-xs text-text-link flex items-center">
-                               <span className="inline-block w-2 h-2 rounded-full bg-text-link mr-2"></span>
-                               Using custom endpoint
-                             </p>
-                           )}
+                          ) : (
+                            <p className="text-xs text-text-link flex items-center">
+                              <span className="inline-block w-2 h-2 rounded-full bg-text-link mr-2"></span>
+                              Using custom endpoint
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -406,12 +406,12 @@ const UserPage = () => {
                         <Label htmlFor="modelName" className="text-text-secondary mb-2 block font-medium">
                           Model Name
                         </Label>
-                                                 <Input
-                           id="modelName"
-                           placeholder="Enter model name"
-                           value={modelName}
-                           onChange={(e) => setModelName(e.target.value || DEFAULT_MODEL_NAME)}
-                           className="bg-secondary/50 border-border-secondary text-text-primary h-12 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-text-link/20 focus:border-text-link"
+                        <Input
+                          id="modelName"
+                          placeholder="Enter model name"
+                          value={modelName}
+                          onChange={(e) => setModelName(e.target.value || DEFAULT_MODEL_NAME)}
+                          className="bg-secondary/50 border-border-secondary text-text-primary h-10 md:h-12 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-text-link/20 focus:border-text-link"
                         />
                         <div className="mt-2">
                           {modelName === DEFAULT_MODEL_NAME ? (
@@ -419,23 +419,23 @@ const UserPage = () => {
                               <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>
                               Using default model
                             </p>
-                                                     ) : (
-                             <p className="text-xs text-text-link flex items-center">
-                               <span className="inline-block w-2 h-2 rounded-full bg-text-link mr-2"></span>
-                               Using custom model
-                             </p>
-                           )}
+                          ) : (
+                            <p className="text-xs text-text-link flex items-center">
+                              <span className="inline-block w-2 h-2 rounded-full bg-text-link mr-2"></span>
+                              Using custom model
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
 
                     {/* Default configuration info */}
-                    <div className="bg-secondary/30 rounded-lg p-4 border border-border-secondary">
+                    <div className="bg-secondary/30 rounded-lg p-3 md:p-4 border border-border-secondary">
                       <p className="text-xs text-text-secondary mb-2 font-medium">Default Configuration:</p>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-xs">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 text-xs">
                         <div>
                           <span className="text-text-secondary">Endpoint: </span>
-                          <span className="font-mono text-text-primary">{DEFAULT_API_URL}</span>
+                          <span className="font-mono text-text-primary break-all">{DEFAULT_API_URL}</span>
                         </div>
                         <div>
                           <span className="text-text-secondary">Model: </span>
@@ -447,21 +447,21 @@ const UserPage = () => {
 
                   {/* Action Buttons */}
                   <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-border-secondary">
-                                         <Button
-                       onClick={handleSaveApiSettings}
-                       className="flex-1 bg-text-link hover:bg-text-linkHover text-white h-12 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
+                    <Button
+                      onClick={handleSaveApiSettings}
+                      className="flex-1 bg-text-link hover:bg-text-linkHover text-white h-10 md:h-12 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
                     >
                       <FaCheck className="mr-2" />
                       Save Configuration
                     </Button>
                     <Button
                       onClick={handleTestApiConnection}
-                      className="flex-1 bg-secondary hover:bg-border-secondary text-text-primary h-12 rounded-lg transition-all duration-200 border border-border-secondary font-medium"
+                      className="flex-1 bg-secondary hover:bg-border-secondary text-text-primary h-10 md:h-12 rounded-lg transition-all duration-200 border border-border-secondary font-medium"
                       disabled={testStatus === 'loading'}
                     >
                       {testStatus === 'loading' ? (
                         <span className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-text-primary mr-2"></div>
+                          <div className="animate-spin rounded-full h-4 w-4 md:h-5 md:w-5 border-b-2 border-text-primary mr-2"></div>
                           Testing Connection...
                         </span>
                       ) : (
@@ -479,7 +479,7 @@ const UserPage = () => {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3 }}
-                      className={`p-6 rounded-lg border max-h-60 overflow-y-auto ${
+                      className={`p-4 md:p-6 rounded-lg border max-h-60 overflow-y-auto ${
                         testStatus === 'success' 
                           ? 'border-green-500/30 bg-green-500/10' 
                           : testStatus === 'error' 
@@ -488,23 +488,23 @@ const UserPage = () => {
                       }`}
                     >
                       <div className="flex items-start space-x-3">
-                        <div className="mt-1">
+                        <div className="mt-1 flex-shrink-0">
                           {testStatus === 'success' && (
-                            <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                            <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-green-500 flex items-center justify-center">
                               <FaCheck className="text-white text-xs" />
                             </div>
                           )}
                           {testStatus === 'error' && (
-                            <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center">
+                            <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-red-500 flex items-center justify-center">
                               <FaTimes className="text-white text-xs" />
                             </div>
                           )}
-                                                     {testStatus === 'loading' && (
-                             <div className="w-6 h-6 rounded-full border-2 border-text-link border-t-transparent animate-spin"></div>
-                           )}
+                          {testStatus === 'loading' && (
+                            <div className="w-5 h-5 md:w-6 md:h-6 rounded-full border-2 border-text-link border-t-transparent animate-spin"></div>
+                          )}
                         </div>
-                        <div className="flex-1">
-                          <p className={`font-semibold mb-2 ${
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-semibold mb-2 text-sm md:text-base ${
                             testStatus === 'success' 
                               ? 'text-green-400' 
                               : testStatus === 'error' 
@@ -515,7 +515,7 @@ const UserPage = () => {
                              testStatus === 'error' ? 'Connection Failed' :
                              'Testing Connection'}
                           </p>
-                          <p className={`text-sm break-all ${
+                          <p className={`text-xs md:text-sm break-all ${
                             testStatus === 'success' 
                               ? 'text-green-300' 
                               : testStatus === 'error' 

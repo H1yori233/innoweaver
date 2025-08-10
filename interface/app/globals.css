@@ -26,14 +26,37 @@ html, body {
     text-wrap: balance;
   }
   
-  /* 优化自定义滚动条样式 */
+  /* Mobile-first responsive utilities */
+  .mobile-padding {
+    @apply px-4 md:px-6 lg:px-8;
+  }
+  
+  .mobile-text {
+    @apply text-sm md:text-base;
+  }
+  
+  .mobile-heading {
+    @apply text-lg md:text-xl lg:text-2xl;
+  }
+  
+  .mobile-spacing {
+    @apply space-y-4 md:space-y-6;
+  }
+  
+  /* Optimize custom scrollbar styles */
   .custom-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
   }
   
   .custom-scrollbar::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
+  }
+  
+  @media (min-width: 768px) {
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 8px;
+    }
   }
   
   .custom-scrollbar::-webkit-scrollbar-track {
@@ -49,9 +72,21 @@ html, body {
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background-color: var(--scrollbar-thumb-hover);
   }
+  
+  /* Mobile-optimized touch targets */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* Safe area handling for mobile devices */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }
-
-/* 删除原有的Webkit和Firefox滚动条样式，因为会使用tailwind配置中的样式 */
 
 .mr-top-10 {
   margin-top: 15px;
@@ -67,7 +102,6 @@ html, body {
 }
 
 .my_bg_yellow2 {
-  /* background-color: rgba(98, 153, 175, 0.6); */
   background-color: #F6F0E3;
 }
 
@@ -79,20 +113,35 @@ html, body {
   border: 1px solid #ccc;
 }
 
-/* Message area styles */
+/* Message area styles - Mobile optimized */
 .message-container {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 12px;
+}
+
+@media (min-width: 768px) {
+  .message-container {
+    padding: 16px;
+  }
 }
 
 .message-bubble {
-  margin-bottom: 16px;
-  padding: 16px;
+  margin-bottom: 12px;
+  padding: 12px;
   font-size: 0.85rem;
-  width: 400px;
+  width: 100%;
+  max-width: 400px;
   border-radius: 12px;
   background-color: #333333;
+}
+
+@media (min-width: 768px) {
+  .message-bubble {
+    margin-bottom: 16px;
+    padding: 16px;
+    width: 400px;
+  }
 }
 
 .llm-message {
@@ -103,7 +152,7 @@ html, body {
 .other-message {
   align-items: center;
   width: fit-content;
-  max-width: 70%;
+  max-width: 85%;
   background-color: #333333;
   color: #eeeeee;
   word-wrap: break-word;
@@ -113,183 +162,144 @@ html, body {
   align-self: flex-end;
 }
 
-/* 文件消息的整体容器 */
+@media (min-width: 768px) {
+  .other-message {
+    max-width: 70%;
+  }
+}
+
+/* File message styles - Mobile optimized */
 .file-wrapper {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding: 10px;
+  padding: 8px;
   background-color: transparent;
-  /* 或者不使用背景色 */
   border-radius: 0;
-  /* 去掉圆角 */
+}
+
+@media (min-width: 768px) {
+  .file-wrapper {
+    padding: 10px;
+  }
 }
 
 .file-message {
   display: flex;
   align-items: center;
-  padding: 10px;
-  /* background-color: #f5f5f5; */
+  padding: 8px;
   background-color: #353535;
   border-radius: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   max-width: 100%;
 }
 
-/* 图标的容器，用于控制图标大小和布局 */
+@media (min-width: 768px) {
+  .file-message {
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+}
+
 .file-icon-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 50px;
-  height: 50px;
-  margin-right: 15px;
+  width: 40px;
+  height: 40px;
+  margin-right: 12px;
 }
 
-/* PDF 图标的样式 */
+@media (min-width: 768px) {
+  .file-icon-wrapper {
+    width: 50px;
+    height: 50px;
+    margin-right: 15px;
+  }
+}
+
 .file-icon {
   color: #e74c3c;
-  font-size: 48px !important;
+  font-size: 36px !important;
 }
 
-/* 文件内容的容器，包含文件名和元数据 */
+@media (min-width: 768px) {
+  .file-icon {
+    font-size: 48px !important;
+  }
+}
+
 .file-content-wrapper {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  min-width: 0;
+  flex: 1;
 }
 
-/* 文件名的样式 */
 .file-name {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: bold;
   color: #ffffff;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
   word-break: break-word;
-  /* 防止文件名过长导致布局问题 */
-  max-width: 200px;
-  /* 设置最大宽度 */
+  max-width: 180px;
 }
 
-/* 文件元数据的样式（例如文件类型或大小） */
+@media (min-width: 768px) {
+  .file-name {
+    font-size: 1rem;
+    margin-bottom: 5px;
+    max-width: 200px;
+  }
+}
+
 .file-meta {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: #DEDEDE;
 }
 
+@media (min-width: 768px) {
+  .file-meta {
+    font-size: 0.85rem;
+  }
+}
+
 .message-actions {
-  margin-top: 8px;
+  margin-top: 6px;
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+@media (min-width: 768px) {
+  .message-actions {
+    margin-top: 8px;
+    gap: 8px;
+  }
 }
 
 .action-button {
   background-color: #d3d3d3;
-  padding: 8px 16px;
+  padding: 6px 12px;
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  font-size: 0.8rem;
+}
+
+@media (min-width: 768px) {
+  .action-button {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
 }
 
 .action-button:hover {
   background-color: #a9a9a9;
 }
 
-/* "p-4 bg-gray-800 sticky bottom-0 flex items-center"> */
-
-.input-area {
-  padding: 0.2rem;
-  background-color: #333333;
-  position: sticky;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  margin-left: 2rem;
-  margin-right: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 1.5rem;
-}
-
-/* min-h-[40px] w-full resize-none bg-transparent 
-  px-2 py-3 focus-within:outline-none sm:text-sm border border-gray-300 
-  rounded-lg px-right-12 pr-[1rem] !leading-tight" */
-
-.input-text {
-  min-height: 30px;
-  width: 100%;
-  resize: none;
-  background-color: transparent;
-  padding: 12px 2px;
-  outline: none;
-  /* border: 1px solid #d1d5db; */
-  /* border-radius: 0.5rem; */
-  padding-left: 1rem;
-  padding-right: 1rem;
-  line-height: 1.25;
-  color: #cea0a0;
-  font-weight: bold;
-}
-
-/* -------------------------------------------------------------- */
-/* 子页面 */
-
-.user_container {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background-color: #000000;
-  font-family: 'Inter', sans-serif;
-  color: #ffffff;
-}
-
-.input_field {
-  padding: 10px;
-  font-size: 16px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  color: black;
-}
-
-.input_field_container {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: 300px;
-  margin-top: 5px;
-}
-
-.user_type_button {
-  /* padding: 10px; */
-  font-size: 16px;
-  /* border: 1px solid #ccc; */
-  /* border-radius: 5px; */
-  /* cursor: pointer; */
-  flex: 1;
-
-  background-color: #888888;
-  color: #FFFFFF;
-  border-radius: 5px;
-  padding: 10px 20px;
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-user_type_button:hover {
-  background-color: #0056b3;
-}
-
-
-.user_type_button_container {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-/* -------------------------------------------------------------- */
-
+/* User history container - Mobile optimized */
 .user_history_container {
   display: flex;
   justify-content: center;
@@ -297,18 +307,27 @@ user_type_button:hover {
   font-family: 'Inter', sans-serif;
   color: #FFFFFF;
   min-height: 100%;
+  padding: 0 16px;
+}
+
+@media (min-width: 768px) {
+  .user_history_container {
+    padding: 0;
+  }
 }
 
 .user_history_content_container {
   display: flex;
-  width: 80%;
+  width: 95%;
   min-height: 87vh;
   flex-direction: column;
   align-items: center;
-  /* margin-left: 6.25rem; */
-  /* margin-top: 50px; */
-  /* margin-bottom: 0; */
-  /* background-color: #133333; */
+}
+
+@media (min-width: 768px) {
+  .user_history_content_container {
+    width: 80%;
+  }
 }
 
 .empty-container {
@@ -319,34 +338,58 @@ user_type_button:hover {
   min-height: 87vh;
   color: rgb(255, 255, 255);
   text-align: center;
-  font-size: 1.5rem;
-  margin-bottom: 2.5rem;
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  padding: 0 16px;
+}
+
+@media (min-width: 768px) {
+  .empty-container {
+    font-size: 1.5rem;
+    padding: 0;
+    margin-bottom: 2.5rem;
+  }
 }
 
 .card-page-content {
-  /* display: grid; */
-  /* grid-template-columns: repeat(5, 1fr); */
   display: flex;
-  gap: 0.2rem;
-  padding: 2rem;
+  gap: 0.15rem;
+  padding: 1rem;
   margin: 0 auto;
   color: #FFFFFF;
   min-height: 90%;
-  /* margin-left: -0.5rem; */
+}
+
+@media (min-width: 768px) {
+  .card-page-content {
+    gap: 0.2rem;
+    padding: 2rem;
+  }
 }
 
 .masonry-grid_column {
   background-clip: padding-box;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+@media (min-width: 768px) {
+  .masonry-grid_column {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
 }
 
 .masonry-grid_column>div {
-  margin-bottom: 1rem;
-  /* 卡片的底部间距 */
+  margin-bottom: 0.75rem;
 }
 
-/* 第一列和最后一列的特殊处理 */
+@media (min-width: 768px) {
+  .masonry-grid_column>div {
+    margin-bottom: 1rem;
+  }
+}
+
 .masonry-grid_column:first-child {
   padding-left: 0;
 }
@@ -360,35 +403,16 @@ user_type_button:hover {
   min-height: 100vh;
   flex-direction: column;
   align-items: center;
-  margin-left: 12.5rem;
+  margin-left: 0;
+  padding: 0 16px;
 }
 
-/* --------------------------------------------------- */
-
-/* 删除重复的滚动条样式定义 */
-/* ::-webkit-scrollbar {
-  width: 24px;
-  height: 24px;
+@media (min-width: 768px) {
+  .prompts_container {
+    margin-left: 12.5rem;
+    padding: 0;
+  }
 }
-
-::-webkit-scrollbar-track {
-  background: #333333;
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-html {
-  scrollbar-width: auto;
-  scrollbar-color: #888 #333333;
-} */
 
 @layer base {
   :root {

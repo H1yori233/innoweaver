@@ -76,20 +76,20 @@ const SolutionSearch = ({ onSelectionChange }) => {
     (solutionId: string) => {
       setSelectedSolutions((prevSelected) => {
         const isSelected = prevSelected.includes(solutionId);
-        
+
         // 如果已经选中，则移除
         if (isSelected) {
           const updatedSelection = prevSelected.filter((id) => id !== solutionId);
           stableOnSelectionChange(updatedSelection);
           return updatedSelection;
         }
-        
+
         // 如果未选中且已达到上限，则不添加
         if (prevSelected.length >= 8) {
           alert('最多只能选择 8 条 inspiration');
           return prevSelected;
         }
-        
+
         // 未选中且未达到上限，则添加
         const updatedSelection = [...prevSelected, solutionId];
         stableOnSelectionChange(updatedSelection);
@@ -132,7 +132,7 @@ const SolutionSearch = ({ onSelectionChange }) => {
       const idArray = ids.split(',');
       setSelectedSolutions(idArray);
       stableOnSelectionChange(idArray);
-      
+
       // 预加载选中的解决方案数据
       idArray.forEach(async (id) => {
         try {
@@ -220,8 +220,8 @@ const SolutionSearch = ({ onSelectionChange }) => {
                     transition={{ duration: 0.3, delay: index * 0.05 }}
                     className={`px-2 rounded-lg bg-primary transition duration-300 ease-in-out`}
                   >
-                    <JsonViewer 
-                      jsonData={solution} 
+                    <JsonViewer
+                      jsonData={solution}
                       isSelectable={true}
                       isSelected={isSolutionSelected(solution["_id"])}
                       onSelect={() => toggleSolutionSelection(solution["_id"])}
