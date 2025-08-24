@@ -2,13 +2,13 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# 加载环境变量
+# Load environment variables
 load_dotenv()
 
-# 项目根目录
+# Project root directory
 ROOT_DIR = Path(__file__).parent.parent
 
-# 日志配置
+# Log configuration
 # LOG_DIR = ROOT_DIR / "logs"
 LOG_DIR = ROOT_DIR
 LOG_DIR.mkdir(exist_ok=True)
@@ -17,7 +17,7 @@ LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 LOG_MAX_BYTES = 10 * 1024 * 1024  # 10MB
 LOG_BACKUP_COUNT = 5
 
-# 数据库配置
+# Database configuration
 MONGODB = {
     "username": os.getenv("MONGO_USER", "CHI2025"),
     "password": os.getenv("MONGO_PASS", "Inlab2024!"),
@@ -26,7 +26,7 @@ MONGODB = {
     "auth_db": os.getenv("MONGO_AUTH_DB", "admin"),
 }
 
-# Redis 配置
+# Redis configuration
 REDIS = {
     # "host": os.getenv("REDIS_HOST", "localhost"),
     "host": os.getenv("REDIS_HOST", "120.55.193.195"),
@@ -35,44 +35,44 @@ REDIS = {
     "password": os.getenv("REDIS_PASSWORD", "Redis2024"),
 }
 
-# MeiliSearch 配置
+# MeiliSearch configuration
 MEILISEARCH = {
     # "host": os.getenv("MEILI_HOST", "http://127.0.0.1:7700"),
     "host": os.getenv("MEILI_HOST", "http://120.55.193.195:7700"),
     "api_key": os.getenv("MEILI_API_KEY", ""),
 }
 
-# API 配置
+# API configuration
 API = {
     "secret_key": os.getenv("SECRET_KEY", "your-secret-key"),
     "token_expire_days": int(os.getenv("TOKEN_EXPIRE_DAYS", 7)),
     "allowed_user_types": ["developer", "designer", "researcher"],
 }
 
-# OpenAI 配置
+# OpenAI configuration
 OPENAI = {
     "api_key": os.getenv("OPENAI_API_KEY"),
     "base_url": os.getenv("OPENAI_BASE_URL"),
     "model": os.getenv("OPENAI_MODEL", "gpt-4"),
 }
 
-# SM.MS 图床配置
+# SM.MS image hosting configuration
 SMMS = {
     "api_key": os.getenv("SM_MS_API_KEY"),
     "upload_url": "https://sm.ms/api/v2/upload",
 }
 
-# 缓存配置
+# Cache configuration
 CACHE = {
-    "default_expire": 3600,  # 1小时
-    "solution_expire": 3600 * 24,  # 24小时
-    "user_session_expire": 3600,  # 1小时
+    "default_expire": 3600,  # 1 hour
+    "solution_expire": 3600 * 24,  # 24 hours
+    "user_session_expire": 3600,  # 1 hour
 }
 
-# 分页配置
+# Pagination configuration
 PAGINATION = {"default_page_size": 10, "max_page_size": 100}
 
-# 提示词文件路径
+# Prompt file paths
 PROMPT_DIR = ROOT_DIR / "prompting"
 PROMPT_FILES = {
     "KNOWLEDGE_EXTRACTION": "knowledge_extraction_system_prompt",
@@ -86,7 +86,7 @@ PROMPT_FILES = {
     "HTML_GENERATION": "html_generation_system_prompt",
 }
 
-# 测试配置
+# Test configuration
 TEST = {
     "test_user": {
         "email": "test_user@example.com",

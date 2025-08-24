@@ -13,10 +13,10 @@ def token_required(f):
         if 'Authorization' in request.headers:
             token = request.headers['Authorization'].split(" ")[1]
         if not token:
-            return jsonify({'error': '请登录'}), 401
+            return jsonify({'error': 'Please login'}), 401
         current_user = await USER.decode_token(token)
         if not current_user:
-            return jsonify({'error': '令牌无效或已过期'}), 401
+            return jsonify({'error': 'Token invalid or expired'}), 401
         return await f(current_user, *args, **kwargs)
     return decorated
 
@@ -32,16 +32,16 @@ def validate_input(fields):
         return decorated_function
     return decorator
 
-# 添加 FastAPI 的安全模式
+# Add FastAPI security scheme
 security = HTTPBearer()
 
-# 新增 FastAPI 版本的认证装饰器
+# New FastAPI version authentication decorator
 async def fastapi_token_required(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> dict:
     """
-    FastAPI 版本的 token 验证装饰器
-    使用方法:
+    FastAPI version of token validation decorator
+    Usage:
     @router.get("/protected")
     async def protected_route(current_user: dict = Depends(fastapi_token_required)):
         return {"message": "Protected route", "user": current_user}
@@ -53,7 +53,7 @@ async def fastapi_token_required(
         if not current_user:
             raise HTTPException(
                 status_code=401,
-                detail="令牌无效或已过期",
+                detail="Token invalid or expired",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
@@ -62,15 +62,15 @@ async def fastapi_token_required(
     except Exception as e:
         raise HTTPException(
             status_code=401,
-            detail="请登录",
+            detail="Please login",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-# FastAPI 版本的输入验证装饰器
+# FastAPI version of input validation decorator
 def fastapi_validate_input(fields: list):
     """
-    FastAPI 版本的输入验证装饰器
-    使用方法:
+    FastAPI version of input validation decorator
+    Usage:
     @router.post("/example")
     @fastapi_validate_input(["username", "password"])
     async def example_route(request: Request):

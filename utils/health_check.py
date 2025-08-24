@@ -17,7 +17,7 @@ class HealthCheck:
         self.connection_timeout = 2
 
     def _is_port_open(self, host: str, port: int) -> bool:
-        """检查指定主机和端口是否开放"""
+        """Check if specified host and port are open"""
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.settimeout(self.connection_timeout)
@@ -114,7 +114,6 @@ class HealthCheck:
 
         health_status["services"] = services_status
 
-        # If any service is unhealthy, set overall status to degraded and collect suggestions
         if any(service["status"] == "unhealthy" for service in services_status.values()):
             health_status["system_status"] = "degraded"
             for service_name, service_status in services_status.items():

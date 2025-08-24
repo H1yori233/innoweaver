@@ -14,7 +14,7 @@ _PROMPT_FILE_PATHS = {
 }
 
 def _get_prompt_file_path(prompt_name: str) -> str | None:
-    """根据 prompt 名称获取对应的文件名（不含扩展名）。"""
+    """Get corresponding filename based on prompt name (without extension)."""
     return _PROMPT_FILE_PATHS.get(prompt_name)
 
 def readfile(name: str):
@@ -32,7 +32,7 @@ def readfile(name: str):
 
 def get_prompt(prompt_name: str) -> str:
     """
-    根据 prompt 逻辑名称动态读取并返回其内容。
+    Dynamically read and return content based on prompt logical name.
     """
     file_name = _get_prompt_file_path(prompt_name)
     if file_name:

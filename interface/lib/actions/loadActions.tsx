@@ -1,18 +1,18 @@
 import { customFetch } from '@/lib/actions/customFetch';
 
-// 加载用户的解决方案，需要认证
+// Load user's solutions, requires authentication
 export async function fetchLoadSolutions(page = 1) {
     return customFetch(`/api/user/load_solutions?page=${page}`, { 
         method: "GET",
-        requireAuth: true  // 明确需要认证
+        requireAuth: true  // Explicitly requires authentication
     });
 }
 
-// 加载用户点赞的解决方案，需要认证
+// Load user's liked solutions, requires authentication
 export async function fetchLoadLikedSolutions(page = 1) {
     return customFetch(`/api/user/load_liked_solutions?page=${page}`, { 
         method: "GET",
-        requireAuth: true  // 明确需要认证
+        requireAuth: true  // Explicitly requires authentication
     });
 }
 
@@ -33,35 +33,35 @@ export interface LogStats {
     debug_count: number;
 }
 
-// 获取日志列表，需要认证
+// Get log list, requires authentication
 export async function fetchLogs(): Promise<LogEntry[]> {
     const response = await customFetch(`/api/logs`, { 
         method: "GET",
-        requireAuth: true  // 明确需要认证
+        requireAuth: true  // Explicitly requires authentication
     });
     return response;
 }
 
-// 获取日志统计信息，需要认证
+// Get log statistics, requires authentication
 export async function fetchLogStats(): Promise<LogStats> {
     const response = await customFetch(`/api/logs/stats`, { 
         method: "GET",
-        requireAuth: true  // 明确需要认证
+        requireAuth: true  // Explicitly requires authentication
     });
     return response;
 } 
 
 // --------------------------------------------------------------------
 
-// 查看提示词，需要认证
+// View prompts, requires authentication
 export async function fetchViewPrompts() {
     return customFetch(`/api/prompts`, { 
         method: "GET",
-        requireAuth: true  // 明确需要认证
+        requireAuth: true  // Explicitly requires authentication
     });
 }
 
-// 修改提示词，需要认证
+// Modify prompts, requires authentication
 export async function fetchModifyPrompt(promptName: string, newContent: string) {
     return customFetch(`/api/prompts`, {
         method: "PUT",
@@ -69,7 +69,7 @@ export async function fetchModifyPrompt(promptName: string, newContent: string) 
             prompt_name: promptName,
             new_content: newContent,
         }),
-        requireAuth: true  // 明确需要认证
+        requireAuth: true  // Explicitly requires authentication
     });
 }
 

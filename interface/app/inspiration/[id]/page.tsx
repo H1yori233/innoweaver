@@ -12,7 +12,7 @@ import Image from 'next/image';
 
 // --- Dynamic Imports for Non-Critical Components ---
 const ChatPopup = dynamic(() => import('@/components/inspiration/ChatPopup'), {
-    ssr: false // This component likely uses client-side state and APIs
+    ssr: false
 });
 
 const RecommendedInspirations = dynamic(() => import('@/components/inspiration/RecommendedInspirations'), {

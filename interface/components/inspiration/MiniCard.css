@@ -72,12 +72,10 @@
     width: 100%;
     height: 100%;
     padding: 1.5rem;
-    background: linear-gradient(
-        to top,
-        rgba(0, 0, 0, 0.85) 0%,
-        rgba(0, 0, 0, 0.6) 50%,
-        rgba(0, 0, 0, 0.3) 100%
-    );
+    background: linear-gradient(to top,
+            rgba(0, 0, 0, 0.85) 0%,
+            rgba(0, 0, 0, 0.6) 50%,
+            rgba(0, 0, 0, 0.3) 100%);
     transition: opacity 0.3s ease;
     display: flex;
     flex-direction: column;
@@ -139,12 +137,10 @@
     align-items: center;
     padding: 1.5rem;
     z-index: 10;
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.05) 0%,
-        rgba(255, 255, 255, 0.02) 50%,
-        rgba(0, 0, 0, 0.05) 100%
-    );
+    background: linear-gradient(135deg,
+            rgba(255, 255, 255, 0.05) 0%,
+            rgba(255, 255, 255, 0.02) 50%,
+            rgba(0, 0, 0, 0.05) 100%);
     transition: opacity 0.3s ease;
 }
 
@@ -157,12 +153,10 @@
 .card-gradient-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.1) 0%,
-        transparent 50%,
-        rgba(0, 0, 0, 0.1) 100%
-    );
+    background: linear-gradient(135deg,
+            rgba(255, 255, 255, 0.1) 0%,
+            transparent 50%,
+            rgba(0, 0, 0, 0.1) 100%);
     z-index: 1;
     transition: opacity 0.3s ease;
 }
@@ -171,83 +165,83 @@
     opacity: 0.7;
 }
 
-/* 响应式设计 */
+/* Responsive design */
 @media (max-width: 768px) {
     .card {
         width: 14rem;
         height: 22rem;
     }
-    
+
     .favorite-button {
         padding: 0.25rem;
         font-size: 1.25rem;
     }
-    
+
     .content {
         padding: 1rem;
     }
-    
+
     .function {
         font-size: 0.75rem;
         -webkit-line-clamp: 6;
     }
 }
 
-/* 深色主题优化 - 简化阴影 */
+/* Dark theme optimization - simplified shadows */
 @media (prefers-color-scheme: dark) {
     .card {
         border-color: rgba(255, 255, 255, 0.08);
     }
-    
+
     .card:hover {
         border-color: rgba(255, 255, 255, 0.15);
     }
 }
 
-/* 浅色主题优化 - 简化阴影 */
+/* Light theme optimization - simplified shadows */
 @media (prefers-color-scheme: light) {
     .card {
         border-color: rgba(0, 0, 0, 0.08);
     }
-    
+
     .card:hover {
         border-color: rgba(0, 0, 0, 0.12);
     }
-    
+
     .favorite-button {
         color: rgba(0, 0, 0, 0.8);
     }
 }
 
-/* 加载动画 - 简化 */
+/* Loading animation - simplified */
 @keyframes shimmer {
     0% {
         background-position: -200% 0;
     }
+
     100% {
         background-position: 200% 0;
     }
 }
 
 .card-loading {
-    background: linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0.1) 25%,
-        rgba(255, 255, 255, 0.2) 50%,
-        rgba(255, 255, 255, 0.1) 75%
-    );
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0.1) 25%,
+            rgba(255, 255, 255, 0.2) 50%,
+            rgba(255, 255, 255, 0.1) 75%);
     background-size: 200% 100%;
     animation: shimmer 2s infinite;
 }
 
-/* 聚焦状态优化 */
+/* Focus state optimization */
 .card:focus-visible {
     outline: 2px solid rgba(59, 130, 246, 0.5);
     outline-offset: 2px;
 }
 
-/* 减少动画对于偏好减少动画的用户 */
+/* Reduce animations for users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
+
     .card,
     .card-image,
     .favorite-button,
@@ -258,23 +252,23 @@
         transition: none;
         animation: none;
     }
-    
+
     .card:hover {
         transform: none;
     }
-    
+
     .card:hover .card-image {
         transform: none;
     }
 }
 
-/* 高对比度模式支持 */
+/* High contrast mode support */
 @media (prefers-contrast: high) {
     .card {
         border-width: 2px;
         border-color: currentColor;
     }
-    
+
     .favorite-button {
         border-width: 2px;
         border-color: currentColor;

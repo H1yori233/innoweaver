@@ -12,13 +12,13 @@ interface MasonryGalleryProps {
 const SkeletonCard: React.FC = () => {
     return (
         <div className="relative w-64 h-96 rounded-2xl overflow-hidden mb-4 bg-gray-200 dark:bg-gray-700 animate-pulse">
-            {/* 模拟标题区域 */}
+            {/* Simulate title area */}
             <div className="absolute inset-0 flex flex-col justify-center items-center p-6">
                 <div className="w-3/4 h-6 bg-gray-300 dark:bg-gray-600 rounded-lg mb-3"></div>
                 <div className="w-1/2 h-4 bg-gray-300 dark:bg-gray-600 rounded-lg"></div>
             </div>
             
-            {/* 模拟点赞按钮 */}
+            {/* Simulate like button */}
             <div className="absolute top-4 right-4 w-10 h-10 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
         </div>
     );

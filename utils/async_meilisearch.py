@@ -10,7 +10,7 @@ class AsyncMeilisearchIndex:
         self.base_url = f"{client.base_url}/indexes/{index_uid}"
 
     async def add_documents(self, documents: List[Dict], primary_key: Optional[str] = None) -> Dict:
-        """异步添加文档到索引"""
+        """Asynchronously add documents to index"""
         try:
             url = f"{self.base_url}/documents"
             params = {}
@@ -35,7 +35,7 @@ class AsyncMeilisearchIndex:
             raise
 
     async def delete_document(self, document_id: str) -> Dict:
-        """异步删除文档"""
+        """Asynchronously delete documents"""
         try:
             url = f"{self.base_url}/documents/{document_id}"
             
@@ -55,7 +55,7 @@ class AsyncMeilisearchIndex:
             raise
 
     async def search(self, query: str, search_params: Optional[Dict] = None) -> Dict:
-        """异步搜索文档"""
+        """Asynchronously search documents"""
         try:
             url = f"{self.base_url}/search"
             payload = {"q": query}
@@ -88,12 +88,12 @@ class AsyncMeilisearchClient:
         logger.info(f"Initialized AsyncMeilisearchClient with base URL: {url}")
 
     def index(self, index_uid: str) -> AsyncMeilisearchIndex:
-        """获取索引实例"""
+        """Get index instance"""
         logger.debug(f"Creating index instance for {index_uid}")
         return AsyncMeilisearchIndex(self, index_uid)
 
     async def create_index(self, index_uid: str, options: Optional[Dict] = None) -> Dict:
-        """异步创建索引"""
+        """Asynchronously create index"""
         try:
             url = f"{self.base_url}/indexes"
             payload = {"uid": index_uid}
@@ -118,7 +118,7 @@ class AsyncMeilisearchClient:
             raise
 
     async def get_indexes(self) -> List[Dict]:
-        """异步获取所有索引"""
+        """Asynchronously get all indexes"""
         try:
             url = f"{self.base_url}/indexes"
             
@@ -138,7 +138,7 @@ class AsyncMeilisearchClient:
             raise
 
     async def get_index(self, index_uid: str) -> Dict:
-        """异步获取特定索引信息"""
+        """Asynchronously get specific index information"""
         try:
             url = f"{self.base_url}/indexes/{index_uid}"
             
@@ -158,7 +158,7 @@ class AsyncMeilisearchClient:
             raise
 
     async def delete_index(self, index_uid: str) -> Dict:
-        """异步删除索引"""
+        """Asynchronously delete index"""
         try:
             url = f"{self.base_url}/indexes/{index_uid}"
             
@@ -178,7 +178,7 @@ class AsyncMeilisearchClient:
             raise
 
     async def health(self) -> Dict:
-        """异步检查Meilisearch健康状态"""
+        """Asynchronously check Meilisearch health status"""
         try:
             url = f"{self.base_url}/health"
             

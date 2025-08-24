@@ -63,7 +63,7 @@ function handleAbort(controller) {
     return new AbortController();
 }
 
-// 点赞/取消点赞
+// Like/Unlike
 export async function fetchLikeSolution(solution_id: string) {
     try {
         return await customFetch(`/api/user/like_solution`, {
@@ -76,7 +76,7 @@ export async function fetchLikeSolution(solution_id: string) {
     }
 }
 
-// 设置 API-KEY
+// Set API-KEY
 export async function fetchSetAPIKey(api_key: string, api_url?: string, model_name?: string) {
     try {
         return await customFetch(`/api/user/api_key`, {

@@ -7,7 +7,7 @@ import utils.log as LOG
 import json
 import requests
 import re
-import asyncio # Added for potential sleep in streaming
+import asyncio
 
 async def _stream_openai_response(http_client, data, headers):
     try:
@@ -119,21 +119,21 @@ async def make_image_request(prompt, client):
     
 # -----------------------------------------------------------------------------
 
-# 添加一个辅助函数来处理LLM响应内容
+# Add a helper function to process LLM response content
 def process_llm_response(content):
     try:
         return json.loads(content)
     except json.JSONDecodeError:
-        # 如果内容不是JSON格式，尝试提取内容中的JSON部分
+        # If content is not JSON format, try to extract JSON part from content
         json_match = re.search(r'```json\s*([\s\S]*?)\s*```', content)
         if json_match:
             try:
                 return json.loads(json_match.group(1))
             except json.JSONDecodeError:
-                # 如果提取的JSON部分解析失败，返回原始内容作为文本
+                # If extracted JSON part parsing fails, return original content as text
                 return {"text": content}
         else:
-            # 如果没有找到JSON部分，返回原始内容作为文本
+            # If no JSON part found, return original content as text
             return {"text": content}
 
 async def knowledge_extraction(paper, client, user_type=None, stream=False):
@@ -184,7 +184,7 @@ async def query_analysis(query, documents, client, user_type=None, stream=False)
 # -----------------------------------------------------------------------------
 
 async def drawing_expert_system(target_user, technical_method, possible_results, client, user_type=None):
-    # 图像生成函数不需要使用模型名称，因为它使用专门的图像API
+    # Image generation function doesn't need to use model name as it uses specialized image API
     LOG.logger.info(f"Using image generation API for drawing expert system (User Type: {user_type})")
     
     # Create a more natural prompt that won't trigger safety systems
@@ -294,7 +294,7 @@ def simple_completion(prompt, client, model=None):
         Exception: With detailed error information from the API
     """
     try:
-        # 优先使用传入的model参数，其次使用客户端的model_name，最后使用默认模型
+        # Prioritize passed model parameter, then client's model_name, finally default model
         model_to_use = model or client.model_name or "deepseek-chat"
         LOG.logger.info(f"Using model {model_to_use} for simple completion")
         

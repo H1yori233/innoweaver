@@ -83,9 +83,6 @@ const ChatPopup = ({ isOpen, onClose, onMinimize, inspirationId, solution }: Cha
                 break;
 
             case 'end':
-                // This 'end' event is sent by the backend when the stream naturally finishes.
-                // If there's still streaming content (e.g., if a 'result' event wasn't sent),
-                // we add it as the final message.
                 if (streamingContent) {
                     setMessages(prev => [
                         ...prev,
@@ -142,11 +139,10 @@ const ChatPopup = ({ isOpen, onClose, onMinimize, inspirationId, solution }: Cha
      */
     const handleStopStreaming = () => {
         logger.info("User is stopping the stream.");
-        disconnect(); // This aborts the fetch request via the AbortController in the hook.
+        disconnect();
         setIsLoading(false);
 
-        // Add a message to the chat to indicate the user stopped the generation.
-        // We use the last known streaming content as the partial result.
+
         const finalContent = streamingContent ? streamingContent : "Generation stopped by user.";
         setMessages(prev => [
             ...prev,

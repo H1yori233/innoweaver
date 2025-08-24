@@ -65,7 +65,7 @@ def search_in_meilisearch(query, requirements):
         search_results = index.search(search_query)
         return search_results
     except Exception as e:
-        print(f"搜索错误: {str(e)}")
+        print(f"Search error: {str(e)}")
         return {"hits": []}
 
 
@@ -77,7 +77,7 @@ async def async_search_in_meilisearch(query, requirements):
         search_results = await index.search(search_query)
         return search_results
     except Exception as e:
-        print(f"异步搜索错误: {str(e)}")
+        print(f"Async search error: {str(e)}")
         return {"hits": []}
 
 
@@ -117,10 +117,10 @@ def solution_eval(solution: Any) -> Optional[Dict[str, Any]]:
                     return result
                 return None
             except Exception as e:
-                print(f"解析失败: {e}")
+                print(f"Parse failed: {e}")
                 return None
     elif isinstance(solution, dict):
         return solution
     else:
-        print(f"solution 类型不支持: {type(solution)}")
+        print(f"Solution type not supported: {type(solution)}")
         return None

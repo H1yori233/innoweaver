@@ -1,28 +1,28 @@
 import { customFetch } from '@/lib/actions/customFetch';
 
-// 不需要认证的请求
+// Request that doesn't require authentication
 export async function fetchQuerySolution(solution_id: string) {
     return customFetch(`/api/query_solution?id=${solution_id}`, { 
         method: "GET",
-        requireAuth: false  // 明确不需要认证
+        requireAuth: false  // Explicitly doesn't require authentication
     });
 }
 
-// 需要认证的请求
+// Request that requires authentication
 export async function fetchQueryLikedSolutions(solution_ids: string[]) {
     return customFetch(`/api/user/query_liked_solutions`, {
         method: "POST",
         body: JSON.stringify({
             solution_ids: solution_ids
         }),
-        requireAuth: true  // 明确需要认证
+        requireAuth: true  // Explicitly requires authentication
     });
 }
 
-// 不需要认证的请求 - 获取单个 solution 的 like count
+// Request that doesn't require authentication - get single solution's like count
 export async function fetchSolutionLikeCount(solution_id: string) {
     return customFetch(`/api/solution/${solution_id}/like_count`, {
         method: "GET",
-        requireAuth: false  // 明确不需要认证
+        requireAuth: false  // Explicitly doesn't require authentication
     });
 }

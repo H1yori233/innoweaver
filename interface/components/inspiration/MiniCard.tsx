@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import './MiniCard.css';
-import { GetColor, useThemeColor } from '@/lib/hooks/color';
 import useRouterHook from '@/lib/hooks/router-hook';
 import Link from 'next/link';
 import { fetchLikeSolution } from '@/lib/actions';
@@ -16,7 +15,18 @@ const MiniCard = React.memo(function MiniCard(props: { content: any, index: numb
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
 
-    const cardColor = useThemeColor(props.index, 25);
+    // Generate gradient color based on title hash
+    const title = props.content.solution?.Title || 'Untitled Title';
+    const generateGradientColor = () => {
+        const hash = title.split('').reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0);
+        const h = hash % 360;
+        const s = 75;
+        const l1 = 65;
+        const l2 = 75;
+        return `linear-gradient(135deg, hsl(${h}, ${s}%, ${l1}%), hsl(${(h + 60) % 360}, ${s}%, ${l2}%))`;
+    };
+
+    const cardColor = generateGradientColor();
     const isDarkTheme = typeof document !== 'undefined' ?
         document.documentElement.classList.contains('dark') : false;
 
@@ -56,9 +66,7 @@ const MiniCard = React.memo(function MiniCard(props: { content: any, index: numb
         setImageLoaded(true);
     }, []);
 
-    // 获取标题显示内容
-    const title = props.content.solution?.Title || 'Untitled Title';
-    // 获取功能显示内容
+    // Get function display content
     const functionName = props.content.solution?.Function || title;
 
     return (
@@ -69,23 +77,23 @@ const MiniCard = React.memo(function MiniCard(props: { content: any, index: numb
                 rel="noopener noreferrer"
                 className={`card ${hasImage ? 'has-image' : ''}`}
                 style={{
-                    backgroundColor: cardColor,
-                    boxShadow: isDarkTheme 
-                        ? '0 6px 12px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1)' 
+                    background: cardColor,
+                    boxShadow: isDarkTheme
+                        ? '0 6px 12px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1)'
                         : '0 6px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.03)',
                     transition: 'all 0.3s ease',
                     borderRadius: '14px',
                     overflow: 'hidden',
-                    border: isDarkTheme 
-                        ? '1px solid rgba(255, 255, 255, 0.08)' 
+                    border: isDarkTheme
+                        ? '1px solid rgba(255, 255, 255, 0.08)'
                         : '1px solid rgba(0, 0, 0, 0.03)'
                 }}
                 aria-label={`View solution ${title}`}
             >
-                {/* 渐变叠加层 */}
+                {/* Gradient overlay */}
                 <div className="card-gradient-overlay"></div>
 
-                {/* 背景图片 */}
+                {/* Background image */}
                 {props.content.solution?.image_url && (
                     <div className="card-image-container">
                         {!imageError ? (
@@ -94,18 +102,18 @@ const MiniCard = React.memo(function MiniCard(props: { content: any, index: numb
                                 alt={title}
                                 fill
                                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1600px) 33vw, 320px"
-                                className={`card-image transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                                className={`card-image transition-opacity duration-300 ${imageLoaded ? 'opacity-80' : 'opacity-0'}`}
                                 onError={handleImageError}
                                 onLoad={handleImageLoad}
                                 style={{ objectFit: 'cover' }}
-                                priority={props.index < 4} // 只有前4张图片优先加载
-                                loading={props.index < 4 ? 'eager' : 'lazy'} // 明确指定加载策略
-                                quality={75} // 降低图片质量以提升加载速度
-                                placeholder="blur" // 添加模糊占位符
-                                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R+Rj5m4xVvEH1Toi/d1a7zLLdN2eH2lAqNdwjlm2VfUH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R+Rj5m4xVvEH1Toi/d1a7zLLdN2eH2lAqNdwjlm2VfUH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R+Rj5m4xVvEH1Toi/d1a7zLLdN2eH2lAqNdwjlm2VfU//2Q=="
+                                priority={props.index < 4}
+                                loading={props.index < 4 ? 'eager' : 'lazy'}
+                                quality={75}
+                                placeholder="blur"
+                                blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIHZpZXdCb3g9IjAgMCAxMCAxMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9IiNlNGU0ZTciLz48L3N2Zz4="
                             />
                         ) : (
-                            // 图片加载失败时的占位符
+                            // Placeholder when image fails to load
                             <div className="absolute inset-0 bg-gradient-to-br from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center">
                                 <div className="text-gray-500 dark:text-gray-400 text-4xl">🖼️</div>
                             </div>
@@ -113,10 +121,10 @@ const MiniCard = React.memo(function MiniCard(props: { content: any, index: numb
                     </div>
                 )}
 
-                {/* 主要内容区域 - 默认只显示标题 */}
+                {/* Main content area - shows title by default */}
                 <div className="card-content-wrapper">
                     <div className="w-full h-full flex flex-col justify-center items-center relative">
-                        {/* 标题文本 */}
+                        {/* Title text */}
                         <h3
                             className="title-text text-xl md:text-2xl font-bold break-words line-clamp-4 text-center px-2"
                             style={{
@@ -129,7 +137,7 @@ const MiniCard = React.memo(function MiniCard(props: { content: any, index: numb
                     </div>
                 </div>
 
-                {/* 点赞按钮 */}
+                {/* Like button */}
                 <button
                     className={`favorite-button ${isLiked ? 'liked' : ''}`}
                     onClick={handleLiked}
@@ -143,7 +151,7 @@ const MiniCard = React.memo(function MiniCard(props: { content: any, index: numb
                     <FaHeart />
                 </button>
 
-                {/* 悬停时显示的详细内容 - 只显示 function */}
+                {/* Detailed content shown on hover - only shows function */}
                 <div className="content">
                     <div className="w-full h-full flex flex-col justify-center items-center px-4">
                         <p className="function font-medium text-center leading-relaxed">
@@ -154,7 +162,7 @@ const MiniCard = React.memo(function MiniCard(props: { content: any, index: numb
                     </div>
                 </div>
 
-                {/* 加载状态指示器 */}
+                {/* Loading state indicator */}
                 {isLoading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-30 rounded-xl">
                         <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
@@ -166,4 +174,3 @@ const MiniCard = React.memo(function MiniCard(props: { content: any, index: numb
 });
 
 export default MiniCard;
-MiniCard.whyDidYouRender = true;

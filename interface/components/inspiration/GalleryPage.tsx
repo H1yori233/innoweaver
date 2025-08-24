@@ -53,11 +53,11 @@ const GalleryPage = ({ title, fetchData }) => {
     const [hasMore, setHasMore] = useState(true);
     const initialLoadDone = useRef(false);
 
-    // 加载解决方案的逻辑
+    // Solution loading logic
     const handleLoadSolution = useCallback(async () => {
         if (isFetching || !hasMore) return;
 
-        setIsFetching(true);  // 设置加载状态
+        setIsFetching(true);  // Set loading state
         try {
             const result = await fetchData(page);
             logger.log("Loaded data:", result);
@@ -94,15 +94,15 @@ const GalleryPage = ({ title, fetchData }) => {
     }, [isFetching, page, hasMore, fetchData]);
 
     useEffect(() => {
-        let mounted = true; // 防止开发环境下 useEffect 执行两次
+        let mounted = true; // Prevent useEffect from executing twice in development mode
         if (!initialLoadDone.current && solutions.length === 0 && mounted) {
             initialLoadDone.current = true;
             handleLoadSolution();
         }
-        return () => { mounted = false; }; // 确保只执行一次
+        return () => { mounted = false; }; // Ensure only executed once
     }, [handleLoadSolution, solutions.length]);
 
-    // 滚动加载处理
+    // Scroll loading handling
     useEffect(() => {
         const handleScroll = () => {
             if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 10 && !isFetching && hasMore) {

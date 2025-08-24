@@ -77,20 +77,20 @@ const SolutionSearch = ({ onSelectionChange }) => {
       setSelectedSolutions((prevSelected) => {
         const isSelected = prevSelected.includes(solutionId);
 
-        // 如果已经选中，则移除
+        // If already selected, remove
         if (isSelected) {
           const updatedSelection = prevSelected.filter((id) => id !== solutionId);
           stableOnSelectionChange(updatedSelection);
           return updatedSelection;
         }
 
-        // 如果未选中且已达到上限，则不添加
+        // If not selected and reached limit, don't add
         if (prevSelected.length >= 8) {
-          alert('最多只能选择 8 条 inspiration');
+          alert('Can select maximum 8 inspirations');
           return prevSelected;
         }
 
-        // 未选中且未达到上限，则添加
+        // If not selected and not reached limit, add
         const updatedSelection = [...prevSelected, solutionId];
         stableOnSelectionChange(updatedSelection);
         return updatedSelection;
@@ -133,7 +133,7 @@ const SolutionSearch = ({ onSelectionChange }) => {
       setSelectedSolutions(idArray);
       stableOnSelectionChange(idArray);
 
-      // 预加载选中的解决方案数据
+      // Preload selected solution data
       idArray.forEach(async (id) => {
         try {
           const client = new MeiliSearch({ host: apiUrl });

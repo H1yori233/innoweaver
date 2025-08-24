@@ -105,15 +105,12 @@ export const useChatSSE = (config: SSEConfig) => {
 
                     // The data can be a JSON string or plain text.
                     // We try to parse it, but if it fails, we use the raw string.
-                    // This is crucial for handling both data objects and simple
-                    // string messages like "complete" or raw error strings.
+
                     try {
-                        // Only attempt to parse if it looks like an object or array.
                         if (typeof eventData === 'string' && (eventData.startsWith('{') || eventData.startsWith('['))) {
                             eventData = JSON5.parse(eventData);
                         }
                     } catch (e) {
-                        // This is not a critical error; it just means the data was not JSON.
                         logger.warn(`Chat SSE: Message data was not a JSON object, using raw text. Data: "${eventData}"`);
                     }
 

@@ -5,8 +5,8 @@ from utils.rate_limiter import rate_limit_dependency, rate_limiter
 import utils.tasks as USER
 from .utils import route_handler
 
-# 配置登录端点特定的限流规则 - 防止暴力破解
-rate_limiter.add_endpoint_limit("/api/login", 10, 60)  # 登录每分钟10次
+# Configure login endpoint specific rate limiting rules - prevent brute force attacks
+rate_limiter.add_endpoint_limit("/api/login", 10, 60)  # Login 10 times per minute
 
 auth_router = APIRouter()
 
@@ -30,7 +30,7 @@ async def register(request: Request):
 @fastapi_validate_input(["email", "password"])
 async def login(
     request: Request,
-    _: Dict = Depends(rate_limit_dependency)  # 添加限流依赖
+    _: Dict = Depends(rate_limit_dependency)  # Add rate limiting dependency
 ):
     data = await request.json()
     response, status_code = await USER.login_user(data["email"], data["password"])

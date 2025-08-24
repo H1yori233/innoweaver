@@ -82,7 +82,7 @@ export const useResearchSSE = (config: Partial<SSEConfig> = {}) => {
             sseConfig.reconnectInterval * Math.pow(2, attempt),
             sseConfig.maxReconnectInterval
         );
-        return delay + Math.random() * 1000; // Add jitter
+        return delay + Math.random() * 1000;
     }, [sseConfig.reconnectInterval, sseConfig.maxReconnectInterval]);
 
     const updateActivity = useCallback(() => {
@@ -173,7 +173,7 @@ export const useResearchSSE = (config: Partial<SSEConfig> = {}) => {
         }, sseConfig.messageTimeout);
     }, [sseConfig.messageTimeout]);
 
-    // Forward declaration for connectSSE
+
     const connectSSERef = useRef<((payload: any, onEvent: SSEEventHandler) => Promise<void>) | null>(null);
 
     // Effect to handle reconnection scheduling

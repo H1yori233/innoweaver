@@ -4,10 +4,10 @@ import psutil
 import time
 
 def find_server_process():
-    """查找运行在 5000 端口的进程"""
+    """Find process running on port 5000"""
     for proc in psutil.process_iter(['pid', 'name']):
         try:
-            # 使用 net_connections() 替代已废弃的 connections()
+            # Use net_connections() instead of deprecated connections()
             connections = psutil.net_connections()
             for conn in connections:
                 if conn.laddr and conn.laddr.port == 5000 and conn.pid:
@@ -17,23 +17,23 @@ def find_server_process():
     return None
 
 def shutdown_server():
-    print("正在查找服务器进程...")
+    print("Looking for server process...")
     server_process = find_server_process()
     
     if not server_process:
-        print("未找到运行在 5000 端口的服务器进程")
+        print("No server process found running on port 5000")
         return
     
     parent_pid = server_process.pid
-    print(f"找到主进程 PID: {parent_pid}")
+    print(f"Found main process PID: {parent_pid}")
     
-    # 获取所有子进程
+    # Get all child processes
     try:
         parent = psutil.Process(parent_pid)
         children = parent.children(recursive=True)
         
-        # 先发送 SIGTERM 信号
-        print("正在发送终止信号...")
+        # Send SIGTERM signal first
+        print("Sending termination signal...")
         for child in children:
             try:
                 os.kill(child.pid, signal.SIGTERM)
@@ -45,12 +45,12 @@ def shutdown_server():
         except (ProcessLookupError, psutil.NoSuchProcess):
             pass
         
-        # 等待进程结束
+        # Wait for process to end
         time.sleep(2)
         
-        # 如果进程还在运行，强制结束
+        # If process is still running, force termination
         if psutil.pid_exists(parent_pid):
-            print("正在强制结束进程...")
+            print("Force terminating process...")
             for child in children:
                 try:
                     os.kill(child.pid, signal.SIGKILL)
@@ -61,11 +61,11 @@ def shutdown_server():
             except (ProcessLookupError, psutil.NoSuchProcess):
                 pass
         
-        print("服务器已关闭")
+        print("Server has been shut down")
     except psutil.NoSuchProcess:
-        print("进程已经不存在")
+        print("Process no longer exists")
     except Exception as e:
-        print(f"关闭服务器时发生错误: {e}")
+        print(f"Error occurred while shutting down server: {e}")
 
 if __name__ == "__main__":
     shutdown_server() 

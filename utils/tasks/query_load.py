@@ -22,7 +22,7 @@ async def query_solution(solution_id):
 
 async def query_liked_solution(user_id: str, solution_ids: List[str]):
     """
-    查询用户是否点赞了指定的解决方案列表
+    Query whether user has liked the specified solution list
     """
     user_oid = ObjectId(user_id)
     solution_oids = [ObjectId(sid) for sid in solution_ids]
@@ -31,7 +31,7 @@ async def query_liked_solution(user_id: str, solution_ids: List[str]):
         'solution_id': {'$in': solution_oids}
     })
     
-    # 使用 to_list 获取所有结果
+    # Use to_list to get all results
     liked_relations = await cursor.to_list(None)
     liked_solution_ids = {str(relation['solution_id']) for relation in liked_relations}
     result = [
@@ -50,13 +50,13 @@ async def query_paper(paper_id: str):
     cached_result = await async_redis.get(cache_key)
     if cached_result:
         paper = json.loads(cached_result)
-    # cache 没有，数据库里读取
+    # Not in cache, read from database
     else:
         paper = await papers_collection.find_one({'_id': ObjectId(paper_id)})
         if(paper):
             paper['id'] = str(paper['_id'])
             del paper['_id']
-    # 更新到 cache 里
+    # Update to cache
     if(paper):
         await async_redis.setex(cache_key, 3600, json.dumps(paper))
     return paper

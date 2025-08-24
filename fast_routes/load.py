@@ -35,16 +35,16 @@ async def gallery(page: int = Query(default=1, ge=1)):
 @load_router.get("/logs")
 @route_handler()
 async def get_logs(current_user: Dict[str, Any] = Depends(fastapi_token_required)):
-    """获取日志条目"""
+    """Get log entries"""
     try:
         if current_user['user_type'] != 'developer':
-            raise HTTPException(status_code=403, detail='没有权限访问此资源')
+            raise HTTPException(status_code=403, detail='No permission to access this resource')
         
         logs = []
         with open(LOG.LOG_FILE, 'r', encoding='utf-8') as f:
             for line in f:
                 try:
-                    # 解析日志行
+                    # Parse log line
                     parts = line.split(' - ', 3)
                     if len(parts) == 4:
                         timestamp, name, level, message = parts
@@ -65,10 +65,10 @@ async def get_logs(current_user: Dict[str, Any] = Depends(fastapi_token_required
 @load_router.get("/logs/stats")
 @route_handler()
 async def get_log_stats(current_user: Dict[str, Any] = Depends(fastapi_token_required)):
-    """获取日志统计信息"""
+    """Get log statistics"""
     try:
         if current_user['user_type'] != 'developer':
-            raise HTTPException(status_code=403, detail='没有权限访问此资源')
+            raise HTTPException(status_code=403, detail='No permission to access this resource')
         
         stats = {
             'total_logs': 0,

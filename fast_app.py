@@ -18,11 +18,11 @@ app = FastAPI(
     version="1.1.0"
 )
 
-# 配置静态文件和模板（必须在中间件之前）
+# Configure static files and templates (must be before middleware)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-# CORS 配置
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -31,24 +31,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Celery 配置
+# Celery configuration
 app.state.broker_url = 'redis://localhost:6379/1'
 app.state.result_backend = 'redis://localhost:6379/0'
 app.state.BASE_URL = os.getenv("BASE_URL")
 
-# 添加限流中间件
+# Add rate limiting middleware
 @app.middleware("http")
 async def api_rate_limiter(request: Request, call_next):
     return await rate_limit_middleware(request, call_next)
 
-# 注册路由
+# Register routes
 app.include_router(auth_router, prefix="/api")
 app.include_router(task_router, prefix="/api")
 app.include_router(query_router, prefix="/api")
 app.include_router(load_router, prefix="/api")
 app.include_router(prompts_router, prefix="/api")
 
-# 请求日志中间件
+# Request logging middleware
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     logger.info(f"Request: {request.method} {request.url}")
@@ -76,7 +76,7 @@ class HealthResponse(BaseModel):
     suggestions: List[str]
     available_apis: Optional[List[Dict[str, Any]]] = None
 
-# 创建健康检查实例
+# Create health check instance
 health_checker = HealthCheck()
 
 @app.get("/api/health", response_model=HealthResponse, status_code=200)
@@ -110,8 +110,8 @@ if __name__ == "__main__":
         "fast_app:app",
         host="0.0.0.0",
         port=5000,
-        reload=True,  # 开发模式启用热重载
+        reload=True,  # Enable hot reload in development mode
         # reload=False,
-        # workers=4     # 生产环境可以调整 worker 数量
+        # workers=4     # Production environment can adjust worker count
         workers=1
     ) 

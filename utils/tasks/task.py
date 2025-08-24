@@ -28,7 +28,7 @@ from utils.tasks.query_load import *
 import utils.main as MAIN
 import utils.log as LOG
 
-# 创建 MeiliSearch 客户端实例
+# Create MeiliSearch client instance
 meili_client = Client(MEILISEARCH["host"])
 
 ################################################################################
@@ -63,7 +63,7 @@ def update_user_to_meilisearch(user):
         index.add_documents([user])
 
 
-# 添加异步版本的更新函数
+# Add async version of update function
 async def async_update_paper_to_meilisearch(paper):
     if paper:
         paper = convert_objectid_to_str(paper)
@@ -96,7 +96,7 @@ async def delete_solution(solution_id):
                 {"solution_id": ObjectId(solution_id)}
             )
 
-            # 使用异步方式删除文档
+            # Delete document using async method
             index = await get_async_solution_index()
             await index.delete_document(str(solution_id))
 
@@ -123,10 +123,10 @@ async def insert_solution(current_user, query, query_analysis_result, final_solu
         results.append(result.inserted_id)
 
         temp = await solutions_collection.find_one({"_id": result.inserted_id})
-        # 使用异步方式更新到Meilisearch
+        # Update to Meilisearch using async method
         await async_update_solution_to_meilisearch(temp)
 
-    print(f"新文档已插入，ID: {results}")
+    print(f"New document inserted, ID: {results}")
     return results
 
 
@@ -143,7 +143,7 @@ async def paper_cited(
                 {"$inc": {"Cited": 1}},
                 return_document=True,
             )
-            # 使用异步方式更新到Meilisearch
+            # Update to Meilisearch using async method
             await async_update_paper_to_meilisearch(updated_paper)
 
             for solution_id in solution_ids:
@@ -163,7 +163,7 @@ async def like_paper(paper, user):
         updated_paper = await papers_collection.find_one_and_update(
             {"_id": ObjectId(paper_id)}, {"$inc": {"Liked": 1}}, return_document=True
         )
-        # 使用异步方式更新到Meilisearch
+        # Update to Meilisearch using async method
         await async_update_paper_to_meilisearch(updated_paper)
 
         await papers_liked_collection.insert_one(
@@ -178,7 +178,7 @@ async def like_paper(paper, user):
 async def like_solution(user_id: str, solution_id: str):
     if (solution_id is None) or (user_id is None):
         return {
-            "message": "失败",
+            "message": "Failed",
             "user_id": str(user_id),
             "solution_id": str(solution_id),
         }, 400
@@ -193,10 +193,10 @@ async def like_solution(user_id: str, solution_id: str):
         await solutions_liked_collection.delete_one(
             {"user_id": ObjectId(user_id), "solution_id": ObjectId(solution_id)}
         )
-        # 使用异步方式更新到Meilisearch
+        # Update to Meilisearch using async method
         await async_update_solution_to_meilisearch(result)
         return {
-            "message": "取消点赞",
+            "message": "Unlike",
             "user_id": str(user_id),
             "solution_id": str(solution_id),
         }, 200
@@ -211,10 +211,10 @@ async def like_solution(user_id: str, solution_id: str):
             "time": get_formatted_time(),
         }
     )
-    # 使用异步方式更新到Meilisearch
+    # Update to Meilisearch using async method
     await async_update_solution_to_meilisearch(result)
     return {
-        "message": "点赞成功",
+        "message": "Like successful",
         "user_id": str(user_id),
         "solution_id": str(solution_id),
     }, 200
@@ -261,9 +261,9 @@ async def test_api_connection(current_user, api_key, api_url=None, model_name=No
             LOG.logger.warning(f"Invalid API key format: {api_key[:5]}...")
             return {"success": False, "message": "Invalid API key format"}
 
-        # 使用提供的URL或默认值
+        # Use provided URL or default value
         base_url = api_url or "https://api.deepseek.com/v1"
-        model = model_name or "deepseek-chat"  # 默认模型
+        model = model_name or "deepseek-chat"  # Default model
 
         LOG.logger.info(
             f"Testing API connection for user {current_user['email']} with URL: {base_url}, model: {model}"
@@ -274,13 +274,12 @@ async def test_api_connection(current_user, api_key, api_url=None, model_name=No
 
         # Create a new client with the provided credentials
         client = OpenAIClient(
-            api_key=api_key, base_url=base_url, model_name=model  # 传递模型名称给客户端
+            api_key=api_key, base_url=base_url, model_name=model  # Pass model name to client
         )
 
         # Basic test prompt
         test_prompt = "Hello, this is a test message. Please respond with 'OK' if you receive this."
 
-        # This is a simple test to verify the API connection works
         try:
             response = await asyncio.to_thread(
                 lambda: MAIN.simple_completion(test_prompt, client)
@@ -302,7 +301,6 @@ async def test_api_connection(current_user, api_key, api_url=None, model_name=No
 
             # Extract more readable error message if possible
             if "status_code" in error_details and "text" in error_details:
-                # This is likely an OpenAI API error with detailed information
                 return {
                     "success": False,
                     "message": "API connection failed",

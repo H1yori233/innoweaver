@@ -17,7 +17,7 @@ const LOCAL_STORAGE_KEYS = {
   LAST_FETCH: 'log_analyzer_last_fetch'
 };
 
-const CACHE_DURATION = 5 * 60 * 1000; // 5分钟的缓存时间
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache duration
 
 const LogAnalyzer: React.FC = () => {
   const { toast } = useToast();
@@ -31,7 +31,7 @@ const LogAnalyzer: React.FC = () => {
   const [isRefreshDialogOpen, setIsRefreshDialogOpen] = useState(false);
   const [hasShownCacheMessage, setHasShownCacheMessage] = useState(false);
 
-  // 修改初始化逻辑
+  // Modify initialization logic
   useEffect(() => {
     const loadFromLocalStorage = () => {
       try {
@@ -43,7 +43,7 @@ const LogAnalyzer: React.FC = () => {
           setLogs(JSON.parse(storedLogs));
           setStats(JSON.parse(storedStats));
           
-          // 只在首次加载时显示缓存过期提示
+          // Only show cache expiration message on first load
           if (!hasShownCacheMessage) {
             const lastFetchTime = parseInt(lastFetch);
             const now = Date.now();
@@ -56,7 +56,7 @@ const LogAnalyzer: React.FC = () => {
             }
           }
         } else if (!hasShownCacheMessage) {
-          // 只在首次加载且没有缓存数据时显示提示
+          // Only show message on first load and when there's no cached data
           toast({
             title: "No Cached Data",
             description: "Please click refresh to load log data.",
@@ -78,7 +78,7 @@ const LogAnalyzer: React.FC = () => {
     loadFromLocalStorage();
   }, [toast, hasShownCacheMessage]);
 
-  // 保存数据到本地存储
+  // Save data to local storage
   const saveToLocalStorage = (newLogs: LogEntry[], newStats: LogStats) => {
     try {
       localStorage.setItem(LOCAL_STORAGE_KEYS.LOGS, JSON.stringify(newLogs));
@@ -128,7 +128,7 @@ const LogAnalyzer: React.FC = () => {
     }
   };
 
-  // 当切换页面或筛选条件时，重置到第一页
+  // Reset to first page when switching pages or filter conditions
   useEffect(() => {
     setCurrentPage(1);
   }, [logFilter, selectedLogLevel]);
@@ -208,7 +208,7 @@ const LogAnalyzer: React.FC = () => {
     return (
         <div className="flex items-center justify-between px-2 py-4">
             <div className="text-sm text-gray-500">
-                显示 {indexOfFirstLog + 1} 到 {Math.min(indexOfLastLog, filteredLogs.length)} 条，共 {filteredLogs.length} 条
+                Showing {indexOfFirstLog + 1} to {Math.min(indexOfLastLog, filteredLogs.length)} entries, total {filteredLogs.length} entries
             </div>
             <div className="flex space-x-2">
                 <Button
@@ -217,7 +217,7 @@ const LogAnalyzer: React.FC = () => {
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
                 >
-                    上一页
+                    Previous
                 </Button>
                 {getPageNumbers().map((page, index) => (
                     page === '...' ? (
@@ -239,7 +239,7 @@ const LogAnalyzer: React.FC = () => {
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
                 >
-                    下一页
+                    Next
                 </Button>
             </div>
         </div>
