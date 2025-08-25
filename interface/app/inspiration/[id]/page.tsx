@@ -4,65 +4,58 @@ import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from "
 import { useParams, useRouter } from "next/navigation";
 import dynamic from 'next/dynamic';
 import { fetchQuerySolution, fetchQueryLikedSolutions, fetchLikeSolution, fetchSolutionLikeCount } from "@/lib/actions";
-import { FaHeart, FaChevronDown, FaComments, FaArrowLeft, FaCamera } from "react-icons/fa";
+import { Heart, ChevronDown, MessageCircle, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import useAuthStore from '@/lib/hooks/auth-store';
 import { logger } from '@/lib/logger';
 import Image from 'next/image';
 
-// --- Dynamic Imports for Non-Critical Components ---
+// Dynamic imports for performance
 const ChatPopup = dynamic(() => import('@/components/inspiration/ChatPopup'), {
     ssr: false
 });
 
 const RecommendedInspirations = dynamic(() => import('@/components/inspiration/RecommendedInspirations'), {
     loading: () => (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-            {[...Array(5)].map((_, i) => (
-                <div key={i} className="bg-white/10 backdrop-blur-sm rounded-2xl h-64 animate-pulse"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-6 md:px-8 lg:px-12">
+            {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-96 bg-surface-secondary rounded-2xl animate-pulse" />
             ))}
         </div>
     ),
     ssr: false,
 });
 
-
-// --- Reusable & Robust Components ---
-
-// Section Error Boundary (Robustness)
+// Error boundary for robust section handling
 interface SectionErrorBoundaryState {
     hasError: boolean;
 }
-interface SectionErrorBoundaryProps {
+
+class SectionErrorBoundary extends React.Component<{
     children: React.ReactNode;
     fallback?: React.ReactNode;
     sectionName?: string;
-}
-class SectionErrorBoundary extends React.Component<SectionErrorBoundaryProps, SectionErrorBoundaryState> {
-    constructor(props: SectionErrorBoundaryProps) {
+}, SectionErrorBoundaryState> {
+    constructor(props: any) {
         super(props);
         this.state = { hasError: false };
     }
 
-    static getDerivedStateFromError(error: any): SectionErrorBoundaryState {
+    static getDerivedStateFromError(): SectionErrorBoundaryState {
         return { hasError: true };
     }
 
     componentDidCatch(error: any, errorInfo: any) {
-        logger.error(`Error in ${this.props.sectionName || 'section'}:`, {
-            error: error.message,
-            stack: error.stack,
-            errorInfo,
-        });
+        logger.error(`Error in ${this.props.sectionName || 'section'}:`, error, errorInfo);
     }
 
     render() {
         if (this.state.hasError) {
             return this.props.fallback || (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 my-4">
-                    <h3 className="text-sm font-medium text-red-800">
+                <div className="p-6 bg-surface-secondary border border-border-subtle rounded-2xl">
+                    <p className="text-sm text-text-tertiary">
                         Unable to load {this.props.sectionName || 'this section'}.
-                    </h3>
+                    </p>
                 </div>
             );
         }
@@ -70,28 +63,37 @@ class SectionErrorBoundary extends React.Component<SectionErrorBoundaryProps, Se
     }
 }
 
-const SafeComponent = ({ children, fallback = null, sectionName }: {
-    children: React.ReactNode;
-    fallback?: React.ReactNode;
-    sectionName?: string;
-}) => (
-    <SectionErrorBoundary sectionName={sectionName} fallback={fallback}>
-        {children}
-    </SectionErrorBoundary>
-);
+// Clean, minimal section header
+const SectionHeader = memo(({ title, accent = 'clay' }: {
+    title: string;
+    accent?: 'clay' | 'sage' | 'rust' | 'storm';
+}) => {
+    const accentColors = {
+        clay: 'bg-organic-clay',
+        sage: 'bg-organic-sage',
+        rust: 'bg-organic-rust',
+        storm: 'bg-organic-storm'
+    };
 
-// Reusable Section Header (Redundancy Reduction)
-const SectionHeader = memo(({ title, barGradient }: { title: string; barGradient: string; }) => (
-    <div className="flex items-center gap-4">
-        <div className={`w-3 h-10 ${barGradient} rounded-full`}></div>
-        <h2 className="text-3xl font-bold text-text-primary">{title}</h2>
-    </div>
-));
+    return (
+        <div className="flex items-center gap-4 mb-8">
+            <div className={`w-1 h-8 ${accentColors[accent]} rounded-full`} />
+            <h2 className="heading-secondary text-text-primary">{title}</h2>
+        </div>
+    );
+});
 SectionHeader.displayName = 'SectionHeader';
 
-
-// --- Memoized Child Components (from original file, unchanged) ---
-const IterationSection = memo(({ title, method, performance, userExperience, isExpanded, onToggle, index }: {
+// Reimagined method section with organic design
+const MethodSection = memo(({
+    title,
+    method,
+    performance,
+    userExperience,
+    isExpanded,
+    onToggle,
+    index
+}: {
     title?: string;
     method?: string;
     performance?: string;
@@ -104,151 +106,163 @@ const IterationSection = memo(({ title, method, performance, userExperience, isE
     const hasContent = method || performance || userExperience;
 
     return (
-        <SafeComponent sectionName={`method ${index + 1}`}>
-            <div className="mb-4 rounded-2xl shadow-lg border border-blue-500/20 overflow-hidden 
-                transition-all duration-300 hover:shadow-xl hover:border-blue-500/40 bg-white/10 backdrop-blur-sm">
-                <motion.button
-                    className="flex justify-between items-center w-full px-6 py-5 text-left 
-                        bg-gradient-to-r from-blue-500/10 to-purple-500/10 hover:from-blue-500/20 hover:to-purple-500/20 
-                        transition-all duration-200"
+        <SectionErrorBoundary sectionName={`method ${index + 1}`}>
+            <div className="border border-border-subtle rounded-2xl overflow-hidden 
+                          bg-surface-elevated hover:border-border-default
+                          transition-all duration-300">
+                <button
+                    className="flex justify-between items-center w-full px-6 py-5 text-left
+                             hover:bg-surface-secondary transition-colors duration-200"
                     onClick={onToggle}
                 >
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center shadow-lg">
-                            <span className="text-sm font-bold text-white">{index + 1}</span>
+                    <div className="flex items-center gap-4">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium text-text-inverse ${index === 0 ? 'bg-accent-primary' : 'bg-organic-sage'
+                            }`}>
+                            {index + 1}
                         </div>
-                        <h3 className="text-lg font-semibold text-text-primary">{safeTitle}</h3>
+                        <h3 className="font-medium text-text-primary">{safeTitle}</h3>
                     </div>
-                    <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.3 }} className="text-blue-500">
-                        <FaChevronDown />
+                    <motion.div
+                        animate={{ rotate: isExpanded ? 180 : 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="text-text-tertiary"
+                    >
+                        <ChevronDown className="w-4 h-4" />
                     </motion.div>
-                </motion.button>
+                </button>
+
                 <AnimatePresence>
                     {isExpanded && (
                         <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
+                            initial={{ height: 0 }}
+                            animate={{ height: "auto" }}
+                            exit={{ height: 0 }}
                             transition={{ duration: 0.3, ease: "easeInOut" }}
                             className="overflow-hidden"
                         >
-                            <div className="px-6 py-6 space-y-6 text-text-secondary bg-white/5 backdrop-blur-sm">
+                            <div className="px-6 py-6 space-y-6 bg-surface-secondary/30">
                                 {method && (
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-1 h-4 bg-gradient-to-b from-blue-500 to-purple-500 rounded-full"></div>
-                                            <strong className="font-semibold text-text-primary">Method</strong>
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="w-0.5 h-4 bg-accent-primary rounded-full" />
+                                            <span className="font-medium text-text-primary text-sm">Method</span>
                                         </div>
-                                        <p className="leading-relaxed pl-3 text-text-secondary">{method}</p>
+                                        <p className="body-regular text-text-secondary pl-3">{method}</p>
                                     </div>
                                 )}
                                 {performance && (
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-1 h-4 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full"></div>
-                                            <strong className="font-semibold text-text-primary">Performance</strong>
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="w-0.5 h-4 bg-organic-sage rounded-full" />
+                                            <span className="font-medium text-text-primary text-sm">Performance</span>
                                         </div>
-                                        <p className="leading-relaxed pl-3 text-text-secondary">{performance}</p>
+                                        <p className="body-regular text-text-secondary pl-3">{performance}</p>
                                     </div>
                                 )}
                                 {userExperience && (
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-1 h-4 bg-gradient-to-b from-orange-500 to-red-500 rounded-full"></div>
-                                            <strong className="font-semibold text-text-primary">User Experience</strong>
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="w-0.5 h-4 bg-organic-rust rounded-full" />
+                                            <span className="font-medium text-text-primary text-sm">User Experience</span>
                                         </div>
-                                        <p className="leading-relaxed pl-3 text-text-secondary">{userExperience}</p>
+                                        <p className="body-regular text-text-secondary pl-3">{userExperience}</p>
                                     </div>
                                 )}
                                 {!hasContent && (
-                                    <p className="text-sm italic text-text-placeholder pl-3">Details not available.</p>
+                                    <p className="body-small text-text-placeholder pl-3">Details not available.</p>
                                 )}
                             </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
             </div>
-        </SafeComponent>
+        </SectionErrorBoundary>
     );
 });
-IterationSection.displayName = 'IterationSection';
+MethodSection.displayName = 'MethodSection';
 
-const FunctionSection = memo(({ func, isLiked, likeCount, onLike, onScreenshot }: {
+// Hero function section with organic design
+const FunctionHero = memo(({
+    title,
+    func,
+    isLiked,
+    likeCount,
+    onLike
+}: {
+    title: string;
     func: string;
     isLiked: boolean;
     likeCount: number;
     onLike: () => void;
-    onScreenshot: () => void;
 }) => (
-    <SafeComponent sectionName="function section">
-        <div className="flex flex-col lg:flex-row gap-6 w-full">
-            <div className="flex-1">
-                <div className="bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-blue-500/10 
-                     rounded-2xl p-8 border border-blue-500/20 shadow-xl backdrop-blur-sm h-full">
-                    <p className="text-xl text-text-primary leading-relaxed font-medium">{func}</p>
-                </div>
+    <SectionErrorBoundary sectionName="function hero">
+        <div className="space-y-8">
+            {/* Title */}
+            <div className="text-center">
+                <h1 className="heading-display text-text-primary mb-6 text-balance max-w-4xl mx-auto">
+                    {title}
+                </h1>
             </div>
-            <div className="flex lg:flex-col flex-row gap-3 lg:justify-start justify-center lg:w-auto w-full">
-                <motion.button
-                    className="p-3 text-blue-500 hover:text-blue-400 transition-colors duration-200"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={onScreenshot}
-                    title="Take Screenshot"
-                >
-                    <FaCamera className="text-xl" />
-                </motion.button>
-                <div className="flex flex-col items-center gap-1">
-                    <motion.button
-                        className={`p-3 transition-colors duration-200 ${isLiked
-                            ? "text-red-500 hover:text-red-400"
-                            : "text-text-secondary hover:text-red-500"
-                            }`}
-                        onClick={onLike}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                        title={isLiked ? "Unlike" : "Like"}
-                    >
-                        <FaHeart className="text-xl" />
-                    </motion.button>
-                    {likeCount > 0 && (
-                        <span className="text-sm text-text-secondary font-medium">{likeCount}</span>
-                    )}
-                </div>
-            </div>
-        </div>
-    </SafeComponent>
-));
-FunctionSection.displayName = 'FunctionSection';
 
-const QueryAnalysis = memo(({ analysis }: { analysis: any }) => (
-    <div className="space-y-6">
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <div className="space-y-3">
-                <h3 className="font-semibold text-lg text-text-primary flex items-center gap-2">
-                    <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-                    Target User
-                </h3>
-                <p className="text-text-secondary leading-relaxed pl-4">
-                    {analysis?.['Targeted User'] || 'Not specified'}
-                </p>
-            </div>
-            <div className="space-y-3">
-                <h3 className="font-semibold text-lg text-text-primary flex items-center gap-2">
-                    <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                    Usage Scenario
-                </h3>
-                <p className="text-text-secondary leading-relaxed pl-4">
-                    {analysis?.['Usage Scenario'] || 'Not specified'}
-                </p>
+            {/* Function description with like action */}
+            <div className="relative">
+                <div className="bg-surface-elevated border border-border-subtle rounded-2xl p-8 md:p-12">
+                    <p className="body-large text-text-primary leading-relaxed text-center max-w-4xl mx-auto">
+                        {func}
+                    </p>
+                </div>
+
+                {/* Like button - floating on the right */}
+                <div className="absolute top-6 right-6">
+                    <div className="flex flex-col items-center gap-1">
+                        <button
+                            className={`p-3 rounded-xl transition-all duration-200 ${isLiked
+                                    ? "text-error hover:text-error/80 hover:bg-surface-secondary"
+                                    : "text-text-tertiary hover:text-error hover:bg-surface-secondary"
+                                }`}
+                            onClick={onLike}
+                            title={isLiked ? "Unlike" : "Like"}
+                        >
+                            <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+                        </button>
+                        {likeCount > 0 && (
+                            <span className="body-small text-text-tertiary">{likeCount}</span>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
-        <div className="space-y-3">
-            <h3 className="font-semibold text-lg text-text-primary flex items-center gap-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+    </SectionErrorBoundary>
+));
+FunctionHero.displayName = 'FunctionHero';
+
+// Query analysis with clean layout
+const QueryAnalysis = memo(({ analysis }: { analysis: any }) => (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div>
+            <h3 className="font-medium text-text-primary mb-3 flex items-center gap-2">
+                <div className="w-2 h-2 bg-organic-clay rounded-full" />
+                Target User
+            </h3>
+            <p className="body-regular text-text-secondary">
+                {analysis?.['Targeted User'] || 'Not specified'}
+            </p>
+        </div>
+        <div>
+            <h3 className="font-medium text-text-primary mb-3 flex items-center gap-2">
+                <div className="w-2 h-2 bg-organic-sage rounded-full" />
+                Usage Scenario
+            </h3>
+            <p className="body-regular text-text-secondary">
+                {analysis?.['Usage Scenario'] || 'Not specified'}
+            </p>
+        </div>
+        <div>
+            <h3 className="font-medium text-text-primary mb-3 flex items-center gap-2">
+                <div className="w-2 h-2 bg-organic-rust rounded-full" />
                 Requirements
             </h3>
-            <p className="text-text-secondary leading-relaxed pl-4">
+            <p className="body-regular text-text-secondary">
                 {Array.isArray(analysis?.Requirement)
                     ? analysis.Requirement.join(', ')
                     : analysis?.Requirement || 'Not specified'}
@@ -258,88 +272,97 @@ const QueryAnalysis = memo(({ analysis }: { analysis: any }) => (
 ));
 QueryAnalysis.displayName = 'QueryAnalysis';
 
-const QuerySection = memo(({ hasQueryAnalysis, analysis, query, imageUrl, title }: {
+// Query section with image support
+const QuerySection = memo(({
+    hasQueryAnalysis,
+    analysis,
+    query,
+    imageUrl,
+    title
+}: {
     hasQueryAnalysis: boolean;
     analysis?: any;
     query?: string;
     imageUrl?: string;
     title: string;
 }) => (
-    <SafeComponent sectionName="query section">
-        <div className={`grid grid-cols-1 ${imageUrl ? 'lg:grid-cols-5' : 'lg:grid-cols-1'} gap-8`}>
-            <div className={`${imageUrl ? 'lg:col-span-3' : 'lg:col-span-1'} space-y-6`}>
-                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-purple-500/20">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="w-2 h-8 bg-gradient-to-b from-purple-500 to-blue-500 rounded-full"></div>
-                        <h2 className="text-2xl font-bold text-text-primary">Query</h2>
+    <SectionErrorBoundary sectionName="query section">
+        <div className="space-y-8">
+            <SectionHeader title="Research Query" accent="sage" />
+
+            <div className={`grid ${imageUrl ? 'grid-cols-1 lg:grid-cols-3' : 'grid-cols-1'} gap-8`}>
+                <div className={`${imageUrl ? 'lg:col-span-2' : ''}`}>
+                    <div className="bg-surface-elevated border border-border-subtle rounded-2xl p-8">
+                        {hasQueryAnalysis ? (
+                            <QueryAnalysis analysis={analysis} />
+                        ) : (
+                            <p className="body-large text-text-primary">{query}</p>
+                        )}
                     </div>
-                    {hasQueryAnalysis ? (
-                        <QueryAnalysis analysis={analysis} />
-                    ) : (
-                        <p className="text-text-primary leading-relaxed text-lg">{query}</p>
-                    )}
                 </div>
-            </div>
-            {imageUrl && (
-                <div className="lg:col-span-2">
-                    <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-blue-500/20 h-full">
-                        <div className="relative w-full h-80 rounded-xl overflow-hidden">
-                            <Image
-                                src={imageUrl}
-                                alt={title}
-                                fill
-                                sizes="(max-width: 1024px) 100vw, 40vw"
-                                className="object-contain"
-                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                            />
+
+                {imageUrl && (
+                    <div>
+                        <div className="bg-surface-elevated border border-border-subtle rounded-2xl p-6">
+                            <div className="relative w-full h-64 rounded-xl overflow-hidden">
+                                <Image
+                                    src={imageUrl}
+                                    alt={title}
+                                    fill
+                                    sizes="(max-width: 1024px) 100vw, 33vw"
+                                    className="object-contain"
+                                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                />
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
-    </SafeComponent>
+    </SectionErrorBoundary>
 ));
 QuerySection.displayName = 'QuerySection';
 
+// Use case item with clean structure
 const UseCaseItem = memo(({ title, content }: { title: string; content: any }) => (
-    <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-emerald-500/20">
-        <h3 className="text-xl font-bold mb-6 text-text-primary flex items-center gap-3">
-            <span className="w-2 h-6 bg-gradient-to-b from-emerald-500 to-green-500 rounded-full"></span>
+    <div className="bg-surface-elevated border border-border-subtle rounded-2xl p-8">
+        <h3 className="font-medium text-text-primary mb-6 flex items-center gap-3">
+            <div className="w-1 h-6 bg-organic-moss rounded-full" />
             {title}
         </h3>
         {typeof content === 'object' && content !== null ? (
-            <div className="space-y-5">
+            <div className="space-y-6">
                 {Object.entries(content as Record<string, any>).map(([subKey, subValue]) => (
-                    <div key={subKey} className="space-y-2">
-                        <h4 className="text-lg font-semibold text-text-primary flex items-center gap-2">
-                            <span className="w-1.5 h-4 bg-blue-500 rounded-full"></span>
+                    <div key={subKey} className="space-y-3">
+                        <h4 className="font-medium text-text-primary text-sm flex items-center gap-2">
+                            <div className="w-0.5 h-4 bg-accent-secondary rounded-full" />
                             {subKey}
                         </h4>
-                        <div className="text-text-secondary pl-4">
+                        <div className="text-text-secondary pl-3">
                             {Array.isArray(subValue) ? (
                                 <ul className="space-y-2">
                                     {subValue.map((item, i) => (
-                                        <li key={i} className="flex items-start gap-2">
-                                            <span className="w-1 h-1 bg-purple-500 rounded-full mt-2 flex-shrink-0"></span>
-                                            <span className="leading-relaxed">{String(item)}</span>
+                                        <li key={i} className="body-regular flex items-start gap-3">
+                                            <div className="w-1 h-1 bg-text-tertiary rounded-full mt-2 flex-shrink-0" />
+                                            <span>{String(item)}</span>
                                         </li>
                                     ))}
                                 </ul>
                             ) : (
-                                <p className="leading-relaxed">{String(subValue)}</p>
+                                <p className="body-regular">{String(subValue)}</p>
                             )}
                         </div>
                     </div>
                 ))}
             </div>
         ) : (
-            <p className="text-text-secondary leading-relaxed">{String(content)}</p>
+            <p className="body-regular text-text-secondary">{String(content)}</p>
         )}
     </div>
 ));
 UseCaseItem.displayName = 'UseCaseItem';
 
-// --- Custom Hooks (from original file, unchanged) ---
+// Custom hooks remain the same
 const useSolutionData = (id: string) => {
     const [solution, setSolution] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -368,7 +391,7 @@ const useSolutionData = (id: string) => {
     }, [id]);
 
     useEffect(() => {
-        if(id) {
+        if (id) {
             fetchAttempted.current = false;
             fetchSolutionData();
         }
@@ -410,7 +433,7 @@ const useLikeStatus = (id: string, email: string) => {
     return { isLiked, setIsLiked, likeCount, setLikeCount };
 };
 
-// --- Main Page Component ---
+// Main component
 const Inspiration = () => {
     const { id } = useParams();
     const router = useRouter();
@@ -421,19 +444,28 @@ const Inspiration = () => {
     const { solution, loading, error, refetch } = useSolutionData(id as string);
     const { isLiked, setIsLiked, likeCount, setLikeCount } = useLikeStatus(id as string, authStore.email);
 
-    // Initialize expanded sections once solution data is available
+    // Initialize expanded sections
     useEffect(() => {
         if (solution && expandedSections.length === 0) {
             try {
-                const defaultExpanded = ["Original"];
-                const iterations = solution?.solution?.["Technical Method"]?.Iteration;
-                if (Array.isArray(iterations)) {
-                    iterations.forEach((_, index) => defaultExpanded.push(`Iteration${index}`));
+                const techMethod = solution?.solution?.["Technical Method"];
+                const defaultExpanded = [];
+
+                if (techMethod?.Original) {
+                    defaultExpanded.push("Method1");
                 }
-                setExpandedSections(defaultExpanded);
+
+                const iterations = techMethod?.Iteration;
+                if (Array.isArray(iterations)) {
+                    iterations.forEach((_, index) => {
+                        defaultExpanded.push(`Method${index + 2}`); // Method2, Method3, etc.
+                    });
+                }
+
+                setExpandedSections(defaultExpanded.length > 0 ? defaultExpanded : ["Method1"]);
             } catch (err) {
                 logger.error("Error initializing expanded sections:", err);
-                setExpandedSections(["Original"]);
+                setExpandedSections(["Method1"]);
             }
         }
     }, [solution, expandedSections.length]);
@@ -465,19 +497,6 @@ const Inspiration = () => {
         );
     }, []);
 
-    const handleScreenshot = useCallback(async () => {
-        try {
-            const html2canvas = (await import('html2canvas')).default;
-            const canvas = await html2canvas(document.body, { useCORS: true, scale: 1 });
-            const link = document.createElement('a');
-            link.download = `${solution?.solution?.Title || 'inspiration'}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
-        } catch (error) {
-            logger.error('Screenshot failed:', error);
-        }
-    }, [solution?.solution?.Title]);
-
     const technicalMethodsSection = useMemo(() => {
         try {
             const techMethod = solution?.solution?.["Technical Method"];
@@ -488,44 +507,60 @@ const Inspiration = () => {
             const iterations = techMethod.Iteration || [];
             const iterationResults = solution.solution["Possible Results"]?.Iteration || [];
 
+            const allMethods = [];
+            let methodIndex = 1;
+
+            // Add original method as Method 1
+            if (originalMethod) {
+                allMethods.push({
+                    id: `Method${methodIndex}`,
+                    title: `Method ${methodIndex}`,
+                    method: originalMethod,
+                    performance: originalResults?.Performance,
+                    userExperience: originalResults?.["User Experience"],
+                    index: methodIndex - 1
+                });
+                methodIndex++;
+            }
+
+            // Add iterations as Method 2, 3, etc.
+            if (Array.isArray(iterations)) {
+                iterations.forEach((iteration: string, index: number) => {
+                    const result = iterationResults[index];
+                    allMethods.push({
+                        id: `Method${methodIndex}`,
+                        title: `Method ${methodIndex}`,
+                        method: iteration,
+                        performance: result?.Performance,
+                        userExperience: result?.["User Experience"],
+                        index: methodIndex - 1
+                    });
+                    methodIndex++;
+                });
+            }
+
             return (
                 <div className="space-y-4">
-                    {originalMethod && (
-                        <IterationSection
-                            title="Original Method"
-                            method={originalMethod}
-                            performance={originalResults?.Performance}
-                            userExperience={originalResults?.["User Experience"]}
-                            isExpanded={expandedSections.includes("Original")}
-                            onToggle={() => toggleSection("Original")}
-                            index={-1} // Special index for original
+                    {allMethods.map((methodData) => (
+                        <MethodSection
+                            key={methodData.id}
+                            title={methodData.title}
+                            method={methodData.method}
+                            performance={methodData.performance}
+                            userExperience={methodData.userExperience}
+                            isExpanded={expandedSections.includes(methodData.id)}
+                            onToggle={() => toggleSection(methodData.id)}
+                            index={methodData.index}
                         />
-                    )}
-                    {Array.isArray(iterations) && iterations.map((iteration: string, index: number) => {
-                        const result = iterationResults[index];
-                        const sectionId = `Iteration${index}`;
-                        return (
-                            <IterationSection
-                                key={sectionId}
-                                title={`Iteration ${index + 1}`}
-                                method={iteration}
-                                performance={result?.Performance}
-                                userExperience={result?.["User Experience"]}
-                                isExpanded={expandedSections.includes(sectionId)}
-                                onToggle={() => toggleSection(sectionId)}
-                                index={index}
-                            />
-                        );
-                    })}
+                    ))}
                 </div>
             );
         } catch (err) {
             logger.error("Error rendering technical methods:", err);
-            return <p className="text-red-500">Could not display technical methods.</p>;
+            return <p className="text-error">Could not display technical methods.</p>;
         }
     }, [solution, expandedSections, toggleSection]);
-    
-    // Memoized safe data accessors
+
     const { title, functionText, imageUrl, useCase, queryAnalysis, queryText } = useMemo(() => ({
         title: solution?.solution?.Title || "Untitled Inspiration",
         functionText: solution?.solution?.Function,
@@ -537,24 +572,30 @@ const Inspiration = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary via-secondary/30 to-primary">
-                <div className="text-center">
-                    <div className="animate-spin w-12 h-12 border-4 border-accent-blue border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p className="text-text-secondary">Loading inspiration...</p>
+            <div className="min-h-screen bg-canvas flex items-center justify-center">
+                <div className="text-center space-y-4">
+                    <div className="w-12 h-12 mx-auto">
+                        <svg className="animate-spin w-full h-full text-accent-primary" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor"
+                                d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                    </div>
+                    <p className="body-regular text-text-secondary">Loading inspiration...</p>
                 </div>
             </div>
         );
     }
-    
+
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-primary via-secondary/30 to-primary">
-                <div className="text-center p-8 rounded-2xl bg-white/10 backdrop-blur-sm shadow-xl border border-red-500/20">
-                    <h2 className="text-xl font-bold text-text-primary mb-4">Unable to Load Content</h2>
-                    <p className="text-text-secondary mb-6">{error}</p>
+            <div className="min-h-screen bg-canvas flex items-center justify-center px-4">
+                <div className="text-center p-8 rounded-2xl bg-surface-elevated border border-border-subtle max-w-md">
+                    <h2 className="heading-secondary text-text-primary mb-4">Unable to Load Content</h2>
+                    <p className="body-regular text-text-secondary mb-6">{error}</p>
                     <button
                         onClick={refetch}
-                        className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all font-medium shadow-xl"
+                        className="btn-primary"
                     >
                         Try Again
                     </button>
@@ -564,118 +605,101 @@ const Inspiration = () => {
     }
 
     return (
-        <motion.div
-            className="min-h-screen bg-gradient-to-br from-primary via-secondary/30 to-primary relative"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-        >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <motion.div
-                    className="space-y-12"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
+        <div className="min-h-screen bg-canvas">
+            <div className="max-w-6xl mx-auto px-6 md:px-8 lg:px-12 py-8 space-y-16">
+
+                {/* Back navigation */}
+                <motion.button
+                    onClick={() => router.push('/gallery')}
+                    className="flex items-center gap-3 text-text-secondary hover:text-text-primary 
+                             transition-colors duration-200 group -mb-8"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
                 >
-                    {/* Header */}
-                    <div className="space-y-8">
-                        <motion.button
-                            onClick={() => router.back()}
-                            className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors duration-200 group"
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                        >
-                            <FaArrowLeft className="group-hover:-translate-x-1 transition-transform duration-200" />
-                            <span className="font-medium">Back</span>
-                        </motion.button>
+                    <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-200" />
+                    <span className="font-medium">Back to Gallery</span>
+                </motion.button>
 
-                        <h1 className="text-4xl md:text-5xl font-bold text-text-primary leading-tight text-center">
-                            {title}
-                        </h1>
+                {/* Hero section */}
+                {functionText && (
+                    <FunctionHero
+                        title={title}
+                        func={functionText}
+                        isLiked={isLiked}
+                        likeCount={likeCount}
+                        onLike={handleLiked}
+                    />
+                )}
 
-                        {functionText && (
-                            <FunctionSection
-                                func={functionText}
-                                isLiked={isLiked}
-                                likeCount={likeCount}
-                                onLike={handleLiked}
-                                onScreenshot={handleScreenshot}
-                            />
-                        )}
-                    </div>
+                {/* Query section */}
+                {(queryAnalysis || queryText) && (
+                    <QuerySection
+                        hasQueryAnalysis={!!queryAnalysis}
+                        analysis={queryAnalysis}
+                        query={queryText}
+                        imageUrl={imageUrl}
+                        title={title}
+                    />
+                )}
 
-                    {/* Query Section */}
-                    {(queryAnalysis || queryText) && (
-                        <QuerySection
-                            hasQueryAnalysis={!!queryAnalysis}
-                            analysis={queryAnalysis}
-                            query={queryText}
-                            imageUrl={imageUrl}
-                            title={title}
-                        />
-                    )}
+                {/* Technical methods */}
+                {technicalMethodsSection && (
+                    <SectionErrorBoundary sectionName="technical methods">
+                        <div className="space-y-8">
+                            <SectionHeader title="Technical Methods" accent="rust" />
+                            <div className="space-y-4">
+                                {technicalMethodsSection}
+                            </div>
+                        </div>
+                    </SectionErrorBoundary>
+                )}
 
-                    {/* Technical Methods */}
-                    {technicalMethodsSection && (
-                        <SafeComponent sectionName="technical methods">
-                            <div className="space-y-8">
-                                <SectionHeader title="Technical Methods" barGradient="bg-gradient-to-b from-blue-500 to-purple-500" />
-                                <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 lg:p-8 shadow-xl border border-blue-500/20">
-                                    {technicalMethodsSection}
+                {/* Use cases */}
+                {useCase && (
+                    <SectionErrorBoundary sectionName="use case section">
+                        <div className="space-y-8">
+                            <SectionHeader title="Use Cases" accent="storm" />
+                            {typeof useCase === 'string' ? (
+                                <div className="bg-surface-elevated border border-border-subtle rounded-2xl p-8">
+                                    <p className="body-large text-text-secondary">{useCase}</p>
                                 </div>
-                            </div>
-                        </SafeComponent>
-                    )}
-
-                    {/* Use Case */}
-                    {useCase && (
-                        <SafeComponent sectionName="use case section">
-                            <div className="space-y-8">
-                                <SectionHeader title="Use Case" barGradient="bg-gradient-to-b from-green-500 to-blue-500" />
-                                {typeof useCase === 'string' ? (
-                                    <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-green-500/20">
-                                        <p className="text-lg text-text-secondary leading-relaxed">{useCase}</p>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                                        {Object.entries(useCase).map(([key, value]) => (
-                                            <UseCaseItem key={key} title={key} content={value} />
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </SafeComponent>
-                    )}
-                </motion.div>
+                            ) : (
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    {Object.entries(useCase).map(([key, value]) => (
+                                        <UseCaseItem key={key} title={key} content={value} />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </SectionErrorBoundary>
+                )}
             </div>
 
             {/* Recommendations */}
-            <SafeComponent sectionName="recommendations">
-                <motion.div
-                    className="max-w-7xl mx-auto mb-4 scale-95"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.7 }}
-                >
-                    <div className="mb-8">
-                        <SectionHeader title="You May Also Like" barGradient="bg-gradient-to-b from-orange-500 to-pink-500" />
+            <SectionErrorBoundary sectionName="recommendations">
+                <div className="bg-surface-secondary/30 py-16">
+                    <div className="max-w-6xl mx-auto px-6 md:px-8 lg:px-12">
+                        <div className="mb-12">
+                            <SectionHeader title="Related Solutions" accent="clay" />
+                        </div>
+                        <RecommendedInspirations currentSolution={solution} currentId={id as string} />
                     </div>
-                    <RecommendedInspirations currentSolution={solution} currentId={id as string} />
-                </motion.div>
-            </SafeComponent>
+                </div>
+            </SectionErrorBoundary>
 
-            {/* Chat UI */}
-            <motion.button
-                className="fixed bottom-8 right-8 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 
-                     text-white p-4 rounded-2xl shadow-2xl transition-all duration-300 z-50 hover:scale-110 active:scale-95"
+            {/* Chat button */}
+            <button
+                className="fixed bottom-8 right-8 bg-accent-primary hover:bg-accent-primary/90 
+                         text-text-inverse p-4 rounded-2xl shadow-lg 
+                         hover:shadow-xl transition-all duration-200 z-50"
                 onClick={() => setIsChatOpen(true)}
-                title="Chat with AI"
+                title="Chat about this solution"
             >
-                <FaComments className="text-xl" />
-            </motion.button>
-            
-            <SafeComponent sectionName="chat">
-                 {isChatOpen && (
+                <MessageCircle className="w-5 h-5" />
+            </button>
+
+            <SectionErrorBoundary sectionName="chat">
+                {isChatOpen && (
                     <ChatPopup
                         isOpen={isChatOpen}
                         onClose={() => setIsChatOpen(false)}
@@ -683,9 +707,9 @@ const Inspiration = () => {
                         inspirationId={id as string}
                         solution={solution}
                     />
-                 )}
-            </SafeComponent>
-        </motion.div>
+                )}
+            </SectionErrorBoundary>
+        </div>
     );
 };
 

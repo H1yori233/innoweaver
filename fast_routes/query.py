@@ -20,11 +20,11 @@ async def query_solution(id: str = Query(default="1")):
     try:
         result = await USER.query_solution(id)
     except Exception as e:
-        print(f"query 失败: {e}")
+        print(f"Query failed: {e}")
     try:
         await async_redis.setex(cache_key, 3600, json.dumps(result))
     except Exception as e:
-        print(f"缓存写入失败: {e}")
+        print(f"Cache write failed: {e}")
     return result
 
 # @query_router.get("/query_paper")

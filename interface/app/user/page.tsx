@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { FaSignOutAlt, FaKey } from "react-icons/fa";
 import useAuthStore from "@/lib/hooks/auth-store";
 
-// 用户信息组件
+// User info component
 const UserInfo = ({ user }) => (
   <div className="bg-white p-6 rounded-lg shadow-md border border-secondary transition-transform transform hover:scale-105">
     <h2 className="text-xl font-semibold text-text-primary">User Info</h2>
@@ -16,7 +16,7 @@ const UserInfo = ({ user }) => (
   </div>
 );
 
-// API Key 输入和保存区块
+// API Key input and save section
 const ApiKeySection = ({ apiKey, onApiKeyChange, onSave }) => (
   <div className="bg-white p-6 rounded-lg shadow-md mt-6 border border-secondary">
     <h3 className="text-xl font-semibold text-text-primary">API Key</h3>
@@ -36,7 +36,7 @@ const ApiKeySection = ({ apiKey, onApiKeyChange, onSave }) => (
   </div>
 );
 
-// 退出按钮组件
+// Logout button component
 const AuthButtons = ({ onLogout }) => (
   <div className="flex justify-center mt-6">
     <button
@@ -49,7 +49,7 @@ const AuthButtons = ({ onLogout }) => (
   </div>
 );
 
-// 主页面组件
+// Main page component
 const UserPage = () => {
   const [apiKey, setApiKey] = useState('');
   const [user, setUser] = useState(null);
@@ -57,11 +57,11 @@ const UserPage = () => {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true); // 延迟渲染
+    setIsMounted(true); // Delayed rendering
   }, []);
 
   useEffect(() => {
-    // 假设已经获得用户信息
+    // Assume user info is already obtained
     if (authStore.userType) {
       setUser({
         email: 'user@example.com',
@@ -87,7 +87,7 @@ const UserPage = () => {
     <div className="flex flex-col items-center justify-center bg-primary min-h-screen p-8 transition-colors duration-300">
       <h1 className="text-4xl font-bold text-text-primary mb-8">User Profile</h1>
 
-      {/* 页面主体区域 */}
+      {/* Main page content area */}
       <div className="w-full max-w-3xl space-y-8">
         <UserInfo user={user} />
         <ApiKeySection apiKey={apiKey} onApiKeyChange={handleApiKeyChange} onSave={handleSaveApiKey} />

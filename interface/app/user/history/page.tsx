@@ -5,10 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { MeiliSearch } from 'meilisearch';
 import { fetchQueryLikedSolutions } from '@/lib/actions';
 import useAuthStore from '@/lib/hooks/auth-store';
-import { FaSearch, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { Search, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import MasonryGallery from '@/components/inspiration/MasonryGallery';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/components/ui/toast';
+import { logger } from '@/lib/logger';
 import { URLQueryManager, QueryParams } from '@/lib/hooks/url-query';
 
 const History = () => {
@@ -17,10 +18,10 @@ const History = () => {
     const authStore = useAuthStore();
     const { toast } = useToast();
 
-    // 使用URL查询管理器
+    // Use URL query manager
     const urlManager = useMemo(() => new URLQueryManager(router, '/user/history'), [router]);
     const currentParams = useMemo(() => URLQueryManager.parseSearchParams(searchParams), [searchParams]);
-    
+
     const { page: pageNumber, query } = currentParams;
     const [queryState, setQuery] = useState(query);
 
@@ -30,6 +31,8 @@ const History = () => {
     const [error, setError] = useState(null);
     const [hasMore, setHasMore] = useState(true);
     const [totalPages, setTotalPages] = useState(0);
+    const [totalResults, setTotalResults] = useState(0);
+    const [jumpToPage, setJumpToPage] = useState('');
 
     const apiUrl = '120.55.193.195:7700/';
     const client = useMemo(() => new MeiliSearch({ host: apiUrl }), [apiUrl]);
@@ -37,11 +40,17 @@ const History = () => {
     const fetchSolutionCount = useCallback(async (searchQuery = '') => {
         try {
             const id = localStorage.getItem('id');
+            if (!id) {
+                setError('User ID not found. Please log in again.');
+                return 0;
+            }
+
             const index = client.index('solution_id');
             const searchResults = await index.search(searchQuery, {
                 limit: 0,
                 filter: [`user_id="${id}"`],
             });
+            logger.log('Total hits:', searchResults.estimatedTotalHits);
             return searchResults.estimatedTotalHits;
         } catch (error) {
             setError('Error fetching solution count');
@@ -51,11 +60,20 @@ const History = () => {
 
     const fetchSolutions = useCallback(async (searchQuery = '', pageNumber = 1) => {
         setLoading(true);
+        setError(null);
+
         try {
             const totalCount = await fetchSolutionCount(searchQuery);
+            setTotalResults(totalCount);
             setTotalPages(Math.ceil(totalCount / 20));
 
             const id = localStorage.getItem('id');
+            if (!id) {
+                setError('User ID not found. Please log in again.');
+                setLoading(false);
+                return;
+            }
+
             const index = client.index('solution_id');
             const searchResults = await index.search(searchQuery, {
                 limit: 20,
@@ -71,9 +89,7 @@ const History = () => {
                     _id: undefined,
                 }));
 
-                setSolutions((prevSolutions) =>
-                    pageNumber === 1 ? modifiedResults : [...prevSolutions, ...modifiedResults]
-                );
+                setSolutions(modifiedResults);
 
                 if (authStore.email) {
                     try {
@@ -82,10 +98,7 @@ const History = () => {
                             acc[solution_id] = isLiked;
                             return acc;
                         }, {});
-                        setLikedSolutions(prevLiked => ({
-                            ...prevLiked,
-                            ...newLikedStates,
-                        }));
+                        setLikedSolutions(newLikedStates);
                     } catch (likeError) {
                         console.error('Failed to fetch like status:', likeError);
                         const defaultLikedStates = modifiedResults.reduce((acc, solution) => {
@@ -104,13 +117,14 @@ const History = () => {
 
                 setHasMore(true);
             } else {
+                setSolutions([]);
                 setHasMore(false);
             }
         } catch (error) {
-            setError('Error fetching solutions');
+            setError('Unable to load your history. Please try again.');
             toast({
-                title: "Error",
-                description: "Failed to load solutions. Please try again later.",
+                title: "Connection Error",
+                description: "Failed to load your solution history. Please check your connection and try again.",
                 type: "error"
             });
         } finally {
@@ -118,149 +132,329 @@ const History = () => {
         }
     }, [client, fetchSolutionCount, authStore.email, toast]);
 
-    // 同步URL参数变化到本地状态
+    // Sync URL parameter changes to local state
     useEffect(() => {
         setQuery(query);
     }, [query]);
 
-    // 当URL参数变化时重新获取数据
+    // Re-fetch data when URL parameters change
     useEffect(() => {
         setSolutions([]);
         setLikedSolutions({});
         setHasMore(true);
-        setLoading(true);
         fetchSolutions(query, pageNumber);
     }, [query, pageNumber, fetchSolutions]);
 
     const handleSearch = (e) => {
         e.preventDefault();
-        urlManager.updateSingleParam('query', queryState.trim(), currentParams);
+        const trimmedQuery = queryState.trim();
+        urlManager.updateSingleParam('query', trimmedQuery, currentParams);
     };
 
     const handlePageChange = (newPage) => {
         if (newPage <= totalPages && newPage > 0) {
             urlManager.updateQuery({ ...currentParams, page: newPage });
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
 
-    const handlePageInputChange = (e) => {
-        const newPage = parseInt(e.target.value, 10);
-        if (!isNaN(newPage) && newPage >= 1 && newPage <= totalPages) {
-            urlManager.updateQuery({ ...currentParams, page: newPage });
+    const handlePageJump = (e) => {
+        e.preventDefault();
+        const page = parseInt(jumpToPage, 10);
+        if (page && page >= 1 && page <= totalPages) {
+            handlePageChange(page);
+            setJumpToPage('');
         }
     };
 
+    const clearSearch = () => {
+        setQuery('');
+        urlManager.updateSingleParam('query', '', currentParams);
+    };
+
+    // Enhanced pagination with better logic
     const renderPagination = () => {
+        if (totalPages <= 1) return null;
+
+        const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+        const range = isMobile ? 1 : 2;
         const pagesToShow = [];
-        const range = 3;
+
         let startPage = Math.max(1, pageNumber - range);
         let endPage = Math.min(totalPages, pageNumber + range);
 
+        // Always show first page
         if (startPage > 1) {
             pagesToShow.push(1);
             if (startPage > 2) pagesToShow.push('...');
         }
 
+        // Show pages in range
         for (let i = startPage; i <= endPage; i++) {
             pagesToShow.push(i);
         }
 
+        // Always show last page
         if (endPage < totalPages) {
             if (endPage < totalPages - 1) pagesToShow.push('...');
             pagesToShow.push(totalPages);
         }
 
-        return pagesToShow.map((page, index) => (
-            <React.Fragment key={index}>
-                {page === '...' ? (
-                    <span className="px-3 py-2 text-gray-500 dark:text-gray-400">...</span>
-                ) : (
-                    <button
-                        onClick={() => handlePageChange(page)}
-                        className={`px-3 py-2 rounded-md transition-colors duration-200 ${page === pageNumber
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-primary text-text-secondary hover:bg-secondary'
-                            }`}
+        return (
+            <div className="flex items-center justify-center gap-4">
+                {/* Main pagination - more compact */}
+                <div className="flex items-center space-x-1">
+                    {/* Previous button */}
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => handlePageChange(pageNumber - 1)}
+                        disabled={pageNumber === 1}
+                        className="flex items-center space-x-1.5 px-3 py-2 text-sm font-medium
+                                 bg-surface-secondary text-text-secondary rounded-lg
+                                 hover:bg-surface-tertiary hover:text-text-primary
+                                 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100
+                                 transition-all duration-200"
                     >
-                        {page}
-                    </button>
+                        <ChevronLeft className="w-4 h-4" />
+                        <span className="hidden sm:inline">Previous</span>
+                    </motion.button>
+
+                    {/* Page numbers - more compact */}
+                    <div className="flex items-center space-x-0.5">
+                        {pagesToShow.map((page, index) => (
+                            <React.Fragment key={index}>
+                                {page === '...' ? (
+                                    <span className="px-1.5 py-2 text-text-tertiary">
+                                        <MoreHorizontal className="w-4 h-4" />
+                                    </span>
+                                ) : (
+                                    <motion.button
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => handlePageChange(page)}
+                                        className={`
+                                            relative px-2.5 py-1.5 text-sm font-medium rounded-lg
+                                            transition-all duration-200 min-w-[32px]
+                                            ${page === pageNumber
+                                                ? 'bg-accent-primary text-text-inverse'
+                                                : 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
+                                            }
+                                        `}
+                                    >
+                                        {page}
+                                    </motion.button>
+                                )}
+                            </React.Fragment>
+                        ))}
+                    </div>
+
+                    {/* Next button */}
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => handlePageChange(pageNumber + 1)}
+                        disabled={pageNumber === totalPages}
+                        className="flex items-center space-x-1.5 px-3 py-2 text-sm font-medium
+                                 bg-surface-secondary text-text-secondary rounded-lg
+                                 hover:bg-surface-tertiary hover:text-text-primary
+                                 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100
+                                 transition-all duration-200"
+                    >
+                        <span className="hidden sm:inline">Next</span>
+                        <ChevronRight className="w-4 h-4" />
+                    </motion.button>
+                </div>
+
+                {/* Compact jump to page */}
+                {totalPages > 10 && (
+                    <div className="flex items-center space-x-2 text-sm">
+                        <span className="text-text-tertiary">Jump to</span>
+                        <form onSubmit={handlePageJump} className="flex items-center space-x-1">
+                            <input
+                                type="number"
+                                min={1}
+                                max={totalPages}
+                                value={jumpToPage}
+                                onChange={(e) => setJumpToPage(e.target.value)}
+                                placeholder="Page"
+                                className="w-16 px-2 py-1 text-xs text-center 
+                                         bg-surface-secondary border border-border-subtle rounded-md
+                                         text-text-primary placeholder:text-text-placeholder
+                                         focus:bg-surface-elevated focus:border-accent-primary
+                                         transition-all duration-200"
+                            />
+                            <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                type="submit"
+                                className="px-2 py-1 text-xs font-medium bg-accent-primary text-text-inverse rounded-md
+                                         hover:bg-accent-primary/90 transition-colors duration-200"
+                            >
+                                Go
+                            </motion.button>
+                        </form>
+                    </div>
                 )}
-            </React.Fragment>
-        ));
+            </div>
+        );
     };
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="h-screen overflow-y-auto bg-primary text-text-primary transition-colors duration-300">
-            <div className="flex justify-center mt-4">
-                <header className="text-center w-full">
-                    <form onSubmit={handleSearch} className="flex justify-center">
-                        <div className="relative w-[80%] max-w-3xl">
-                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-text-placeholder">
-                                <FaSearch />
-                            </span>
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            className="min-h-screen bg-canvas"
+        >
+            {/* Compact Header */}
+            <div className="sticky top-0 z-20 bg-canvas/95 backdrop-blur-md border-b border-border-subtle/50">
+                <div className="w-full max-w-7xl mx-auto px-6 md:px-8 lg:px-12 py-4">
+                    {/* Page Title */}
+                    <div className="text-center mb-4">
+                        <h1 className="text-2xl font-bold text-text-primary">My History</h1>
+                    </div>
+
+                    <form onSubmit={handleSearch} className="relative max-w-2xl mx-auto">
+                        <div className="relative">
+                            {/* Search Icon */}
+                            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-text-tertiary">
+                                <Search className="w-4 h-4" />
+                            </div>
+
+                            {/* Compact Input */}
                             <input
                                 type="text"
                                 value={queryState}
                                 onChange={(e) => setQuery(e.target.value)}
-                                placeholder="Search Inspirtaions"
-                                className="w-full pl-12 pr-4 py-3 text-lg border border-secondary rounded-lg bg-primary text-text-primary outline-none shadow 
-                                focus:ring focus:ring-secondary focus:border-neutral-500 focus:bg-secondary transition-all duration-300"
+                                placeholder="Search your inspirations..."
+                                className="w-full pl-11 pr-10 py-3 text-sm
+                                         bg-surface-secondary border border-border-subtle rounded-xl
+                                         text-text-primary placeholder:text-text-placeholder
+                                         focus:bg-surface-elevated focus:border-accent-primary focus:ring-1 focus:ring-accent-primary/20
+                                         transition-all duration-200"
                             />
+
+                            {/* Clear Button */}
+                            <AnimatePresence>
+                                {queryState && (
+                                    <motion.button
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.8 }}
+                                        type="button"
+                                        onClick={clearSearch}
+                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 
+                                                 p-1 rounded-md hover:bg-surface-tertiary
+                                                 text-text-tertiary hover:text-text-primary transition-all duration-200"
+                                    >
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </motion.button>
+                                )}
+                            </AnimatePresence>
                         </div>
                     </form>
-                </header>
+                </div>
             </div>
 
-            {loading && pageNumber === 1 ? (
-                <MasonryGallery solutions={[]} likedSolutions={{}} />
-            ) : error ? (
-                <div className="text-center mt-24 text-red-500">
-                    {error}
-                </div>
-            ) : (
-                <div>
-                    <MasonryGallery solutions={solutions} likedSolutions={likedSolutions} />
-                    {loading && pageNumber > 1 && (
-                        <MasonryGallery solutions={[]} likedSolutions={{}} />
-                    )}
+            {/* Error State */}
+            <AnimatePresence>
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="text-center py-16 px-4"
+                    >
+                        <div className="max-w-md mx-auto">
+                            <div className="w-16 h-16 mx-auto mb-6 text-error opacity-60">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                </svg>
+                            </div>
+                            <h3 className="heading-secondary text-text-primary mb-3">Unable to load history</h3>
+                            <p className="body-regular text-text-secondary mb-6">{error}</p>
+                            <button
+                                onClick={() => fetchSolutions(query, pageNumber)}
+                                className="btn-primary"
+                            >
+                                Try Again
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-                    {/* Pagination Controls */}
-                    <div className="flex justify-center mt-2 mb-6 space-x-3">
+            {/* Empty State */}
+            {!loading && !error && solutions.length === 0 && (
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center py-24 px-4"
+                >
+                    <div className="max-w-md mx-auto">
+                        <div className="w-16 h-16 mx-auto mb-6 text-text-tertiary opacity-60">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                                    d="M12 10v6m0-6V4m0 6h6m-6 0H6" />
+                            </svg>
+                        </div>
+                        <h3 className="heading-secondary text-text-primary mb-3">No solutions explored yet</h3>
+                        <p className="body-regular text-text-secondary mb-6">
+                            Start exploring solutions to see your history here.
+                        </p>
                         <button
-                            onClick={() => handlePageChange(pageNumber - 1)}
-                            disabled={pageNumber === 1}
-                            className="px-4 py-2 rounded-md bg-primary text-text-primary 
-                                disabled:opacity-50 hover:bg-secondary
-                                focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+                            onClick={() => router.push('/gallery')}
+                            className="btn-primary"
                         >
-                            <FaChevronLeft className="inline mr-2" />
-                            Previous
-                        </button>
-                        {renderPagination()}
-
-                        <button
-                            onClick={() => handlePageChange(pageNumber + 1)}
-                            disabled={pageNumber === totalPages}
-                            className="px-4 py-2 rounded-md bg-primary text-text-primary 
-                                disabled:opacity-50 hover:bg-secondary
-                                focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-                        >
-                            Next
-                            <FaChevronRight className="inline ml-2" />
+                            Explore Solutions
                         </button>
                     </div>
+                </motion.div>
+            )}
+
+            {/* Gallery Content */}
+            {!error && solutions.length > 0 && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                >
+                    <MasonryGallery solutions={solutions} likedSolutions={likedSolutions} />
+                </motion.div>
+            )}
+
+            {/* Pagination - more compact */}
+            {!loading && !error && totalPages > 1 && (
+                <div className="py-8 px-6 md:px-8 lg:px-12">
+                    {renderPagination()}
                 </div>
             )}
+
+            {/* Bottom spacing */}
+            <div className="h-8" />
         </motion.div>
     );
 };
 
 const HistoryPage = () => (
-    <Suspense fallback={<div>Loading gallery...</div>}>
+    <Suspense fallback={
+        <div className="min-h-screen bg-canvas flex items-center justify-center">
+            <div className="text-center space-y-4">
+                <div className="w-12 h-12 mx-auto">
+                    <svg className="animate-spin w-full h-full text-accent-primary" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor"
+                            d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                </div>
+                <p className="body-regular text-text-secondary">Loading history...</p>
+            </div>
+        </div>
+    }>
         <History />
     </Suspense>
 );

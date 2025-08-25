@@ -8,24 +8,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/toast';
-import { fetchSetAPIKey, fetchTestAPIConnection } from '@/lib/actions/taskActions';
-import { fetchLogin } from '@/lib/actions/taskActions';
-import { 
-  FaKey, 
-  FaCheck, 
-  FaTimes, 
-  FaSignOutAlt, 
-  FaEye, 
-  FaEyeSlash, 
-  FaUser, 
-  FaCog, 
-  FaRocket,
-  FaShieldAlt,
-  FaArrowLeft
-} from 'react-icons/fa';
-import { motion } from 'framer-motion';
+import { fetchSetAPIKey, fetchTestAPIConnection, fetchLogin } from '@/lib/actions/taskActions';
+import {
+  CheckCircle,
+  XCircle,
+  LogOut,
+  Eye,
+  EyeOff,
+  ArrowLeft,
+  AlertCircle,
+  Copy,
+  Shield
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// Default values for API settings
+// Default API configuration
 const DEFAULT_API_URL = "https://api.deepseek.com/v1";
 const DEFAULT_MODEL_NAME = "deepseek-chat";
 
@@ -35,87 +32,83 @@ const UserPage = () => {
   const authStore = useAuthStore();
   const { toast } = useToast();
 
-  // API settings state
+  // State management
   const [apiUrl, setApiUrl] = useState('');
   const [modelName, setModelName] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [testMessage, setTestMessage] = useState('');
+  const [isConfigChanged, setIsConfigChanged] = useState(false);
 
+  // Initialize configuration
   useEffect(() => {
-    // Load current API info from authStore when component mounts
-    if (authStore.apiKey) {
-      setApiKey(authStore.apiKey);
-    }
-
-    // If user has previously set API URL, use that, otherwise use default
-    if (authStore.apiUrl) {
-      setApiUrl(authStore.apiUrl);
-    } else {
-      setApiUrl(DEFAULT_API_URL);
-    }
-
-    // If user has previously set model name, use that, otherwise use default
-    if (authStore.modelName) {
-      setModelName(authStore.modelName);
-    } else {
-      setModelName(DEFAULT_MODEL_NAME);
-    }
+    if (authStore.apiKey) setApiKey(authStore.apiKey);
+    setApiUrl(authStore.apiUrl || DEFAULT_API_URL);
+    setModelName(authStore.modelName || DEFAULT_MODEL_NAME);
   }, [authStore.apiKey, authStore.apiUrl, authStore.modelName]);
 
+  // Monitor configuration changes
+  useEffect(() => {
+    const hasChanged =
+      apiKey !== (authStore.apiKey || '') ||
+      apiUrl !== (authStore.apiUrl || DEFAULT_API_URL) ||
+      modelName !== (authStore.modelName || DEFAULT_MODEL_NAME);
+    setIsConfigChanged(hasChanged);
+  }, [apiKey, apiUrl, modelName, authStore]);
+
+  // Save API configuration
   const handleSaveApiSettings = async () => {
-    if (!apiKey) {
+    if (!apiKey?.trim()) {
       toast({
-        title: "Warning",
-        description: "Please enter your API Key",
+        title: "Missing API Key",
+        description: "Please enter your API key to continue",
         type: "warning"
       });
       return;
     }
 
     try {
-      // Use default values if fields are empty
-      const finalApiUrl = apiUrl || DEFAULT_API_URL;
-      const finalModelName = modelName || DEFAULT_MODEL_NAME;
+      const finalApiUrl = apiUrl.trim() || DEFAULT_API_URL;
+      const finalModelName = modelName.trim() || DEFAULT_MODEL_NAME;
 
-      // Save API settings
-      await fetchSetAPIKey(apiKey, finalApiUrl, finalModelName);
+      await fetchSetAPIKey(apiKey.trim(), finalApiUrl, finalModelName);
 
-      // Update authStore
       authStore.setUserData({
-        apiKey,
+        apiKey: apiKey.trim(),
         apiUrl: finalApiUrl,
         modelName: finalModelName
       });
 
-      // Refresh user info
+      // Refresh user information
       if (authStore.email && authStore.password) {
         await fetchLogin(authStore.email, authStore.password);
       }
 
       toast({
-        title: "Success",
-        description: "API settings saved successfully",
+        title: "Configuration Saved",
+        description: "Your API settings have been saved successfully",
       });
 
-      // Update local state to reflect saved values
       setApiUrl(finalApiUrl);
       setModelName(finalModelName);
+      setIsConfigChanged(false);
     } catch (error) {
+      console.error('Save error:', error);
       toast({
-        title: "Error",
-        description: "Failed to save API settings",
+        title: "Save Failed",
+        description: "Failed to save your API settings. Please try again.",
         type: "error"
       });
     }
   };
 
+  // Test API connection
   const handleTestApiConnection = async () => {
-    if (!apiKey) {
+    if (!apiKey?.trim()) {
       toast({
-        title: "Warning",
-        description: "Please enter your API Key to test",
+        title: "Missing API Key",
+        description: "Please enter your API key to test the connection",
         type: "warning"
       });
       return;
@@ -123,90 +116,105 @@ const UserPage = () => {
 
     try {
       setTestStatus('loading');
-      setTestMessage('Testing API connection...');
+      setTestMessage('Establishing connection...');
+
+      const finalApiUrl = apiUrl.trim() || DEFAULT_API_URL;
+      const finalModelName = modelName.trim() || DEFAULT_MODEL_NAME;
 
       toast({
-        title: "Testing",
-        description: "Testing API connection...",
+        title: "Testing Connection",
+        description: `Testing ${finalModelName} at ${finalApiUrl}`,
       });
 
-      // Use default values if fields are empty
-      const finalApiUrl = apiUrl || DEFAULT_API_URL;
-      const finalModelName = modelName || DEFAULT_MODEL_NAME;
-
-      // Display what we're testing with
-      setTestMessage(`Testing connection to ${finalApiUrl} with model ${finalModelName}...`);
-
-      const result = await fetchTestAPIConnection(apiKey, finalApiUrl, finalModelName);
+      const result = await fetchTestAPIConnection(apiKey.trim(), finalApiUrl, finalModelName);
 
       if (result.success) {
         setTestStatus('success');
-        setTestMessage(`Connection successful to ${finalApiUrl} with model ${finalModelName}`);
+        setTestMessage(`Successfully connected to ${finalModelName} at ${finalApiUrl}`);
         toast({
-          title: "Success",
-          description: "API connection tested successfully",
+          title: "Connection Successful",
+          description: "Your API configuration is working correctly",
         });
       } else {
         setTestStatus('error');
-        setTestMessage(result.message || result.details?.raw_error || "API connection test failed");
+        setTestMessage(result.message || result.details?.raw_error || "Connection test failed");
         toast({
-          title: "Error",
-          description: result.message || "API connection test failed",
+          title: "Connection Failed",
+          description: result.message || "Please check your API configuration",
           type: "error"
         });
       }
     } catch (error) {
       setTestStatus('error');
-      setTestMessage(error instanceof Error ? error.message : "Unknown error");
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      setTestMessage(errorMessage);
       toast({
-        title: "Error",
-        description: "API connection test failed",
+        title: "Connection Error",
+        description: errorMessage,
         type: "error"
       });
     }
   };
 
-  // Handle logout
+  // Copy API key
+  const handleCopyApiKey = async () => {
+    if (apiKey) {
+      await navigator.clipboard.writeText(apiKey);
+      toast({
+        title: "Copied",
+        description: "API key copied to clipboard",
+      });
+    }
+  };
+
+  // Clear API configuration
+  const handleClearConfig = () => {
+    setApiKey('');
+    setApiUrl(DEFAULT_API_URL);
+    setModelName(DEFAULT_MODEL_NAME);
+    setTestStatus('idle');
+    setTestMessage('');
+  };
+
+  // Logout
   const handleLogout = () => {
     authStore.clearUserData();
     toast({
-      title: "Logged Out",
-      description: "You have been successfully logged out.",
+      title: "Signed Out",
+      description: "You have been successfully signed out",
     });
     router.push('/');
   };
 
-  // Handle back navigation
+  // Back
   const handleBack = () => {
     router.back();
   };
 
-  // Show restricted access message if user not logged in or ID doesn't match
+  // Access permission check
   if (!authStore.email || authStore.id !== id) {
     return (
-      <div className="min-h-screen bg-primary flex items-center justify-center px-4">
+      <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
           className="w-full max-w-md"
         >
-          <Card className="border border-border-primary backdrop-blur-sm bg-primary/80 shadow-xl">
-            <CardHeader className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border-b border-border-secondary">
-              <div className="flex items-center justify-center mb-4">
-                <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center">
-                  <FaShieldAlt className="text-red-500 text-2xl" />
-                </div>
+          <Card className="border-error/20 bg-error/5">
+            <CardHeader className="text-center pb-4">
+              <div className="w-16 h-16 mx-auto rounded-full bg-error/10 flex items-center justify-center mb-4">
+                <Shield className="w-8 h-8 text-error" />
               </div>
-              <CardTitle className="text-center text-text-primary text-xl">Access Restricted</CardTitle>
+              <CardTitle className="text-xl text-text-primary">Access Restricted</CardTitle>
             </CardHeader>
-            <CardContent className="p-8 text-center">
+            <CardContent className="text-center">
               <p className="text-text-secondary mb-6">
-                You do not have permission to access this user profile
+                You don't have permission to access this profile
               </p>
-              <Button 
+              <Button
                 onClick={() => router.push('/')}
-                className="bg-text-link hover:bg-text-linkHover text-white px-6 py-2 rounded-lg transition-all duration-200"
+                className="btn-primary"
               >
                 Return Home
               </Button>
@@ -218,89 +226,87 @@ const UserPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-primary">
-      {/* Header with back button */}
-      <div className="sticky top-0 z-10 bg-primary/80 md:pt-4 pt-16">
-        <div className="container mx-auto px-4 py-4 max-w-7xl">
+    <div className="min-h-screen bg-canvas">
+      {/* Header navigation */}
+      <div className="sticky top-0 z-10 bg-canvas/80 backdrop-blur-md border-b border-border-subtle">
+        <div className="container mx-auto px-4 py-4 max-w-6xl">
           <div className="flex items-center justify-between">
             <Button
               variant="ghost"
               onClick={handleBack}
-              className="text-text-secondary hover:text-text-primary hover:bg-secondary/50 transition-all duration-200"
+              className="flex items-center space-x-2 text-text-secondary hover:text-text-primary"
             >
-              <FaArrowLeft className="mr-2" />
-              Back
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back</span>
             </Button>
-            <h1 className="text-xl md:text-2xl font-bold text-text-primary">Profile Settings</h1>
-            <div className="w-16 md:w-20"></div> {/* Spacer for centering */}
+
+            <div className="text-center">
+              <h1 className="text-xl font-semibold">Profile Settings</h1>
+              <p className="text-sm text-text-tertiary">Manage your account and API configuration</p>
+            </div>
+
+            <div className="w-20"></div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-4 md:py-8 max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 md:gap-8">
-          {/* User Profile Card */}
+      <div className="container mx-auto px-4 py-6 max-w-6xl">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          {/* User profile card */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
+            transition={{ duration: 0.5 }}
             className="lg:col-span-1"
           >
-            <Card className="border border-border-primary backdrop-blur-sm bg-primary/80 shadow-xl h-fit lg:sticky lg:top-24">
-              <CardHeader className="bg-gradient-to-br from-text-link/10 to-text-linkHover/10 border-b border-border-secondary">
-                <div className="flex items-center space-x-2 text-text-primary">
-                  <FaUser className="text-text-link" />
-                  <CardTitle className="text-lg">User Profile</CardTitle>
-                </div>
+            <Card className="card h-full flex flex-col">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg">Profile</CardTitle>
               </CardHeader>
-              <CardContent className="p-4 md:p-6">
-                {/* Avatar and basic info */}
+
+              <CardContent className="p-6 pt-2 flex-1 flex flex-col">
+                {/* User avatar and information */}
                 <div className="text-center mb-6">
-                  <div className="relative inline-block">
-                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-text-link to-text-linkHover flex items-center justify-center text-2xl md:text-3xl font-bold text-white shadow-lg">
-                      {authStore.name ? authStore.name.substring(0, 2).toUpperCase() : 'U'}
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 w-5 h-5 md:w-6 md:h-6 bg-green-500 rounded-full border-2 border-primary flex items-center justify-center">
-                      <div className="w-2 h-2 bg-white rounded-full"></div>
-                    </div>
+                  <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-organic-sage to-organic-clay 
+                                 flex items-center justify-center text-xl font-bold text-surface-elevated 
+                                 shadow-sm mx-auto mb-3">
+                    {authStore.name ? authStore.name.substring(0, 2).toUpperCase() : 'U'}
                   </div>
-                  <h3 className="text-lg md:text-xl font-semibold text-text-primary mt-4">
+
+                  <h3 className="text-lg font-semibold text-text-primary">
                     {authStore.name || 'User'}
                   </h3>
-                  <p className="text-text-secondary text-sm">
-                    {authStore.userType || 'Standard User'}
+                  <p className="text-sm text-text-tertiary">
+                    {authStore.userType || 'Standard Account'}
                   </p>
                 </div>
 
                 {/* User details */}
-                <div className="space-y-4">
-                  <div className="bg-secondary/50 rounded-lg p-3 md:p-4 border border-border-secondary">
-                    <Label className="text-text-secondary text-xs font-medium uppercase tracking-wide">
-                      Email Address
-                    </Label>
-                    <p className="text-text-primary text-xs md:text-sm mt-1 break-all font-mono">
+                <div className="space-y-3 flex-1">
+                  <div className="bg-surface-secondary rounded-lg p-3">
+                    <Label className="text-xs text-text-tertiary uppercase tracking-wide">Email</Label>
+                    <p className="text-sm font-mono text-text-primary mt-1 break-all">
                       {authStore.email || 'Not available'}
                     </p>
                   </div>
 
-                  <div className="bg-secondary/50 rounded-lg p-3 md:p-4 border border-border-secondary">
-                    <Label className="text-text-secondary text-xs font-medium uppercase tracking-wide">
-                      User ID
-                    </Label>
-                    <p className="text-text-primary text-xs mt-1 break-all font-mono">
+                  <div className="bg-surface-secondary rounded-lg p-3">
+                    <Label className="text-xs text-text-tertiary uppercase tracking-wide">User ID</Label>
+                    <p className="text-xs font-mono text-text-secondary mt-1 break-all">
                       {authStore.id || 'Not available'}
                     </p>
                   </div>
                 </div>
 
                 {/* Logout button */}
-                <div className="mt-6 pt-6 border-t border-border-secondary">
+                <div className="mt-6 pt-6 border-t border-border-subtle">
                   <Button
                     variant="destructive"
-                    className="w-full bg-red-500 hover:bg-red-600 text-white transition-all duration-200 shadow-lg hover:shadow-xl"
+                    className="w-full bg-error hover:bg-error/90 text-surface-elevated"
                     onClick={handleLogout}
                   >
-                    <FaSignOutAlt className="mr-2" />
+                    <LogOut className="w-4 h-4 mr-2" />
                     Sign Out
                   </Button>
                 </div>
@@ -308,227 +314,178 @@ const UserPage = () => {
             </Card>
           </motion.div>
 
-          {/* API Configuration Card */}
+          {/* API configuration card */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="lg:col-span-3"
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="lg:col-span-2"
           >
-            <Card className="border border-border-primary backdrop-blur-sm bg-primary/80 shadow-xl">
-              <CardHeader className="bg-gradient-to-br from-text-link/10 to-text-linkHover/10 border-b border-border-secondary">
-                <div className="flex items-center space-x-2 text-text-primary">
-                  <FaCog className="text-text-link" />
+            <Card className="card h-full flex flex-col">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">API Configuration</CardTitle>
+
+                  {isConfigChanged && (
+                    <div className="flex items-center space-x-2 text-warning text-sm">
+                      <AlertCircle className="w-4 h-4" />
+                      <span>Unsaved</span>
+                    </div>
+                  )}
                 </div>
-                <p className="text-text-secondary text-sm mt-2">
-                  Configure your AI model settings for optimal performance
-                </p>
               </CardHeader>
-              <CardContent className="p-4 md:p-8">
-                <div className="space-y-6 md:space-y-8">
-                  {/* API Key Section */}
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2 mb-4">
-                      <FaKey className="text-text-link" />
-                      <h3 className="text-base md:text-lg font-semibold text-text-primary">API Authentication</h3>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="apiKey" className="text-text-secondary mb-2 block font-medium">
-                        API Key <span className="text-red-500">*</span>
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          id="apiKey"
-                          type={showApiKey ? "text" : "password"}
-                          placeholder="Enter your API Key"
-                          value={apiKey}
-                          onChange={(e) => setApiKey(e.target.value)}
-                          className="bg-secondary/50 border-border-secondary text-text-primary pr-12 h-10 md:h-12 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-text-link/20 focus:border-text-link"
-                        />
-                        <button 
+
+              <CardContent className="p-6 pt-2 space-y-6 flex-1">
+
+                {/* API key configuration */}
+                <div>
+                  <h3 className="font-medium mb-3">API Key</h3>
+
+                  <div className="relative">
+                    <Input
+                      type={showApiKey ? "text" : "password"}
+                      placeholder="Enter your API key"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      className="input-field pr-20"
+                    />
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex space-x-1">
+                      {apiKey && (
+                        <button
                           type="button"
-                          onClick={() => setShowApiKey(!showApiKey)}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors duration-200 p-1"
-                          aria-label={showApiKey ? "Hide API Key" : "Show API Key"}
+                          onClick={handleCopyApiKey}
+                          className="p-1.5 text-text-tertiary hover:text-text-primary rounded"
                         >
-                          {showApiKey ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                          <Copy className="w-4 h-4" />
                         </button>
-                      </div>
-                      {apiKey ? (
-                        <p className="text-xs text-green-500 mt-2 flex items-center">
-                          <FaCheck className="mr-1" /> API Key configured
-                        </p>
-                      ) : (
-                        <p className="text-xs text-red-500 mt-2 flex items-center">
-                          <FaTimes className="mr-1" /> API Key required for functionality
-                        </p>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => setShowApiKey(!showApiKey)}
+                        className="p-1.5 text-text-tertiary hover:text-text-primary rounded"
+                      >
+                        {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
                     </div>
                   </div>
 
-                  {/* Model Configuration */}
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2 mb-4">
-                      <FaRocket className="text-text-link" />
-                      <h3 className="text-base md:text-lg font-semibold text-text-primary">Model Configuration</h3>
+                  <div className="mt-2 text-sm">
+                    {apiKey ? (
+                      <div className="flex items-center text-success">
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        <span>API key configured</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center text-error">
+                        <XCircle className="w-4 h-4 mr-2" />
+                        <span>API key required</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Model configuration */}
+                <div>
+                  <h3 className="font-medium mb-3">Model Settings</h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">API Endpoint</Label>
+                      <Input
+                        placeholder="Enter API URL"
+                        value={apiUrl}
+                        onChange={(e) => setApiUrl(e.target.value)}
+                        className="input-field"
+                      />
+                      <p className="text-xs text-text-tertiary mt-1">
+                        {apiUrl === DEFAULT_API_URL ? 'Default endpoint' : 'Custom endpoint'}
+                      </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                      <div>
-                        <Label htmlFor="apiUrl" className="text-text-secondary mb-2 block font-medium">
-                          API Endpoint
-                        </Label>
-                        <Input
-                          id="apiUrl"
-                          placeholder="Enter API URL"
-                          value={apiUrl}
-                          onChange={(e) => setApiUrl(e.target.value || DEFAULT_API_URL)}
-                          className="bg-secondary/50 border-border-secondary text-text-primary h-10 md:h-12 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-text-link/20 focus:border-text-link"
-                        />
-                        <div className="mt-2">
-                          {apiUrl === DEFAULT_API_URL ? (
-                            <p className="text-xs text-text-secondary flex items-center">
-                              <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>
-                              Using default endpoint
-                            </p>
-                          ) : (
-                            <p className="text-xs text-text-link flex items-center">
-                              <span className="inline-block w-2 h-2 rounded-full bg-text-link mr-2"></span>
-                              Using custom endpoint
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="modelName" className="text-text-secondary mb-2 block font-medium">
-                          Model Name
-                        </Label>
-                        <Input
-                          id="modelName"
-                          placeholder="Enter model name"
-                          value={modelName}
-                          onChange={(e) => setModelName(e.target.value || DEFAULT_MODEL_NAME)}
-                          className="bg-secondary/50 border-border-secondary text-text-primary h-10 md:h-12 rounded-lg transition-all duration-200 focus:ring-2 focus:ring-text-link/20 focus:border-text-link"
-                        />
-                        <div className="mt-2">
-                          {modelName === DEFAULT_MODEL_NAME ? (
-                            <p className="text-xs text-text-secondary flex items-center">
-                              <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>
-                              Using default model
-                            </p>
-                          ) : (
-                            <p className="text-xs text-text-link flex items-center">
-                              <span className="inline-block w-2 h-2 rounded-full bg-text-link mr-2"></span>
-                              Using custom model
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Default configuration info */}
-                    <div className="bg-secondary/30 rounded-lg p-3 md:p-4 border border-border-secondary">
-                      <p className="text-xs text-text-secondary mb-2 font-medium">Default Configuration:</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 text-xs">
-                        <div>
-                          <span className="text-text-secondary">Endpoint: </span>
-                          <span className="font-mono text-text-primary break-all">{DEFAULT_API_URL}</span>
-                        </div>
-                        <div>
-                          <span className="text-text-secondary">Model: </span>
-                          <span className="font-mono text-text-primary">{DEFAULT_MODEL_NAME}</span>
-                        </div>
-                      </div>
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Model Name</Label>
+                      <Input
+                        placeholder="Enter model name"
+                        value={modelName}
+                        onChange={(e) => setModelName(e.target.value)}
+                        className="input-field"
+                      />
+                      <p className="text-xs text-text-tertiary mt-1">
+                        {modelName === DEFAULT_MODEL_NAME ? 'Default model' : 'Custom model'}
+                      </p>
                     </div>
                   </div>
+                </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-border-secondary">
-                    <Button
-                      onClick={handleSaveApiSettings}
-                      className="flex-1 bg-text-link hover:bg-text-linkHover text-white h-10 md:h-12 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl font-medium"
-                    >
-                      <FaCheck className="mr-2" />
-                      Save Configuration
-                    </Button>
-                    <Button
-                      onClick={handleTestApiConnection}
-                      className="flex-1 bg-secondary hover:bg-border-secondary text-text-primary h-10 md:h-12 rounded-lg transition-all duration-200 border border-border-secondary font-medium"
-                      disabled={testStatus === 'loading'}
-                    >
-                      {testStatus === 'loading' ? (
-                        <span className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-4 w-4 md:h-5 md:w-5 border-b-2 border-text-primary mr-2"></div>
-                          Testing Connection...
-                        </span>
-                      ) : (
-                        <>
-                          <FaRocket className="mr-2" />
-                          Test Connection
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                {/* Action buttons */}
+                <div className="flex gap-3 pt-4 border-t border-border-subtle mt-auto">
+                  <Button
+                    onClick={handleSaveApiSettings}
+                    className="flex-1"
+                    disabled={!isConfigChanged}
+                  >
+                    Save Configuration
+                  </Button>
 
-                  {/* Test Results */}
+                  <Button
+                    onClick={handleTestApiConnection}
+                    variant="outline"
+                    className="flex-1"
+                    disabled={testStatus === 'loading' || !apiKey}
+                  >
+                    {testStatus === 'loading' ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                        Testing...
+                      </>
+                    ) : (
+                      'Test Connection'
+                    )}
+                  </Button>
+                </div>
+
+                {/* Test results */}
+                <AnimatePresence>
                   {testStatus !== 'idle' && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className={`p-4 md:p-6 rounded-lg border max-h-60 overflow-y-auto ${
-                        testStatus === 'success' 
-                          ? 'border-green-500/30 bg-green-500/10' 
-                          : testStatus === 'error' 
-                          ? 'border-red-500/30 bg-red-500/10' 
-                          : 'bg-secondary/30 border-border-secondary'
-                      }`}
+                      exit={{ opacity: 0, y: -10 }}
+                      className={`p-4 rounded-lg border ${testStatus === 'success'
+                          ? 'border-success/30 bg-success/5'
+                          : testStatus === 'error'
+                            ? 'border-error/30 bg-error/5'
+                            : 'border-border-default bg-surface-secondary'
+                        }`}
                     >
                       <div className="flex items-start space-x-3">
-                        <div className="mt-1 flex-shrink-0">
+                        <div className="flex-shrink-0 pt-0.5">
                           {testStatus === 'success' && (
-                            <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-green-500 flex items-center justify-center">
-                              <FaCheck className="text-white text-xs" />
-                            </div>
+                            <CheckCircle className="w-5 h-5 text-success" />
                           )}
                           {testStatus === 'error' && (
-                            <div className="w-5 h-5 md:w-6 md:h-6 rounded-full bg-red-500 flex items-center justify-center">
-                              <FaTimes className="text-white text-xs" />
-                            </div>
+                            <XCircle className="w-5 h-5 text-error" />
                           )}
                           {testStatus === 'loading' && (
-                            <div className="w-5 h-5 md:w-6 md:h-6 rounded-full border-2 border-text-link border-t-transparent animate-spin"></div>
+                            <div className="w-5 h-5 border-2 border-accent-primary/30 border-t-accent-primary rounded-full animate-spin" />
                           )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`font-semibold mb-2 text-sm md:text-base ${
-                            testStatus === 'success' 
-                              ? 'text-green-400' 
-                              : testStatus === 'error' 
-                              ? 'text-red-400' 
-                              : 'text-text-primary'
-                          }`}>
+
+                        <div className="flex-1">
+                          <h4 className={`font-medium mb-1 ${testStatus === 'success' ? 'text-success' :
+                              testStatus === 'error' ? 'text-error' : 'text-text-primary'
+                            }`}>
                             {testStatus === 'success' ? 'Connection Successful' :
-                             testStatus === 'error' ? 'Connection Failed' :
-                             'Testing Connection'}
-                          </p>
-                          <p className={`text-xs md:text-sm break-all ${
-                            testStatus === 'success' 
-                              ? 'text-green-300' 
-                              : testStatus === 'error' 
-                              ? 'text-red-300' 
-                              : 'text-text-secondary'
-                          }`}>
+                              testStatus === 'error' ? 'Connection Failed' : 'Testing Connection'}
+                          </h4>
+                          <p className="text-sm text-text-secondary">
                             {testMessage}
                           </p>
                         </div>
                       </div>
                     </motion.div>
                   )}
-                </div>
+                </AnimatePresence>
               </CardContent>
             </Card>
           </motion.div>

@@ -4,47 +4,80 @@ import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import useAuthStore from '@/lib/hooks/auth-store';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { Home, Image, History, Star, Code, Menu, X } from 'lucide-react';
-import { FeedbackFish } from '@feedback-fish/react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Home, Image, History, Star, Code, Menu, X, Sun, Moon } from 'lucide-react';
 import UserHistory from './UserHistory';
 import UserAvatar from './UserAvatar';
 
-export default function TopBar() {
-    const pathname = usePathname();
-    const router = useRouter();
-    const [key, setKey] = useState(0);
-    const authStore = useAuthStore();
-    const [isCollapsed, setIsCollapsed] = useState(false);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
+// Brand logo component
+const BrandLogo = ({ isCollapsed }: { isCollapsed: boolean }) => (
+    <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-start'} w-full`}>
+        {/* Redesigned logo - more organic, geometric abstract design */}
+        <div className="relative">
+            <svg
+                width={isCollapsed ? "32" : "40"}
+                height={isCollapsed ? "32" : "40"}
+                viewBox="0 0 100 100"
+                fill="none"
+                className="transition-all duration-300"
+            >
+                {/* Organic background shape */}
+                <path
+                    d="M20,15 C35,8 65,8 80,15 C92,25 92,35 85,50 C88,65 75,85 50,85 C25,85 12,65 15,50 C8,35 8,25 20,15 Z"
+                    fill="currentColor"
+                    className="text-organic-sage/20"
+                />
+
+                {/* Geometric structure lines */}
+                <g stroke="currentColor" strokeWidth="2.5" fill="none" className="text-accent-primary">
+                    {/* Main connecting lines */}
+                    <path d="M25,25 L75,75" strokeLinecap="round" />
+                    <path d="M75,25 L25,75" strokeLinecap="round" />
+
+                    {/* Node circles */}
+                    <circle cx="25" cy="25" r="4" fill="currentColor" className="text-organic-clay" />
+                    <circle cx="75" cy="25" r="4" fill="currentColor" className="text-organic-sage" />
+                    <circle cx="25" cy="75" r="4" fill="currentColor" className="text-organic-rust" />
+                    <circle cx="75" cy="75" r="4" fill="currentColor" className="text-accent-primary" />
+
+                    {/* Center connection point */}
+                    <circle cx="50" cy="50" r="3" fill="currentColor" className="text-text-primary animate-pulse" />
+
+                    {/* Organic connecting lines */}
+                    <path
+                        d="M50,50 Q30,35 25,25 M50,50 Q70,35 75,25 M50,50 Q30,65 25,75 M50,50 Q70,65 75,75"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        className="text-text-tertiary opacity-60"
+                        strokeLinecap="round"
+                    />
+                </g>
+            </svg>
+        </div>
+
+        {!isCollapsed && (
+            <div className="flex items-baseline">
+                <span className="font-display text-xl font-semibold text-text-primary">
+                    Inno
+                </span>
+                <span className="font-display text-xl font-semibold bg-gradient-to-r from-organic-sage to-organic-clay bg-clip-text text-transparent">
+                    Weaver
+                </span>
+            </div>
+        )}
+    </div>
+);
+
+// Theme toggle component
+const ThemeToggle = ({ isCollapsed }: { isCollapsed: boolean }) => {
+    const [theme, setTheme] = useState('light');
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         setMounted(true);
-        setKey(prevKey => prevKey + 1);
-        
-        // Check if mobile on mount and resize
-        const checkMobile = () => {
-            setIsMobile(window.innerWidth < 768);
-            if (window.innerWidth >= 768) {
-                setIsMobileMenuOpen(false);
-            }
-        };
-        
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
-    }, [pathname]);
-
-    const [theme, setTheme] = useState('light');
-
-    useEffect(() => {
-        if (mounted) {
-            const savedTheme = document.body.className || 'light';
-            setTheme(savedTheme);
-        }
-    }, [mounted]);
+        const savedTheme = document.body.className || 'light';
+        setTheme(savedTheme);
+    }, []);
 
     const toggleTheme = () => {
         const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -54,6 +87,80 @@ export default function TopBar() {
         window.dispatchEvent(event);
     };
 
+    if (!mounted) return null;
+
+    if (isCollapsed) {
+        return (
+            <button
+                onClick={toggleTheme}
+                className="p-2.5 rounded-xl bg-surface-secondary hover:bg-surface-tertiary 
+                   border border-border-subtle hover:border-border-default
+                   transition-all duration-200 group touch-target"
+                aria-label="Toggle theme"
+            >
+                {theme === 'light' ? (
+                    <Sun className="w-5 h-5 text-organic-clay" />
+                ) : (
+                    <Moon className="w-5 h-5 text-accent-primary" />
+                )}
+            </button>
+        );
+    }
+
+    return (
+        <button
+            onClick={toggleTheme}
+            className="relative flex items-center p-1.5 rounded-full bg-surface-secondary 
+                 hover:bg-surface-tertiary border border-border-subtle hover:border-border-default
+                 transition-all duration-200 w-20 h-10"
+            aria-label="Toggle theme"
+        >
+            <motion.div
+                className="absolute bg-surface-elevated shadow-sm rounded-full w-7 h-7 
+                   border border-border-subtle flex items-center justify-center"
+                animate={{ x: theme === 'dark' ? 0 : 44 }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            >
+                {theme === 'light' ? (
+                    <Sun className="w-4 h-4 text-organic-clay" />
+                ) : (
+                    <Moon className="w-4 h-4 text-accent-primary" />
+                )}
+            </motion.div>
+
+            {/* Background icons - don't follow animation */}
+            <div className="flex justify-between items-center w-full px-2 text-xs">
+                <Moon className="w-4 h-4 text-accent-primary/30" />
+                <Sun className="w-4 h-4 text-organic-clay/30" />
+            </div>
+        </button>
+    );
+};
+
+export default function TopBar() {
+    const pathname = usePathname();
+    const router = useRouter();
+    const authStore = useAuthStore();
+    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+            if (window.innerWidth >= 768) {
+                setIsMobileMenuOpen(false);
+            }
+        };
+
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, [pathname]);
+
     const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
         e.preventDefault();
         router.push(href);
@@ -61,9 +168,9 @@ export default function TopBar() {
             setIsMobileMenuOpen(false);
         }
     };
-    
+
     const isActive = (path: string) => pathname === path;
-    
+
     const toggleSidebar = () => {
         const newState = !isCollapsed;
         setIsCollapsed(newState);
@@ -75,181 +182,161 @@ export default function TopBar() {
         setIsMobileMenuOpen(!isMobileMenuOpen);
     };
 
+    // Navigation menu items
+    const mainNavItems = [
+        { href: '/', icon: Home, label: 'Home' },
+        { href: '/gallery', icon: Image, label: 'Gallery' },
+    ];
+
+    const userNavItems = [
+        ...(authStore.userType === 'developer' ? [{ href: '/user/developer', icon: Code, label: 'Developer' }] : []),
+        { href: '/user/favlist', icon: Star, label: 'Favorites' },
+        { href: '/user/history', icon: History, label: 'History' },
+    ];
+
+    // Loading state
     if (!mounted) {
         return (
-            <div className="fixed left-0 top-0 h-screen w-[200px] bg-primary z-40 flex flex-col justify-between items-start overflow-x-hidden text-text-primary transition-all duration-200 shadow-md overflow-y-auto backdrop-blur-md bg-opacity-95">
-                <div className="w-full flex-shrink-0">
-                    <h1 className="text-2xl font-semibold mt-6 ml-1 tracking-tight h-8 flex items-center">
-                        <svg width="32" height="32" viewBox="0 0 120 130" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2">
-                            <g transform="translate(10, 5)">
-                                <circle cx="20" cy="20" r="9" fill="#2563eb" />
-                                <circle cx="100" cy="20" r="9" fill="#2563eb" />
-                                <circle cx="20" cy="90" r="9" fill="#2563eb" />
-                                <circle cx="100" cy="90" r="9" fill="#2563eb" />
-                                <path
-                                    d="M20 20 L100 90 M100 20 L20 90 M20 20 L20 90 M100 20 L100 90 M100 90 L70 120"
-                                    stroke="#2563eb"
-                                    strokeWidth="7"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    fill="none"
-                                />
-                            </g>
-                        </svg>
-                        <div className="flex">
-                            <span className="text-text-primary font-bold">Inno</span>
-                            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500 font-bold">
-                                Weaver
-                            </span>
-                        </div>
-                    </h1>
+            <div className="fixed left-0 top-0 h-screen w-52 bg-surface-primary z-40 
+                      border-r border-border-subtle">
+                <div className="p-6">
+                    <div className="w-8 h-8 bg-surface-secondary rounded-lg animate-pulse"></div>
                 </div>
             </div>
         );
     }
 
-    // Mobile menu button for small screens
+    // Mobile menu
     if (isMobile) {
         return (
             <>
                 {/* Mobile menu button */}
                 <button
                     onClick={toggleMobileMenu}
-                    className="fixed top-4 left-4 z-50 p-2 bg-primary/90 backdrop-blur-sm rounded-lg shadow-lg border border-border-primary md:hidden"
+                    className="fixed top-4 left-4 z-50 p-2.5 rounded-xl 
+                     bg-surface-elevated/95 backdrop-blur-md 
+                     border border-border-subtle shadow-lg 
+                     hover:bg-surface-secondary hover:border-border-default
+                     transition-all duration-200 md:hidden touch-target"
                 >
-                    {isMobileMenuOpen ? (
-                        <X className="w-6 h-6 text-text-primary" />
-                    ) : (
-                        <Menu className="w-6 h-6 text-text-primary" />
-                    )}
+                    <AnimatePresence mode="wait">
+                        {isMobileMenuOpen ? (
+                            <motion.div
+                                key="close"
+                                initial={{ opacity: 0, rotate: -90 }}
+                                animate={{ opacity: 1, rotate: 0 }}
+                                exit={{ opacity: 0, rotate: 90 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <X className="w-5 h-5 text-text-primary" />
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="menu"
+                                initial={{ opacity: 0, rotate: 90 }}
+                                animate={{ opacity: 1, rotate: 0 }}
+                                exit={{ opacity: 0, rotate: -90 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <Menu className="w-5 h-5 text-text-primary" />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </button>
 
                 {/* Mobile menu overlay */}
-                {isMobileMenuOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/50 z-40 md:hidden"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                    />
-                )}
+                <AnimatePresence>
+                    {isMobileMenuOpen && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 bg-ink/20 backdrop-blur-sm z-40 md:hidden"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                        />
+                    )}
+                </AnimatePresence>
 
                 {/* Mobile sidebar */}
-                <motion.div
-                    className={`fixed left-0 top-0 h-screen w-80 bg-primary z-50 flex flex-col justify-between items-start overflow-x-hidden
-                        text-text-primary shadow-xl border-r border-border-primary md:hidden`}
-                    initial={{ x: '-100%' }}
-                    animate={{ x: isMobileMenuOpen ? 0 : '-100%' }}
-                    transition={{ duration: 0.3, ease: 'easeInOut' }}
-                >
-                    <div className="w-full flex-shrink-0 pt-16">
-                        <h1 className="text-2xl font-semibold mt-6 ml-6 tracking-tight h-8 flex items-center">
-                            <svg width="32" height="32" viewBox="0 0 120 130" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2">
-                                <g transform="translate(10, 5)">
-                                    <circle cx="20" cy="20" r="9" fill="#2563eb" />
-                                    <circle cx="100" cy="20" r="9" fill="#2563eb" />
-                                    <circle cx="20" cy="90" r="9" fill="#2563eb" />
-                                    <circle cx="100" cy="90" r="9" fill="#2563eb" />
-                                    <path
-                                        d="M20 20 L100 90 M100 20 L20 90 M20 20 L20 90 M100 20 L100 90 M100 90 L70 120"
-                                        stroke="#2563eb"
-                                        strokeWidth="7"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        fill="none"
-                                    />
-                                </g>
-                            </svg>
-                            <div className="flex">
-                                <span className="text-text-primary font-bold">Inno</span>
-                                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500 font-bold">
-                                    Weaver
-                                </span>
-                            </div>
-                        </h1>
-                        <div className="w-full h-px bg-gradient-to-r from-transparent via-border-secondary to-transparent my-5 opacity-70" />
-
-                        <div className="px-6 mb-3 mt-8">
-                            <h2 className="text-xs font-bold text-text-secondary uppercase tracking-wider opacity-70">Main</h2>
-                        </div>
-                        <nav className="flex flex-col items-center w-full font-medium text-base space-y-3 px-4 mb-4 flex-shrink-0">
-                            {[
-                                { href: '/', icon: Home, label: 'Home' },
-                                { href: '/gallery', icon: Image, label: 'Gallery' },
-                            ].map(({ href, icon: Icon, label }) => (
-                                <Link
-                                    key={href}
-                                    href={href}
-                                    className={`w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 ${isActive(href)
-                                        ? 'text-text-primary font-semibold bg-secondary/50'
-                                        : 'text-text-secondary hover:bg-border-primary/50 hover:text-text-primary'
-                                        }`}
-                                    onClick={(e) => handleNavigation(e, href)}
-                                >
-                                    <Icon className="text-lg mr-3" />
-                                    <span>{label}</span>
-                                </Link>
-                            ))}
-                        </nav>
-
-                        <div className="px-6 mb-3 mt-8">
-                            <h2 className="text-xs font-bold text-text-secondary uppercase tracking-wider opacity-70">User</h2>
-                        </div>
-                        <nav className="flex flex-col items-center w-full font-medium text-base space-y-3 px-4 flex-shrink-0">
-                            {[
-                                ...(authStore.userType === 'developer' ? [{ href: '/user/developer', icon: Code, label: 'Developer' }] : []),
-                                { href: '/user/favlist', icon: Star, label: 'Favorite' },
-                                { href: '/user/history', icon: History, label: 'History' },
-                            ].map(({ href, icon: Icon, label }) => (
-                                <Link
-                                    key={href}
-                                    href={href}
-                                    className={`w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 ${isActive(href)
-                                        ? 'text-text-primary font-semibold bg-secondary/50'
-                                        : 'text-text-secondary hover:bg-border-primary/50 hover:text-text-primary'
-                                        }`}
-                                    onClick={(e) => handleNavigation(e, href)}
-                                >
-                                    <Icon className="text-lg mr-3" />
-                                    <span>{label}</span>
-                                </Link>
-                            ))}
-                        </nav>
-
-                        <div className="w-full px-6 mt-6">
-                            <UserHistory />
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col justify-end items-center w-full mb-5 font-medium text-sm space-y-3 px-4 flex-shrink-0">
-                        <div className='w-full rounded-lg overflow-hidden'>
-                            <UserAvatar isCollapsed={false} />
-                        </div>
-                        <button
-                            onClick={toggleTheme}
-                            className="relative flex items-center p-2 text-xl rounded-full 
-                                bg-border-secondary/30 hover:bg-border-primary/40 backdrop-blur-sm
-                                shadow-sm transition-all duration-200 w-32"
-                            style={{ borderRadius: '9999px' }}
+                <AnimatePresence>
+                    {isMobileMenuOpen && (
+                        <motion.div
+                            className="fixed left-0 top-0 h-screen w-80 bg-surface-primary z-50 
+                         border-r border-border-subtle shadow-2xl md:hidden
+                         flex flex-col"
+                            initial={{ x: '-100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '-100%' }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                         >
-                            <div
-                                className="absolute bg-primary shadow-md"
-                                style={{
-                                    width: '2.5rem',
-                                    height: '2.5rem',
-                                    transform: theme === 'dark' ? 'translateX(0)' : 'translateX(4.5rem)',
-                                    transition: 'transform 0.3s ease, background-color 0.3s ease',
-                                    borderRadius: '9999px',
-                                }}
-                            ></div>
-                            <div className="flex justify-between w-full px-2">
-                                <span>☀️</span>
-                                <span>🌙</span>
+                            {/* Mobile header */}
+                            <div className="p-6 pt-20 border-b border-border-subtle">
+                                <BrandLogo isCollapsed={false} />
                             </div>
-                        </button>
-                    </div>
-                </motion.div>
+
+                            {/* Mobile navigation */}
+                            <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                                {/* Main navigation */}
+                                <div>
+                                    <h2 className="caption text-text-tertiary mb-4">Navigation</h2>
+                                    <nav className="space-y-2">
+                                        {mainNavItems.map(({ href, icon: Icon, label }) => (
+                                            <Link
+                                                key={href}
+                                                href={href}
+                                                className={`flex items-center px-4 py-3 rounded-xl transition-all duration-200 group ${isActive(href)
+                                                        ? 'bg-accent-primary/10 text-accent-primary border border-accent-primary/20'
+                                                        : 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
+                                                    }`}
+                                                onClick={(e) => handleNavigation(e, href)}
+                                            >
+                                                <Icon className={`w-5 h-5 mr-3 transition-transform duration-200 ${isActive(href) ? 'scale-110' : 'group-hover:scale-105'
+                                                    }`} />
+                                                <span className="font-medium">{label}</span>
+                                            </Link>
+                                        ))}
+                                    </nav>
+                                </div>
+
+                                {/* User navigation */}
+                                <div>
+                                    <h2 className="caption text-text-tertiary mb-4">User</h2>
+                                    <nav className="space-y-2">
+                                        {userNavItems.map(({ href, icon: Icon, label }) => (
+                                            <Link
+                                                key={href}
+                                                href={href}
+                                                className={`flex items-center px-4 py-3 rounded-xl transition-all duration-200 group ${isActive(href)
+                                                        ? 'bg-accent-primary/10 text-accent-primary border border-accent-primary/20'
+                                                        : 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
+                                                    }`}
+                                                onClick={(e) => handleNavigation(e, href)}
+                                            >
+                                                <Icon className={`w-5 h-5 mr-3 transition-transform duration-200 ${isActive(href) ? 'scale-110' : 'group-hover:scale-105'
+                                                    }`} />
+                                                <span className="font-medium">{label}</span>
+                                            </Link>
+                                        ))}
+                                    </nav>
+                                </div>
+
+                                {/* User history */}
+                                <div>
+                                    <h2 className="caption text-text-tertiary mb-4">Recent</h2>
+                                    <UserHistory />
+                                </div>
+                            </div>
+
+                            {/* Mobile bottom */}
+                            <div className="p-6 border-t border-border-subtle space-y-4">
+                                <UserAvatar isCollapsed={false} />
+                                <div className="flex justify-center">
+                                    <ThemeToggle isCollapsed={false} />
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </>
         );
     }
@@ -257,140 +344,136 @@ export default function TopBar() {
     // Desktop sidebar
     return (
         <motion.div
-            className={`fixed left-0 top-0 h-screen ${isCollapsed ? 'w-16' : 'w-[200px]'} 
-                bg-primary z-40 flex flex-col justify-between items-start overflow-x-hidden
-                text-text-primary transition-all duration-200 shadow-md overflow-y-auto
-                backdrop-blur-md bg-opacity-95 md:flex`}
+            className={`fixed left-0 top-0 h-screen ${isCollapsed ? 'w-20' : 'w-52'} 
+                  bg-surface-primary/95 backdrop-blur-md z-40 
+                  border-r border-border-subtle shadow-sm
+                  flex flex-col transition-all duration-300 ease-out`}
             initial={{ x: '-100%' }}
             animate={{ x: 0 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
         >
-            <div className="w-full flex-shrink-0">
-                <h1 className={`text-2xl font-semibold ${isCollapsed ? 'mt-6 text-center' : 'mt-6 ml-1'} tracking-tight h-8 flex items-center`}>
-                    {isCollapsed ? (
-                        <span className="text-text-primary font-bold">IW</span>
-                    ) : (
-                        <>
-                            <svg width="32" height="32" viewBox="0 0 120 130" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-2">
-                                <g transform="translate(10, 5)">
-                                    <circle cx="20" cy="20" r="9" fill="#2563eb" />
-                                    <circle cx="100" cy="20" r="9" fill="#2563eb" />
-                                    <circle cx="20" cy="90" r="9" fill="#2563eb" />
-                                    <circle cx="100" cy="90" r="9" fill="#2563eb" />
-                                    <path
-                                        d="M20 20 L100 90 M100 20 L20 90 M20 20 L20 90 M100 20 L100 90 M100 90 L70 120"
-                                        stroke="#2563eb"
-                                        strokeWidth="7"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        fill="none"
-                                    />
-                                </g>
-                            </svg>
-                            <div className="flex">
-                                <span className="text-text-primary font-bold">Inno</span>
-                                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500 font-bold">
-                                    Weaver
-                                </span>
-                            </div>
-                        </>
-                    )}
-                </h1>
-                <div className="w-full h-px bg-gradient-to-r from-transparent via-border-secondary to-transparent my-5 opacity-70" />
-
-                <div className={`${isCollapsed ? 'px-1' : 'px-5'} mb-3 mt-8`}>
-                    <h2 className={`text-xs font-bold text-text-secondary uppercase tracking-wider ${isCollapsed ? 'text-center' : ''} opacity-70`}>Main</h2>
-                </div>
-                <nav className={`flex flex-col items-center w-full font-medium text-base space-y-3 ${isCollapsed ? 'px-1.5' : 'px-3'} mb-4 flex-shrink-0`}>
-                    {[
-                        { href: '/', icon: Home, label: 'Home' },
-                        { href: '/gallery', icon: Image, label: 'Gallery' },
-                    ].map(({ href, icon: Icon, label }) => (
-                        <Link
-                            key={href}
-                            href={href}
-                            className={`w-full flex items-center ${isCollapsed ? 'justify-center' : ''} px-2 py-1 rounded-xl transition-all duration-200 ${isActive(href)
-                                ? 'text-text-primary font-semibold'
-                                : 'text-text-secondary hover:bg-border-primary/50 hover:text-text-primary'
-                                }`}
-                            onClick={(e) => handleNavigation(e, href)}
-                        >
-                            <Icon className={`${isCollapsed ? 'text-xl' : 'text-lg'} ${isActive(href) ? 'text-text-primary font-semibold' : 'text-text-secondary'}`} />
-                            <span className={`ml-2 ${isCollapsed ? 'hidden' : 'block'}`}>{label}</span>
-                            {!isCollapsed && isActive(href)}
-                        </Link>
-                    ))}
-                </nav>
-
-                <div className={`${isCollapsed ? 'px-1' : 'px-5'} mb-3 mt-8`}>
-                    <h2 className={`text-xs font-bold text-text-secondary uppercase tracking-wider ${isCollapsed ? 'text-center' : ''} opacity-70`}>User</h2>
-                </div>
-                <nav className={`flex flex-col items-center w-full font-medium text-base space-y-3 ${isCollapsed ? 'px-1.5' : 'px-3'} flex-shrink-0`}>
-                    {[
-                        ...(authStore.userType === 'developer' ? [{ href: '/user/developer', icon: Code, label: 'Developer' }] : []),
-                        { href: '/user/favlist', icon: Star, label: 'Favorite' },
-                        { href: '/user/history', icon: History, label: 'History' },
-                    ].map(({ href, icon: Icon, label }) => (
-                        <Link
-                            key={href}
-                            href={href}
-                            className={`w-full flex items-center ${isCollapsed ? 'justify-center' : ''} px-2 py-1 rounded-xl transition-all duration-200 ${isActive(href)
-                                ? 'text-text-primary font-semibold'
-                                : 'text-text-secondary hover:bg-border-primary/50 hover:text-text-primary'
-                                }`}
-                            onClick={(e) => handleNavigation(e, href)}
-                        >
-                            <Icon className={`${isCollapsed ? 'text-xl' : 'text-lg'} ${isActive(href) ? 'text-text-primary font-semibold' : 'text-text-secondary'}`} />
-                            <span className={`ml-2 ${isCollapsed ? 'hidden' : 'block'}`}>{label}</span>
-                            {!isCollapsed && isActive(href)}
-                        </Link>
-                    ))}
-                </nav>
-
-                {!isCollapsed && (
-                    <div className="w-full px-4 ml-3 mt-1">
-                        <UserHistory />
-                    </div>
-                )}
+            {/* Header logo area */}
+            <div className={`${isCollapsed ? 'p-4' : 'p-6'}`}>
+                <BrandLogo isCollapsed={isCollapsed} />
             </div>
 
-            <div className={`flex flex-col justify-end items-center w-full mb-5 font-medium text-sm space-y-3 ${isCollapsed ? 'px-1.5' : 'px-3'} flex-shrink-0`}>
-                <div className='w-full rounded-lg overflow-hidden'>
-                    <UserAvatar isCollapsed={isCollapsed} />
-                </div>
-                {isCollapsed ? (
-                    <button
-                        onClick={toggleTheme}
-                        className="relative flex items-center justify-center p-2 text-xl rounded-full 
-                            bg-border-secondary/30 hover:bg-border-primary/40 mb-2 backdrop-blur-sm
-                            shadow-sm transition-all duration-200"
-                        style={{ width: '2.5rem', height: '2.5rem' }}
-                    >
-                        {theme === 'dark' ? '🌙' : '☀️'}
-                    </button>
-                ) : (
-                    <button
-                        onClick={toggleTheme}
-                        className="relative flex items-center p-2 text-xl rounded-full 
-                            bg-border-secondary/30 hover:bg-border-primary/40 backdrop-blur-sm
-                            shadow-sm transition-all duration-200"
-                        style={{ width: '8rem', borderRadius: '9999px', marginLeft: '-2rem' }}
-                    >
-                        <div
-                            className="absolute bg-primary shadow-md"
-                            style={{
-                                width: '2.5rem',
-                                height: '2.5rem',
-                                transform: theme === 'dark' ? 'translateX(0)' : 'translateX(4.5rem)',
-                                transition: 'transform 0.3s ease, background-color 0.3s ease',
-                                borderRadius: '9999px',
-                            }}
-                        ></div>
-                        <div className="flex justify-between w-full px-2">
-                            <span>☀️</span>
-                            <span>🌙</span>
+            <div className="w-full h-px bg-border-subtle mb-6" />
+
+            {/* Main content area */}
+            <div className="flex-1 overflow-y-auto scrollbar-hide">
+                <div className={`${isCollapsed ? 'p-2' : 'p-4'} space-y-6`}>
+
+                    {/* Main navigation */}
+                    <div>
+                        {!isCollapsed && (
+                            <h2 className="text-xs font-medium text-text-tertiary uppercase tracking-wider mb-3 px-2">Navigation</h2>
+                        )}
+                        <nav className="space-y-1">
+                            {mainNavItems.map(({ href, icon: Icon, label }) => (
+                                <Link
+                                    key={href}
+                                    href={href}
+                                    className={`flex items-center ${isCollapsed ? 'justify-center p-2.5' : 'px-3 py-2.5'} 
+                             rounded-lg transition-all duration-200 group relative ${isActive(href)
+                                            ? 'bg-accent-primary/10 text-accent-primary'
+                                            : 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
+                                        }`}
+                                    onClick={(e) => handleNavigation(e, href)}
+                                    title={isCollapsed ? label : undefined}
+                                >
+                                    <Icon className={`${isCollapsed ? 'w-5 h-5' : 'w-5 h-5 mr-3'} 
+                                   transition-transform duration-200 ${isActive(href) ? 'scale-110' : 'group-hover:scale-105'
+                                        }`} />
+                                    {!isCollapsed && (
+                                        <span className="font-medium text-[15px] transition-colors duration-200">
+                                            {label}
+                                        </span>
+                                    )}
+
+                                    {/* Active indicator */}
+                                    {isActive(href) && (
+                                        <motion.div
+                                            className={`absolute ${isCollapsed ? 'right-0 top-1/2 -translate-y-1/2 w-1 h-5' : 'left-0 top-1/2 -translate-y-1/2 w-1 h-5'} 
+                                 bg-accent-primary rounded-r-full`}
+                                            layoutId="activeIndicator"
+                                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                        />
+                                    )}
+                                </Link>
+                            ))}
+                        </nav>
+                    </div>
+
+                    {/* User navigation */}
+                    <div>
+                        {!isCollapsed && (
+                            <h2 className="text-xs font-medium text-text-tertiary uppercase tracking-wider mb-3 px-2">User</h2>
+                        )}
+                        <nav className="space-y-1">
+                            {userNavItems.map(({ href, icon: Icon, label }) => (
+                                <Link
+                                    key={href}
+                                    href={href}
+                                    className={`flex items-center ${isCollapsed ? 'justify-center p-2.5' : 'px-3 py-2.5'} 
+                             rounded-lg transition-all duration-200 group relative ${isActive(href)
+                                            ? 'bg-accent-primary/10 text-accent-primary'
+                                            : 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
+                                        }`}
+                                    onClick={(e) => handleNavigation(e, href)}
+                                    title={isCollapsed ? label : undefined}
+                                >
+                                    <Icon className={`${isCollapsed ? 'w-5 h-5' : 'w-5 h-5 mr-3'} 
+                                   transition-transform duration-200 ${isActive(href) ? 'scale-110' : 'group-hover:scale-105'
+                                        }`} />
+                                    {!isCollapsed && (
+                                        <span className="font-medium text-[15px] transition-colors duration-200">
+                                            {label}
+                                        </span>
+                                    )}
+
+                                    {/* Active indicator */}
+                                    {isActive(href) && (
+                                        <motion.div
+                                            className={`absolute ${isCollapsed ? 'right-0 top-1/2 -translate-y-1/2 w-1 h-5' : 'left-0 top-1/2 -translate-y-1/2 w-1 h-5'} 
+                                 bg-accent-primary rounded-r-full`}
+                                            layoutId="activeIndicator"
+                                            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                        />
+                                    )}
+                                </Link>
+                            ))}
+                        </nav>
+                    </div>
+
+                    {/* User history */}
+                    {!isCollapsed && (
+                        <div>
+                            <h2 className="text-xs font-medium text-text-tertiary uppercase tracking-wider mb-3 px-2">Recent</h2>
+                            <UserHistory />
                         </div>
-                    </button>
+                    )}
+                </div>
+            </div>
+
+            {/* Bottom user area */}
+            <div className={`${isCollapsed ? 'p-2' : 'p-4'} border-t border-border-subtle space-y-3`}>
+                <UserAvatar isCollapsed={isCollapsed} />
+                <div className={`flex ${isCollapsed ? 'justify-center' : 'justify-center'}`}>
+                    <ThemeToggle isCollapsed={isCollapsed} />
+                </div>
+
+                {/* Collapse button */}
+                {isCollapsed && (
+                    <div className="flex justify-center">
+                        <button
+                            onClick={toggleSidebar}
+                            className="p-1.5 rounded-lg hover:bg-surface-secondary 
+                         transition-colors duration-200 text-text-tertiary hover:text-text-primary"
+                            aria-label="Expand sidebar"
+                        >
+                            <Menu className="w-4 h-4" />
+                        </button>
+                    </div>
                 )}
             </div>
         </motion.div>

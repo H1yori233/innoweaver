@@ -16,7 +16,7 @@ prompts_router = APIRouter()
 @route_handler()
 async def view_prompts(current_user: Dict[str, Any] = Depends(fastapi_token_required)):
     if current_user['user_type'] != 'developer':
-        raise HTTPException(status_code=403, detail='没有权限访问此资源')
+        raise HTTPException(status_code=403, detail='No permission to access this resource')
     
     current_prompts = {}
     for prompt_name in PROMPTING._PROMPT_FILE_PATHS.keys():
@@ -36,10 +36,10 @@ async def modify_prompt(
     new_content = data["new_content"]
     
     if current_user['user_type'] != 'developer':
-        raise HTTPException(status_code=403, detail='没有权限修改此资源')
+        raise HTTPException(status_code=403, detail='No permission to modify this resource')
     
     if prompt_name not in PROMPTING._PROMPT_FILE_PATHS:
-        raise HTTPException(status_code=400, detail='无效的提示词名称')
+        raise HTTPException(status_code=400, detail='Invalid prompt name')
     
     file_name = PROMPTING._PROMPT_FILE_PATHS.get(prompt_name)
     
@@ -48,9 +48,9 @@ async def modify_prompt(
     try:
         with open(file_path, 'w', encoding='utf-8') as file:
             file.write(new_content)
-        return {'message': f'{prompt_name} 已成功更新'}
+        return {'message': f'{prompt_name} updated successfully'}
     except FileNotFoundError:
-        raise HTTPException(status_code=500, detail=f'无法找到 Prompt 文件: {file_path}')
+        raise HTTPException(status_code=500, detail=f'Cannot find prompt file: {file_path}')
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f'更新 Prompt 时发生错误: {e}') 
+        raise HTTPException(status_code=500, detail=f'Error updating prompt: {e}') 
     
